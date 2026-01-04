@@ -1,0 +1,417 @@
+@import "tailwindcss";
+
+/* ============================
+   赛博学神：神经潜渊
+   Cyberpunk Academic Design System
+   ============================ */
+
+@theme {
+  /* Colors */
+  --color-neon-green: #39ff14;
+  --color-cyber-pink: #ff00ff;
+  --color-deep-void: #0a0a0a;
+  --color-data-blue: #00f0ff;
+  --color-warning-red: #ff3333;
+  --color-hp-green: #00ff88;
+  --color-overload-purple: #9933ff;
+  --color-overload-yellow: #ffff00;
+  --color-gold-glow: #ffd700;
+
+  /* Fonts */
+  --font-mono: "JetBrains Mono", "Fira Code", "SF Mono", Consolas, monospace;
+  --font-sans: "Inter", "Segoe UI", sans-serif;
+}
+
+/* Base styles */
+html {
+  font-family: var(--font-sans);
+  background-color: var(--color-deep-void);
+  color: white;
+}
+
+body {
+  margin: 0;
+  min-height: 100vh;
+  background: radial-gradient(
+      ellipse at 50% 0%,
+      rgba(57, 255, 20, 0.1) 0%,
+      transparent 50%
+    ),
+    radial-gradient(
+      ellipse at 80% 80%,
+      rgba(255, 0, 255, 0.08) 0%,
+      transparent 40%
+    ),
+    radial-gradient(
+      ellipse at 20% 90%,
+      rgba(0, 240, 255, 0.06) 0%,
+      transparent 40%
+    ),
+    var(--color-deep-void);
+  overflow-x: hidden;
+}
+
+/* ============================
+   Animation Keyframes
+   ============================ */
+
+@keyframes glitch-1 {
+  0%, 100% {
+    transform: translateX(0);
+    clip-path: polygon(0 0, 100% 0, 100% 100%, 0 100%);
+  }
+  20% {
+    transform: translateX(-3px);
+    clip-path: polygon(0 15%, 100% 0, 100% 85%, 0 100%);
+  }
+  40% {
+    transform: translateX(3px);
+    clip-path: polygon(0 0, 100% 15%, 100% 100%, 0 85%);
+  }
+  60% {
+    transform: translateX(-2px);
+    clip-path: polygon(0 10%, 100% 0, 100% 90%, 0 100%);
+  }
+  80% {
+    transform: translateX(2px);
+    clip-path: polygon(0 0, 100% 10%, 100% 100%, 0 90%);
+  }
+}
+
+@keyframes glitch-2 {
+  0%, 100% {
+    opacity: 1;
+  }
+  33% {
+    opacity: 0.8;
+  }
+  66% {
+    opacity: 0.9;
+  }
+}
+
+@keyframes scanline {
+  0% {
+    transform: translateY(-100%);
+  }
+  100% {
+    transform: translateY(100vh);
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    filter: drop-shadow(0 0 5px currentColor);
+  }
+  50% {
+    filter: drop-shadow(0 0 15px currentColor) drop-shadow(0 0 25px currentColor);
+  }
+}
+
+@keyframes float {
+  0%, 100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes shake {
+  0%, 100% {
+    transform: translateX(0);
+  }
+  10% {
+    transform: translateX(-10px);
+  }
+  20% {
+    transform: translateX(10px);
+  }
+  30% {
+    transform: translateX(-10px);
+  }
+  40% {
+    transform: translateX(10px);
+  }
+  50% {
+    transform: translateX(-5px);
+  }
+  60% {
+    transform: translateX(5px);
+  }
+  70% {
+    transform: translateX(-2px);
+  }
+  80% {
+    transform: translateX(2px);
+  }
+  90% {
+    transform: translateX(-1px);
+  }
+}
+
+@keyframes cyberpsychosis {
+  0%, 100% {
+    filter: hue-rotate(0deg) saturate(100%);
+    transform: scale(1);
+  }
+  25% {
+    filter: hue-rotate(-30deg) saturate(150%);
+    transform: scale(1.02);
+  }
+  50% {
+    filter: hue-rotate(30deg) saturate(200%);
+    transform: scale(0.98);
+  }
+  75% {
+    filter: hue-rotate(-15deg) saturate(150%);
+    transform: scale(1.01);
+  }
+}
+
+@keyframes gold-pulse {
+  0%, 100% {
+    filter: drop-shadow(0 0 10px #ffd700) brightness(1);
+  }
+  50% {
+    filter: drop-shadow(0 0 30px #ffd700) drop-shadow(0 0 50px #ffd700) brightness(1.2);
+  }
+}
+
+@keyframes data-stream {
+  0% {
+    background-position: 0 0;
+  }
+  100% {
+    background-position: 0 100%;
+  }
+}
+
+@keyframes border-dance {
+  0%, 100% {
+    border-color: rgba(57, 255, 20, 0.5);
+  }
+  33% {
+    border-color: rgba(0, 240, 255, 0.5);
+  }
+  66% {
+    border-color: rgba(255, 0, 255, 0.5);
+  }
+}
+
+/* ============================
+   Utility Classes
+   ============================ */
+
+.animate-glitch {
+  animation: glitch-1 0.3s ease-in-out;
+}
+
+.animate-cyberpsychosis {
+  animation: cyberpsychosis 0.5s ease-in-out infinite;
+}
+
+.animate-gold-pulse {
+  animation: gold-pulse 1s ease-in-out infinite;
+}
+
+.animate-border-dance {
+  animation: border-dance 3s ease-in-out infinite;
+}
+
+/* ============================
+   Custom Components
+   ============================ */
+
+/* Cyber Panel */
+.cyber-panel {
+  background: linear-gradient(
+    135deg,
+    rgba(10, 10, 10, 0.95) 0%,
+    rgba(20, 20, 30, 0.9) 100%
+  );
+  border: 1px solid rgba(57, 255, 20, 0.3);
+  backdrop-filter: blur(10px);
+  box-shadow: 
+    0 0 20px rgba(57, 255, 20, 0.1),
+    inset 0 0 20px rgba(0, 0, 0, 0.5);
+}
+
+/* Neon Text */
+.neon-text {
+  text-shadow: 
+    0 0 5px currentColor,
+    0 0 10px currentColor,
+    0 0 20px currentColor;
+}
+
+/* Cyber Border */
+.cyber-border {
+  position: relative;
+}
+
+.cyber-border::before,
+.cyber-border::after {
+  content: '';
+  position: absolute;
+  width: 20px;
+  height: 20px;
+  border-style: solid;
+  border-width: 2px;
+}
+
+.cyber-border::before {
+  top: -5px;
+  left: -5px;
+  border-color: var(--color-neon-green);
+  border-right: none;
+  border-bottom: none;
+}
+
+.cyber-border::after {
+  bottom: -5px;
+  right: -5px;
+  border-color: var(--color-neon-green);
+  border-left: none;
+  border-top: none;
+}
+
+/* Glitch Text Effect */
+.glitch-text {
+  position: relative;
+}
+
+.glitch-text::before,
+.glitch-text::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  opacity: 0.8;
+}
+
+.glitch-text::before {
+  color: var(--color-cyber-pink);
+  clip-path: polygon(0 0, 100% 0, 100% 45%, 0 45%);
+  animation: glitch-1 2s infinite linear alternate-reverse;
+}
+
+.glitch-text::after {
+  color: var(--color-data-blue);
+  clip-path: polygon(0 55%, 100% 55%, 100% 100%, 0 100%);
+  animation: glitch-1 3s infinite linear alternate-reverse;
+}
+
+/* Matrix Rain Background */
+.matrix-rain {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  overflow: hidden;
+  opacity: 0.1;
+}
+
+.matrix-column {
+  position: absolute;
+  top: -100%;
+  font-family: var(--font-mono);
+  font-size: 14px;
+  color: var(--color-neon-green);
+  text-shadow: 0 0 5px var(--color-neon-green);
+  writing-mode: vertical-rl;
+  animation: data-stream 10s linear infinite;
+}
+
+/* ============================
+   Scrollbar Styles
+   ============================ */
+
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(57, 255, 20, 0.1);
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-neon-green);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-cyber-pink);
+}
+
+/* Firefox */
+* {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-neon-green) rgba(57, 255, 20, 0.1);
+}
+
+/* ============================
+   Selection Styles
+   ============================ */
+
+::selection {
+  background: rgba(255, 0, 255, 0.5);
+  color: white;
+}
+
+::-moz-selection {
+  background: rgba(255, 0, 255, 0.5);
+  color: white;
+}
+
+/* ============================
+   Focus Styles
+   ============================ */
+
+:focus {
+  outline: 2px solid var(--color-neon-green);
+  outline-offset: 2px;
+}
+
+:focus:not(:focus-visible) {
+  outline: none;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-neon-green);
+  outline-offset: 2px;
+}
+
+/* ============================
+   Responsive Adjustments
+   ============================ */
+
+@media (max-width: 768px) {
+  .cyber-panel {
+    backdrop-filter: none;
+  }
+}
+
+/* ============================
+   Print Styles (for wrong answer book)
+   ============================ */
+
+@media print {
+  body {
+    background: white;
+    color: black;
+  }
+
+  .neon-text {
+    text-shadow: none;
+  }
+
+  .cyber-panel {
+    background: white;
+    border: 1px solid #333;
+    box-shadow: none;
+  }
+}
