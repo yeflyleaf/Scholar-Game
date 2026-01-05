@@ -1,5 +1,6 @@
 import { motion } from 'framer-motion';
 import { Brain, ChevronRight, Database, Settings, Shield, Terminal, Wifi, Zap } from 'lucide-react';
+import { useState } from 'react';
 import { NARRATIVE } from '../../lib/constants';
 import { useGameStore } from '../../stores';
 import { CyberButton, GlitchText } from '../atoms';
@@ -26,29 +27,7 @@ export function TitleScreen() {
         {/* Matrix rain effect */}
         <div className="absolute inset-0 opacity-10">
           {Array.from({ length: 20 }).map((_, i) => (
-            <motion.div
-              key={i}
-              className="absolute text-neon-green font-mono text-xs"
-              style={{
-                left: `${i * 5}%`,
-                top: -100,
-              }}
-              animate={{
-                y: ['0vh', '110vh'],
-              }}
-              transition={{
-                duration: 10 + Math.random() * 10,
-                repeat: Infinity,
-                delay: Math.random() * 5,
-                ease: 'linear',
-              }}
-            >
-              {Array.from({ length: 20 }).map((_, j) => (
-                <div key={j} className="my-1">
-                  {String.fromCharCode(0x30a0 + Math.random() * 96)}
-                </div>
-              ))}
-            </motion.div>
+            <MatrixColumn key={i} index={i} />
           ))}
         </div>
 
@@ -150,7 +129,7 @@ export function TitleScreen() {
             className="min-w-[200px]"
           >
             <Terminal className="mr-2" size={20} />
-            进入要塞
+            登舰出发
             <ChevronRight className="ml-2" size={20} />
           </CyberButton>
 
@@ -161,7 +140,7 @@ export function TitleScreen() {
             className="min-w-[200px]"
           >
             <Zap className="mr-2" size={20} />
-            快速潜入
+            快速狩猎
           </CyberButton>
 
           <CyberButton
@@ -184,11 +163,11 @@ export function TitleScreen() {
         >
           <div className="flex items-center gap-2">
             <Wifi size={14} className="text-neon-green" />
-            <span>连接状态: 就绪</span>
+            <span>飞船状态: 待命</span>
           </div>
           <div className="flex items-center gap-2">
             <Database size={14} className="text-data-blue" />
-            <span>目标: 荒坂教育</span>
+            <span>目标: 思维号</span>
           </div>
         </motion.div>
       </motion.div>
@@ -208,8 +187,41 @@ export function TitleScreen() {
 
       {/* Version info */}
       <div className="absolute bottom-4 right-8 text-xs font-mono text-gray-600">
-        v1.0.0 // 神经潜渊协议
+        v1.0.0 // 收割者协议
       </div>
     </div>
+  );
+}
+
+function MatrixColumn({ index }: { index: number }) {
+  const [randomDuration] = useState(() => 10 + Math.random() * 10);
+  const [randomDelay] = useState(() => Math.random() * 5);
+  const [chars] = useState(() => 
+    Array.from({ length: 20 }, () => String.fromCharCode(0x30a0 + Math.random() * 96))
+  );
+  
+  return (
+    <motion.div
+      className="absolute text-neon-green font-mono text-xs"
+      style={{
+        left: `${index * 5}%`,
+        top: -100,
+      }}
+      animate={{
+        y: ['0vh', '110vh'],
+      }}
+      transition={{
+        duration: randomDuration,
+        repeat: Infinity,
+        delay: randomDelay,
+        ease: 'linear',
+      }}
+    >
+      {chars.map((char, j) => (
+        <div key={j} className="my-1">
+          {char}
+        </div>
+      ))}
+    </motion.div>
   );
 }

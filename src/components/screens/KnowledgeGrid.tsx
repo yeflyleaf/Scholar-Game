@@ -95,9 +95,9 @@ export function KnowledgeGrid() {
           </CyberButton>
           <div>
             <GlitchText intensity="low" className="text-xl font-mono font-bold text-neon-green">
-              全息知识网络
+              舰室数据森林
             </GlitchText>
-            <p className="text-xs text-gray-500 font-mono">THE KNOWLEDGE GRID // 赛博格里数据要塞</p>
+            <p className="text-xs text-gray-500 font-mono">THE CHRONO-JUNGLE // 思维号舰内生态系统</p>
           </div>
         </div>
 
@@ -302,7 +302,7 @@ export function KnowledgeGrid() {
                 onClick={handleStartBattle}
                 className="w-full"
               >
-                开始入侵
+                开始狩猎
                 <ChevronRight className="ml-2" size={20} />
               </CyberButton>
             </>
@@ -310,10 +310,10 @@ export function KnowledgeGrid() {
             <div className="text-center py-12">
               <AlertTriangle className="w-12 h-12 text-gray-600 mx-auto mb-4" />
               <p className="text-gray-500 font-mono text-sm">
-                选择一个可入侵的节点
+                选择一个可狩猎的舰室
               </p>
               <p className="text-gray-600 font-mono text-xs mt-2">
-                绿色节点 = 可入侵
+                绿色节点 = 可狩猎
               </p>
             </div>
           )}
@@ -328,7 +328,7 @@ export function KnowledgeGrid() {
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-neon-green" />
-                <span className="text-neon-green">可入侵</span>
+                <span className="text-neon-green">可狩猎</span>
               </div>
               <div className="flex items-center gap-2">
                 <div className="w-3 h-3 rounded-full bg-data-blue" />

@@ -1,12 +1,12 @@
 import { useCallback, useState } from 'react';
 import type {
-    Enemy,
-    Question
+  Enemy,
+  Question
 } from '../types';
 import type {
-    GeneratedChapter,
-    GeneratedKnowledgeTree,
-    QuestionGenerationOptions
+  GeneratedChapter,
+  GeneratedKnowledgeTree,
+  QuestionGenerationOptions
 } from '../types/electron';
 
 interface UseGeminiReturn {
@@ -74,7 +74,7 @@ export function useGemini(): UseGeminiReturn {
       const result = await electronAPI.gemini.checkStatus();
       setIsConfigured(result.configured);
       return result.configured;
-    } catch (e) {
+    } catch {
       return false;
     }
   }, [electronAPI]);

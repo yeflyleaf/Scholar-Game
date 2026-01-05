@@ -52,8 +52,9 @@ export function QuestionCard({
   className,
 }: QuestionCardProps) {
   const difficultyColor = DIFFICULTY_COLORS[question.difficulty];
-  const [hiddenOptions, setHiddenOptions] = useState<number[]>([]);
   const [showObfuscation, setShowObfuscation] = useState(question.isObfuscated);
+
+  const [hiddenOptions, setHiddenOptions] = useState<number[]>([]);
 
   // 心流状态：隐藏2个错误选项
   useEffect(() => {
@@ -68,9 +69,13 @@ export function QuestionCard({
       
       // 随机选择2个错误选项隐藏
       const shuffled = wrongIndices.sort(() => Math.random() - 0.5);
-      setHiddenOptions(shuffled.slice(0, GAME_CONFIG.flowStateOptionsHidden));
+      setTimeout(() => {
+        setHiddenOptions(shuffled.slice(0, GAME_CONFIG.flowStateOptionsHidden));
+      }, 0);
     } else {
-      setHiddenOptions([]);
+      setTimeout(() => {
+        setHiddenOptions([]);
+      }, 0);
     }
   }, [hasFlowState, question]);
 

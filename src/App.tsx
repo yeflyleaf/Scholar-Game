@@ -51,20 +51,20 @@ function RewardScreen() {
         </motion.div>
 
         <h1 className="text-3xl font-mono font-bold text-neon-green mb-4">
-          节点已攻破！
+          舰室已净化！
         </h1>
 
         {currentNode && (
           <p className="text-gray-400 font-mono mb-6">
-            成功入侵: {currentNode.name}
+            成功收割: {currentNode.name}
           </p>
         )}
 
         <div className="bg-deep-void/50 border border-neon-green/30 rounded-lg p-4 mb-6">
-          <h3 className="text-sm font-mono text-neon-green mb-3">数据下载完成</h3>
+          <h3 className="text-sm font-mono text-neon-green mb-3">认知燃料已提取</h3>
           <div className="space-y-2 text-sm font-mono text-gray-400">
             <div className="flex justify-between">
-              <span>知识碎片</span>
+              <span>认知燃料</span>
               <span className="text-data-blue">+{currentNode?.questionCount || 0}</span>
             </div>
             <div className="flex justify-between">
@@ -72,7 +72,7 @@ function RewardScreen() {
               <span className="text-cyber-pink">+{(currentNode?.difficulty || 1) * 100}</span>
             </div>
             <div className="flex justify-between">
-              <span>已完成节点</span>
+              <span>已净化舰室</span>
               <span className="text-neon-green">{progress.completedNodes.length}</span>
             </div>
           </div>
@@ -83,7 +83,7 @@ function RewardScreen() {
             onClick={() => setScreen('KNOWLEDGE_GRID')}
             className="px-6 py-3 border-2 border-neon-green text-neon-green font-mono font-bold rounded hover:bg-neon-green/20 transition-colors"
           >
-            返回知识网络
+            返回舰室地图
           </button>
         </div>
       </motion.div>
@@ -117,22 +117,22 @@ function GameOverScreen() {
         </h1>
 
         <p className="text-gray-400 font-mono mb-6">
-          神经链路崩溃，数据传输失败
+          神经链路崩溃，认知燃料丢失
         </p>
 
         <div className="bg-deep-void/50 border border-warning-red/30 rounded-lg p-4 mb-6">
-          <h3 className="text-sm font-mono text-warning-red mb-3">本次潜渊报告</h3>
+          <h3 className="text-sm font-mono text-warning-red mb-3">本次狩猎报告</h3>
           <div className="space-y-2 text-sm font-mono text-gray-400">
             <div className="flex justify-between">
-              <span>正确答题</span>
+              <span>成功收割</span>
               <span className="text-neon-green">{progress.correctAnswers}</span>
             </div>
             <div className="flex justify-between">
-              <span>总题目</span>
+              <span>总概念体</span>
               <span className="text-data-blue">{progress.totalQuestions}</span>
             </div>
             <div className="flex justify-between">
-              <span>错题记录</span>
+              <span>逃脱概念体</span>
               <span className="text-warning-red">{progress.wrongAnswers.length}</span>
             </div>
           </div>

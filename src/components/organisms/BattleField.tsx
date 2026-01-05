@@ -45,7 +45,7 @@ export function BattleField() {
     resetBattle,
     setScreen,
     useItem,
-    useSkill,
+    useSkill: triggerSkill,
     endBattle,
   } = useGameStore();
 
@@ -76,7 +76,7 @@ export function BattleField() {
     const livingEnemies = enemies.filter((e) => e.hp > 0);
     if (livingEnemies.length > 0) {
       // For now, target first enemy
-      useSkill(characterId, skillId, livingEnemies[0].id);
+      triggerSkill(characterId, skillId, livingEnemies[0].id);
     }
   };
 
@@ -167,9 +167,9 @@ export function BattleField() {
             <Swords className="text-neon-green" size={24} />
             <div>
               <GlitchText intensity="low" className="text-lg font-mono font-bold text-neon-green">
-                神经潜渊
+                赛博丛林战斗
               </GlitchText>
-              <p className="text-xs text-gray-500 font-mono">NEURAL DIVE</p>
+              <p className="text-xs text-gray-500 font-mono">CHRONO-JUNGLE HUNT</p>
             </div>
           </div>
 
@@ -202,31 +202,29 @@ export function BattleField() {
 
             {/* Phase Indicator */}
             <div className="text-center">
-              <span className="text-xs text-gray-500 uppercase tracking-widest">阶段</span>
+              <span className="text-xs text-gray-500 uppercase tracking-widest">状态</span>
               <motion.div
                 key={phase}
                 className={cn(
                   'text-sm font-mono font-bold uppercase',
                   phase === 'PLAYER_TURN'
                     ? 'text-neon-green'
-                    : phase === 'ENEMY_TURN'
-                    ? 'text-warning-red'
                     : phase === 'WIN'
                     ? 'text-data-blue'
+                    : phase === 'LOSE'
+                    ? 'text-warning-red'
                     : 'text-gray-400'
                 )}
                 initial={{ x: 10, opacity: 0 }}
                 animate={{ x: 0, opacity: 1 }}
               >
                 {phase === 'PLAYER_TURN'
-                  ? '玩家回合'
-                  : phase === 'ENEMY_TURN'
-                  ? '敌方回合'
+                  ? '狩猎中'
                   : phase === 'WIN'
                   ? '胜利'
                   : phase === 'LOSE'
                   ? '失败'
-                  : phase}
+                  : '处理中'}
               </motion.div>
             </div>
 
@@ -346,13 +344,13 @@ export function BattleField() {
                     phase === 'WIN' ? 'text-neon-green' : 'text-warning-red'
                   )}
                 >
-                  {phase === 'WIN' ? '系统已净化' : '系统崩溃'}
+                  {phase === 'WIN' ? '概念体已收割' : '装甲崩溃'}
                 </GlitchText>
 
                 <p className="text-gray-400 font-mono mb-8">
                   {phase === 'WIN' 
-                    ? '成功突破数据防线，知识已下载完毕' 
-                    : '神经连接中断，数据丢失'}
+                    ? '成功收割野生概念体，认知燃料已提取' 
+                    : '神经链路崩溃，认知燃料流失'}
                 </p>
 
                 <div className="flex gap-4">
@@ -395,26 +393,6 @@ export function BattleField() {
                   isTimerWarning={isTimerWarning}
                   hasFlowState={hasFlowState}
                 />
-
-                {/* Enemy Turn Indicator */}
-                {phase === 'ENEMY_TURN' && (
-                  <motion.div
-                    className="mt-6 text-center"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                  >
-                    <div className="inline-flex items-center gap-3 px-6 py-3 rounded-lg bg-warning-red/10 border border-warning-red/30">
-                      <motion.div
-                        className="w-3 h-3 rounded-full bg-warning-red"
-                        animate={{ scale: [1, 1.2, 1], opacity: [1, 0.5, 1] }}
-                        transition={{ duration: 0.5, repeat: Infinity, type: 'tween' }}
-                      />
-                      <span className="font-mono text-warning-red uppercase tracking-widest">
-                        系统拦截中...
-                      </span>
-                    </div>
-                  </motion.div>
-                )}
               </div>
             )}
           </motion.div>
@@ -428,7 +406,7 @@ export function BattleField() {
           >
             <h2 className="text-sm font-mono uppercase tracking-widest text-warning-red mb-3 flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-warning-red animate-pulse" />
-              数据幽灵
+              野生概念体
             </h2>
             <AnimatePresence>
               {enemies.map((enemy, index) => (

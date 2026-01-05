@@ -1,5 +1,5 @@
 import { motion } from 'framer-motion';
-import type { ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import { cn } from '../../lib/utils';
 
 interface GlitchTextProps {
@@ -42,6 +42,9 @@ export function GlitchText({
 }: GlitchTextProps) {
   const config = intensityConfig[intensity];
 
+  const [randomDelay1] = useState(() => Math.random() * 2);
+  const [randomDelay2] = useState(() => Math.random() * 2);
+
   return (
     <motion.span
       className={cn('relative inline-block', className)}
@@ -74,7 +77,7 @@ export function GlitchText({
         transition={{
           duration: 0.15,
           repeat: Infinity,
-          repeatDelay: config.interval + Math.random() * 2,
+          repeatDelay: config.interval + randomDelay1,
         }}
         aria-hidden
       >
@@ -95,7 +98,7 @@ export function GlitchText({
         transition={{
           duration: 0.15,
           repeat: Infinity,
-          repeatDelay: config.interval + 1 + Math.random() * 2,
+          repeatDelay: config.interval + 1 + randomDelay2,
         }}
         aria-hidden
       >

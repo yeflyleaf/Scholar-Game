@@ -31,13 +31,15 @@ export function useBattleSequence(): BattleSequenceReturn {
     attackEnemy,
     takeDamage,
     increaseOverload,
-    resolveTurn,
+    setPhase,
     addDamageIndicator,
     addBattleLog,
     incrementCorrectStreak,
     resetCorrectStreak,
     checkMultiCoreActivation,
     addWrongAnswer,
+    nextQuestion,
+    setCurrentQuestion,
   } = useGameStore();
 
   // Get living characters and enemies
@@ -55,12 +57,30 @@ export function useBattleSequence(): BattleSequenceReturn {
     return () => clearInterval(interval);
   }, [timer.isRunning, phase, tickTimer]);
 
-  // Handle timeout
-  useEffect(() => {
-    if (timer.timeRemaining === 0 && timer.isRunning && phase === 'PLAYER_TURN' && !isProcessing) {
-      handleTimeout();
+  /**
+   * Proceed to next question after answer is processed
+   */
+  const proceedToNextQuestion = useCallback(async () => {
+    // 检查战斗是否结束
+    const allEnemiesDead = enemies.every((e) => e.hp <= 0);
+    const allPartyDead = party.every((c) => c.hp <= 0);
+
+    if (allEnemiesDead) {
+      setPhase('WIN');
+      setStatusMessage('胜利！概念体已收割！');
+      return;
     }
-  }, [timer.timeRemaining, timer.isRunning, phase, isProcessing]);
+
+    if (allPartyDead) {
+      setPhase('LOSE');
+      setStatusMessage('装甲崩溃...狩猎失败');
+      return;
+    }
+
+    // 获取下一题
+    setStatusMessage('选择你的答案...');
+    nextQuestion();
+  }, [enemies, party, setPhase, nextQuestion]);
 
   /**
    * Handle question timeout
@@ -70,7 +90,7 @@ export function useBattleSequence(): BattleSequenceReturn {
 
     setIsProcessing(true);
     stopTimer();
-    setStatusMessage('时间到！系统过载...');
+    setStatusMessage('时间到！熵值增加...');
     addBattleLog('⏱️ 超时！全队过载增加！', 'overload');
 
     // 超时：全队增加过载
@@ -78,19 +98,41 @@ export function useBattleSequence(): BattleSequenceReturn {
       increaseOverload(char.id, GAME_CONFIG.overloadOnTimeout);
     }
 
-    await delay(800);
+    // 超时也算敌人攻击一次
+    const attacker = getRandomItem(livingEnemies);
+    const victim = getRandomItem(livingParty);
+    if (attacker && victim) {
+      takeDamage(victim.id, attacker.damage);
+      addDamageIndicator({
+        value: attacker.damage,
+        x: 25,
+        y: 50,
+        type: 'damage',
+      });
+    }
 
     // 重置连击
     resetCorrectStreak();
 
-    // 进入敌方回合
-    setStatusMessage('敌方回合...');
-    resolveTurn();
+    await delay(1000);
+
+    // 进入下一题
+    await proceedToNextQuestion();
 
     setIsProcessing(false);
     setSelectedAnswerIndex(null);
     setIsCorrect(null);
-  }, [isProcessing, livingParty, stopTimer, increaseOverload, resolveTurn, addBattleLog, resetCorrectStreak]);
+  }, [isProcessing, livingParty, livingEnemies, stopTimer, increaseOverload, takeDamage, addBattleLog, resetCorrectStreak, addDamageIndicator, proceedToNextQuestion]);
+
+  // Handle timeout
+  useEffect(() => {
+    if (timer.timeRemaining === 0 && timer.isRunning && phase === 'PLAYER_TURN' && !isProcessing) {
+      const timeoutId = setTimeout(() => {
+        handleTimeout();
+      }, 0);
+      return () => clearTimeout(timeoutId);
+    }
+  }, [timer.timeRemaining, timer.isRunning, phase, isProcessing, handleTimeout]);
 
   /**
    * Handle player submitting an answer
@@ -120,7 +162,7 @@ export function useBattleSequence(): BattleSequenceReturn {
         // 增加连击计数
         incrementCorrectStreak();
 
-        await delay(500);
+        await delay(600);
 
         // 计算伤害
         let damage = DIFFICULTY_DAMAGE[currentQuestion.difficulty] || GAME_CONFIG.baseDamage;
@@ -142,10 +184,9 @@ export function useBattleSequence(): BattleSequenceReturn {
           if (isMultiCore) {
             // AOE攻击
             attackEnemy(target.id, damage, true);
-            resetCorrectStreak(); // 使用后重置
+            resetCorrectStreak();
           } else {
             attackEnemy(target.id, damage);
-
             addDamageIndicator({
               value: damage,
               x: 70,
@@ -157,20 +198,12 @@ export function useBattleSequence(): BattleSequenceReturn {
           setStatusMessage(`对 ${target.name} 造成 ${damage} 点伤害！`);
         }
 
-        await delay(800);
+        await delay(1000);
 
-        // 检查是否胜利
-        const allEnemiesDead = enemies.every(
-          (e) => e.hp <= 0 || (e.id === target?.id && target.hp - damage <= 0)
-        );
-        if (!allEnemiesDead) {
-          setStatusMessage('敌方回合...');
-          resolveTurn();
-        }
       } else {
         // === 错误答案 ===
-        setStatusMessage('错误！系统过载...');
-        addBattleLog('✗ 回答错误！系统遭受反噬...', 'damage');
+        setStatusMessage('错误！遭到反噬...');
+        addBattleLog('✗ 回答错误！遭到概念体反噬...', 'damage');
 
         // 记录错题
         addWrongAnswer(currentQuestion);
@@ -178,7 +211,7 @@ export function useBattleSequence(): BattleSequenceReturn {
         // 重置连击
         resetCorrectStreak();
 
-        await delay(500);
+        await delay(600);
 
         // 检查护盾效果
         const target = getRandomItem(livingParty);
@@ -187,7 +220,6 @@ export function useBattleSequence(): BattleSequenceReturn {
 
           if (hasShield) {
             addBattleLog(`🛡️ 异常拦截生效！过载增加被抵消！`, 'skill');
-            // 移除护盾效果
             const shieldEffect = target.statusEffects.find((e) => e.effect === 'shield');
             if (shieldEffect) {
               useGameStore.getState().removeStatusEffect(target.id, shieldEffect.id);
@@ -197,9 +229,7 @@ export function useBattleSequence(): BattleSequenceReturn {
           }
         }
 
-        await delay(500);
-
-        // 敌人反击
+        // 敌人对玩家造成伤害
         const attacker = getRandomItem(livingEnemies);
         const victim = getRandomItem(livingParty);
 
@@ -216,15 +246,11 @@ export function useBattleSequence(): BattleSequenceReturn {
           setStatusMessage(`${attacker.name} 对 ${victim.name} 造成 ${attacker.damage} 点伤害！`);
         }
 
-        await delay(800);
-
-        // 检查是否失败
-        const allPartyDead = party.every((c) => c.hp <= 0);
-        if (!allPartyDead) {
-          setStatusMessage('敌方回合...');
-          resolveTurn();
-        }
+        await delay(1000);
       }
+
+      // 进入下一题
+      await proceedToNextQuestion();
 
       setIsProcessing(false);
       setSelectedAnswerIndex(null);
@@ -236,12 +262,9 @@ export function useBattleSequence(): BattleSequenceReturn {
       currentQuestion,
       livingEnemies,
       livingParty,
-      party,
-      enemies,
       attackEnemy,
       takeDamage,
       increaseOverload,
-      resolveTurn,
       addDamageIndicator,
       addBattleLog,
       incrementCorrectStreak,
@@ -249,91 +272,44 @@ export function useBattleSequence(): BattleSequenceReturn {
       checkMultiCoreActivation,
       addWrongAnswer,
       stopTimer,
+      proceedToNextQuestion,
     ]
   );
 
   /**
    * Skip player turn (DDOS Attack)
    */
-  const skipTurn = useCallback(() => {
+  const skipTurn = useCallback(async () => {
     if (phase !== 'PLAYER_TURN' || isProcessing) return;
 
+    setIsProcessing(true);
     stopTimer();
     setStatusMessage('跳过回合...');
-    addBattleLog('玩家跳过回合', 'system');
+    addBattleLog('使用DDOS攻击跳过此题', 'system');
     resetCorrectStreak();
-    resolveTurn();
-  }, [phase, isProcessing, resolveTurn, addBattleLog, resetCorrectStreak, stopTimer]);
 
-  /**
-   * Handle enemy turn automatically
-   */
-  useEffect(() => {
-    if (phase !== 'ENEMY_TURN') return;
+    await delay(500);
+    await proceedToNextQuestion();
 
-    const executeEnemyTurn = async () => {
-      setIsProcessing(true);
-      setStatusMessage('系统拦截中...');
-
-      await delay(GAME_CONFIG.enemyTurnDelay);
-
-      // 选择未眩晕的敌人
-      const activeEnemies = livingEnemies.filter((e) => !e.isStunned);
-      const attacker = getRandomItem(activeEnemies);
-
-      if (!attacker) {
-        // 所有敌人都被眩晕
-        addBattleLog('所有敌人处于眩晕状态！', 'system');
-        resolveTurn();
-        setIsProcessing(false);
-        return;
-      }
-
-      const target = getRandomItem(livingParty);
-      if (!target) {
-        resolveTurn();
-        setIsProcessing(false);
-        return;
-      }
-
-      setStatusMessage(`${attacker.name} 正在攻击...`);
-      addBattleLog(`${attacker.name} 发起攻击！`, 'info');
-
-      await delay(500);
-
-      takeDamage(target.id, attacker.damage);
-
-      addDamageIndicator({
-        value: attacker.damage,
-        x: 25,
-        y: 40,
-        type: 'damage',
-      });
-
-      setStatusMessage(`${attacker.name} 对 ${target.name} 造成 ${attacker.damage} 点伤害！`);
-
-      await delay(800);
-
-      const allPartyDead = party.every((c) => c.hp <= 0);
-      if (!allPartyDead) {
-        resolveTurn();
-        setStatusMessage('选择你的答案...');
-      }
-
-      setIsProcessing(false);
-    };
-
-    executeEnemyTurn();
-  }, [phase, livingEnemies, livingParty, party, takeDamage, resolveTurn, addDamageIndicator, addBattleLog]);
+    setIsProcessing(false);
+  }, [phase, isProcessing, stopTimer, addBattleLog, resetCorrectStreak, proceedToNextQuestion]);
 
   // Update status based on game state
   useEffect(() => {
+    let targetMessage = '';
     if (phase === 'WIN') {
-      setStatusMessage('胜利！病毒已清除！');
+      targetMessage = '胜利！概念体已收割！';
     } else if (phase === 'LOSE') {
-      setStatusMessage('系统崩溃...游戏结束');
+      targetMessage = '装甲崩溃...狩猎失败';
     } else if (phase === 'PLAYER_TURN' && !isProcessing) {
-      setStatusMessage('选择你的答案...');
+      targetMessage = '选择你的答案...';
+    }
+
+    if (targetMessage) {
+      const timeoutId = setTimeout(() => {
+        setStatusMessage((prev) => (prev !== targetMessage ? targetMessage : prev));
+      }, 0);
+      return () => clearTimeout(timeoutId);
     }
   }, [phase, isProcessing]);
 

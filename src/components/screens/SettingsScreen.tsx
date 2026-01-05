@@ -1,19 +1,20 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import {
-    AlertTriangle,
-    ArrowLeft,
-    Brain,
-    CheckCircle,
-    FileText,
-    Key,
-    Loader2,
-    Settings,
-    Sparkles,
-    XCircle
+  AlertTriangle,
+  ArrowLeft,
+  Brain,
+  CheckCircle,
+  FileText,
+  Key,
+  Loader2,
+  Settings,
+  Sparkles,
+  XCircle
 } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { useGemini } from '../../hooks/useGemini';
 import { useGameStore } from '../../stores';
+import type { GeneratedChapter } from '../../types/electron';
 import { isElectron } from '../../types/electron';
 import { CyberButton, GlitchText } from '../atoms';
 
@@ -35,7 +36,7 @@ export function SettingsScreen() {
   const [chapterTitle, setChapterTitle] = useState('');
   const [difficulty, setDifficulty] = useState(3);
   const [generationStatus, setGenerationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
-  const [generatedData, setGeneratedData] = useState<any>(null);
+  const [generatedData, setGeneratedData] = useState<GeneratedChapter | null>(null);
 
   const isElectronEnv = isElectron();
 
@@ -70,7 +71,7 @@ export function SettingsScreen() {
       } else {
         setGenerationStatus('error');
       }
-    } catch (e) {
+    } catch {
       setGenerationStatus('error');
     }
   };
