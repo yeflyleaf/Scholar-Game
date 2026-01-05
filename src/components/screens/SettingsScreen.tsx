@@ -52,7 +52,7 @@ const SectionPanel: React.FC<{
 );
 
 export const SettingsScreen: React.FC = () => {
-    const { setScreen } = useGameStore();
+    const { setScreen, settings, updateSettings, resetProgress } = useGameStore();
     const {
         isConfigured,
         isLoading,
@@ -76,6 +76,26 @@ export const SettingsScreen: React.FC = () => {
             checkStatus();
         }
     }, [isElectronEnv, checkStatus]);
+
+    // 全屏切换副作用
+    useEffect(() => {
+        const handleFullscreen = async () => {
+            try {
+                if (settings.fullscreen) {
+                    if (!document.fullscreenElement) {
+                        await document.documentElement.requestFullscreen();
+                    }
+                } else {
+                    if (document.fullscreenElement) {
+                        await document.exitFullscreen();
+                    }
+                }
+            } catch (err) {
+                console.error("Fullscreen toggle failed:", err);
+            }
+        };
+        handleFullscreen();
+    }, [settings.fullscreen]);
 
     const handleSaveApiKey = async () => {
         if (apiKeyInput.trim()) {
@@ -143,9 +163,39 @@ export const SettingsScreen: React.FC = () => {
                         <StatusIndicator isActive={isConfigured} label="AI 核心连接" />
                     </div>
                     <span className="text-xs font-mono text-gray-500">
-                        版本 1.0.0 // 学者协议
+                        智者协议
                     </span>
                 </motion.div>
+
+                {/* 基础设置区域 */}
+                <SectionPanel
+                    title="基础设置"
+                    subtitle="系统参数调整"
+                    icon={<span className="text-neon-cyan">⚙</span>}
+                >
+                    <div className="space-y-6">
+                        {/* 显示设置 */}
+                        <div className="space-y-4">
+                             <h3 className="text-sm font-mono text-gray-400 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-holographic-gold" />
+                                显示设置
+                            </h3>
+                            
+                            <div className="flex items-center justify-between">
+                                <span className="text-sm font-mono text-gray-300">全屏模式</span>
+                                <motion.button
+                                    onClick={() => updateSettings({ fullscreen: !settings.fullscreen })}
+                                    className={`w-12 h-6 rounded-full relative transition-colors ${settings.fullscreen ? 'bg-neon-cyan' : 'bg-gray-700'}`}
+                                >
+                                    <motion.div 
+                                        className="w-4 h-4 bg-white rounded-full absolute top-1"
+                                        animate={{ left: settings.fullscreen ? 'calc(100% - 1.25rem)' : '0.25rem' }}
+                                    />
+                                </motion.button>
+                            </div>
+                        </div>
+                    </div>
+                </SectionPanel>
 
                 {/* API Key 区域 */}
                 <SectionPanel
@@ -349,6 +399,32 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                 </SectionPanel>
 
+                {/* 危险区域 */}
+                <SectionPanel
+                    title="危险区域"
+                    subtitle="数据重置与调试"
+                    icon={<span className="text-glitch-red">⚠</span>}
+                >
+                    <div className="space-y-4">
+                        <p className="text-sm font-mono text-gray-400">
+                            重置所有游戏进度，包括解锁的扇区、获得的铭文和经验值。此操作不可逆。
+                        </p>
+                        <motion.button
+                            onClick={() => {
+                                if (confirm('确定要重置所有进度吗？此操作无法撤销。')) {
+                                    resetProgress();
+                                    alert('进度已重置。');
+                                }
+                            }}
+                            className="hex-button border-glitch-red text-glitch-red hover:bg-glitch-red/10 w-full py-3"
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                        >
+                            重置游戏进度
+                        </motion.button>
+                    </div>
+                </SectionPanel>
+
                 {/* 信息区域 */}
                 <motion.div
                     className="text-center py-8 space-y-2"
@@ -357,10 +433,13 @@ export const SettingsScreen: React.FC = () => {
                     transition={{ delay: 0.5 }}
                 >
                     <p className="text-xs font-mono text-gray-500">
-                        学者计划 // 学习飞升
+                        智者计划 | 学习飞升
                     </p>
                     <p className="text-xs font-mono text-gray-600">
-                        为世界上所有的不挂科而战
+                        为世界上所有的不挂科而战！
+                    </p>
+                    <p className="text-xs font-mono text-gray-600">
+                        把这些不完美的成绩，变成我们所期待的样子！
                     </p>
                 </motion.div>
             </div>

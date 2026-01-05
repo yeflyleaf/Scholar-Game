@@ -173,3 +173,10 @@ export interface DamageIndicator {
   type: "damage" | "heal" | "critical" | "deletion"; // deletion = 特殊击杀特效
   timestamp: number;
 }
+
+// 5. System Settings - 系统设置
+export interface GameSettings {
+  resolution: string; // "1920x1080", etc.
+  fullscreen: boolean;
+  language: "zh-CN" | "en-US";
+}

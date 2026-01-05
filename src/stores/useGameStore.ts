@@ -15,6 +15,7 @@ import type {
     DamageIndicator,
     EntropyEntity,
     GameScreen,
+    GameSettings,
     Inscription,
     ObserverProfile,
     Question,
@@ -75,6 +76,11 @@ interface GameState {
     // 视觉辅助
     addBattleLog: (message: string, type: BattleLogEntry['type']) => void;
     addDamageIndicator: (indicator: Omit<DamageIndicator, 'id' | 'timestamp'>) => void;
+
+    // === 系统设置 ===
+    settings: GameSettings;
+    updateSettings: (settings: Partial<GameSettings>) => void;
+    resetProgress: () => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -110,6 +116,43 @@ export const useGameStore = create<GameState>((set, get) => ({
     damageIndicators: [],
     isScreenShaking: false,
     glitchIntensity: 0,
+
+    settings: {
+        resolution: "1920x1080",
+        fullscreen: false,
+        language: "zh-CN"
+    },
+
+    updateSettings: (newSettings) => set(state => ({
+        settings: { ...state.settings, ...newSettings }
+    })),
+
+    resetProgress: () => set({
+        observerProfile: {
+            name: 'Observer',
+            level: 1,
+            exp: 0,
+            maxExp: 1000,
+            unlockedConstructs: ['ARBITER', 'WEAVER', 'ARCHITECT'],
+            inventory: [],
+            clearedSectors: [],
+            entropyStabilized: 0
+        },
+        sectors: STAR_SECTORS,
+        currentSector: null,
+        battleState: 'PLAYER_TURN',
+        currentTurn: 1,
+        constructs: INITIAL_CONSTRUCTS,
+        entropyEntities: [],
+        activeConstructId: null,
+        selectedTargetId: null,
+        currentQuestion: null,
+        questionQueue: [],
+        battleLog: [],
+        damageIndicators: [],
+        isScreenShaking: false,
+        glitchIntensity: 0
+    }),
 
     // === 导航 ===
     setScreen: (screen) => set({ currentScreen: screen }),

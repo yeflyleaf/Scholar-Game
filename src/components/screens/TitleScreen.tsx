@@ -296,7 +296,7 @@ const GlitchFragment: React.FC<{ index: number }> = React.memo(({ index }) => {
 
 // 带有戏剧性揭示效果的动画标题
 const AnimatedTitle: React.FC = () => {
-    const titleChars = '学习飞升'.split('');
+    const titleChars = '智者计划'.split('');
 
     return (
         <motion.div className="relative">
@@ -535,15 +535,14 @@ export const TitleScreen: React.FC = () => {
 
                     {/* 标语 */}
                     <motion.div
-                        className="text-gray-400 font-mono italic text-lg mt-8 relative"
+                        className="text-gray-400 font-mono italic text-lg mt-8 relative text-center"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         transition={{ delay: 2.5 }}
                     >
-                        <span className="text-glitch-red">"</span>
                         为世界上所有的不挂科而战！
-                        <span className="text-glitch-red">"</span>
-                        
+                        <br />
+                        把这些不完美的成绩，变成我们所期待的样子！
                         {/* 下划线动画 */}
                         <motion.div
                             className="absolute bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-gray-500 to-transparent w-full"

@@ -15,7 +15,7 @@ function createWindow() {
     width: 1400,
     height: 900,
     minWidth: 1200,
-    minHeight: 800,
+    minHeight: 850,
     title: '赛博学神：神经潜渊',
     backgroundColor: '#0a0a0a',
     webPreferences: {
