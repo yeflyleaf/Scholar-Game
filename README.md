@@ -8,13 +8,15 @@
 >
 > **In the gaze of the Final’s End, knowledge is our only redemption.**
 
-![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)
-![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript)
-![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-FUI动画-FF0055?style=flat-square)
-![Zustand](https://img.shields.io/badge/Zustand-状态管理-orange?style=flat-square)
-![Electron](https://img.shields.io/badge/Electron-桌面端-47848F?style=flat-square&logo=electron)
-![License](https://img.shields.io/badge/License-AGPL%203.0-green?style=flat-square)
+<p align="center">
+  <img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript" alt="TypeScript" />
+  <img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss" alt="Tailwind CSS" />
+  <img src="https://img.shields.io/badge/Framer_Motion-FUI动画-FF0055?style=flat-square" alt="Framer Motion" />
+  <img src="https://img.shields.io/badge/Zustand-状态管理-orange?style=flat-square" alt="Zustand" />
+  <img src="https://img.shields.io/badge/Electron-桌面端-47848F?style=flat-square&logo=electron" alt="Electron" />
+  <img src="https://img.shields.io/badge/License-AGPL%203.0-green?style=flat-square" alt="License" />
+</p>
 
 ---
 
