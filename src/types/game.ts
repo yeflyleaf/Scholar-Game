@@ -108,7 +108,7 @@ export interface Question {
   type: QuestionType;
   options: string[];
   correctOptionIndex: number | number[];
-  difficulty: 1 | 2 | 3 | 4 | 5;
+  difficulty: 1 | 2 | 3 | 4 | 5 | 6;
   timeLimit?: number;
   hint?: string;
   explanation?: string;
@@ -133,7 +133,7 @@ export interface StarSector {
   name: string; // 例如："Boot Sector"
   description: string;
   status: NodeStatus;
-  difficulty: 1 | 2 | 3 | 4 | 5;
+  difficulty: 1 | 2 | 3 | 4 | 5 | 6;
   position: { x: number; y: number }; // 用于星图 UI
   totalQuestions: number;
   entropyEntities: EntropyEntity[];

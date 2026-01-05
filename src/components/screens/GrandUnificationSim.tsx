@@ -327,7 +327,7 @@ const GeometricNode: React.FC<{
                             </span>
                             {/* 难度星级 */}
                             <div className="flex gap-0.5 mt-1">
-                                {[...Array(5)].map((_, i) => (
+                                {[...Array(6)].map((_, i) => (
                                     <div
                                         key={i}
                                         className="w-1.5 h-1.5 rounded-full"
@@ -483,7 +483,7 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
                 >
                     <span className="text-xs text-gray-500 font-mono uppercase tracking-wider">挑战等级</span>
                     <div className="flex gap-1 mt-2">
-                        {[1, 2, 3, 4, 5].map((star) => (
+                        {[1, 2, 3, 4, 5, 6].map((star) => (
                             <motion.span
                                 key={star}
                                 className={`text-xl ${star <= sector.difficulty ? 'text-yellow-400' : 'text-gray-700'}`}

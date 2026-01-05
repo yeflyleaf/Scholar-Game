@@ -28,7 +28,7 @@ export interface GeneratedKnowledgeTree {
     id: string;
     name: string;
     description: string;
-    difficulty: 1 | 2 | 3 | 4 | 5;
+    difficulty: 1 | 2 | 3 | 4 | 5 | 6;
     prerequisites: string[];
     position: { x: number; y: number };
     questionCount: number;
@@ -45,7 +45,7 @@ export interface GeneratedKnowledgeTree {
 // 题目生成选项
 export interface QuestionGenerationOptions {
   count?: number;
-  difficulty?: 1 | 2 | 3 | 4 | 5 | 'mixed';
+  difficulty?: 1 | 2 | 3 | 4 | 5 | 6 | 'mixed';
   types?: Array<'Single' | 'Multi' | 'TrueFalse'>;
   language?: string;
 }
