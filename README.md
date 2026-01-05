@@ -1,4 +1,8 @@
-# <p align="center"> Project Scholar: The Study Ascension (智者计划：学习飞升)</p>
+<h1 align="center">
+  Project Scholar: The Study Ascension
+  <br>
+  智者计划：学习飞升
+</h1>
 
 > **在期末的终焉凝视下，知识是我们唯一的救赎。**
 >
