@@ -17,7 +17,7 @@ function App() {
     <AnimatePresence mode="wait">
       <motion.div
         key={currentScreen}
-        className="w-full h-full"
+        className="w-full h-screen"
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}

@@ -113,7 +113,7 @@ export const CausalityRecord: React.FC = () => {
     };
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
             {/* 背景暗化遮罩 */}
             <motion.div
                 className="absolute inset-0 bg-black"

@@ -110,7 +110,7 @@ export const MindHack: React.FC = () => {
     const config = result ? (rarityConfig[result.rarity] || rarityConfig.N) : rarityConfig.N;
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
             {/* 背景特效 */}
             <div className="hex-grid-bg opacity-50" />
             <div className="data-stream opacity-40" />

@@ -3,250 +3,296 @@ import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useGameStore } from '../../stores/useGameStore';
 
-// 数字雨特效（黑客帝国风格）
-const DigitalRain: React.FC = () => {
-    const columns = 30;
+// 数字雨特效（黑客帝国风格）- 使用CSS动画优化性能
+const DigitalRain: React.FC = React.memo(() => {
+    const columns = 15; // 减少列数以提升性能
     const chars = '学者计划-真理知识-智慧未来-科技系统-网络数据-代码连接-进化飞升';
     
     const rainColumns = useMemo(() => 
         [...Array(columns)].map((_, i) => ({
             id: i,
             left: `${(i / columns) * 100}%`,
-            duration: 8 + Math.random() * 8,
-            delay: Math.random() * 5,
-            characters: [...Array(30)].map((_, j) => ({
-                char: chars[Math.floor(Math.random() * chars.length)],
-                opacity: 1 - j * 0.03,
+            duration: 10 + (i % 5) * 2, // 使用确定性的持续时间
+            delay: (i % 5) * 1.5,
+            characters: [...Array(15)].map((_, j) => ({ // 减少字符数
+                char: chars[(i * 3 + j) % chars.length], // 使用确定性的字符选择
+                opacity: 1 - j * 0.05,
             })),
         })), [chars, columns]
     );
     
     return (
-        <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
-            {rainColumns.map((col) => (
-                <motion.div
-                    key={col.id}
-                    className="absolute text-neon-cyan font-mono text-xs whitespace-pre leading-4"
-                    style={{ left: col.left }}
-                    initial={{ y: '-100%' }}
-                    animate={{ y: '100vh' }}
-                    transition={{
-                        duration: col.duration,
-                        repeat: Infinity,
-                        delay: col.delay,
-                        ease: 'linear',
-                    }}
-                >
-                    {col.characters.map((item, j) => (
-                        <div key={j} style={{ opacity: item.opacity }}>
-                            {item.char}
-                        </div>
-                    ))}
-                </motion.div>
-            ))}
-        </div>
+        <>
+            <style>{`
+                @keyframes rain-fall {
+                    from { transform: translateY(-100%); }
+                    to { transform: translateY(100vh); }
+                }
+            `}</style>
+            <div className="absolute inset-0 overflow-hidden opacity-20 pointer-events-none">
+                {rainColumns.map((col) => (
+                    <div
+                        key={col.id}
+                        className="absolute text-neon-cyan font-mono text-xs whitespace-pre leading-4 will-change-transform"
+                        style={{ 
+                            left: col.left,
+                            animation: `rain-fall ${col.duration}s linear ${col.delay}s infinite`,
+                        }}
+                    >
+                        {col.characters.map((item, j) => (
+                            <div key={j} style={{ opacity: item.opacity }}>
+                                {item.char}
+                            </div>
+                        ))}
+                    </div>
+                ))}
+            </div>
+        </>
     );
-};
+});
 
-// 动画星座/神经网络背景
-const NeuralNetwork: React.FC = () => {
-    const nodes = useMemo(() => 
-        [...Array(25)].map((_, i) => ({
-            id: i,
-            x: Math.random() * 100,
-            y: Math.random() * 100,
-            size: 2 + Math.random() * 4,
-            delay: Math.random() * 2,
-        })), []
-    );
+// 动画星座/神经网络背景 - 使用CSS简化以优化性能
+const NeuralNetwork: React.FC = React.memo(() => {
+    // 使用确定性位置以避免 Math.random() 纯函数问题
+    const nodes = useMemo(() => [
+        { id: 0, x: 15, y: 20, size: 4, delay: 0 },
+        { id: 1, x: 85, y: 15, size: 3, delay: 0.3 },
+        { id: 2, x: 45, y: 35, size: 5, delay: 0.6 },
+        { id: 3, x: 25, y: 70, size: 3, delay: 0.9 },
+        { id: 4, x: 75, y: 65, size: 4, delay: 1.2 },
+        { id: 5, x: 55, y: 85, size: 3, delay: 1.5 },
+        { id: 6, x: 10, y: 45, size: 4, delay: 0.2 },
+        { id: 7, x: 90, y: 50, size: 3, delay: 0.5 },
+        { id: 8, x: 35, y: 10, size: 5, delay: 0.8 },
+        { id: 9, x: 65, y: 90, size: 4, delay: 1.1 },
+        { id: 10, x: 50, y: 55, size: 3, delay: 1.4 },
+        { id: 11, x: 30, y: 45, size: 4, delay: 1.7 },
+    ], []);
+
+    // 预计算连接线（只连接相近的节点）
+    const connections = useMemo(() => [
+        [0, 2], [1, 2], [2, 4], [3, 5], [4, 5],
+        [6, 3], [7, 4], [8, 1], [9, 5], [10, 2], [10, 4],
+    ], []);
 
     return (
-        <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
-            <defs>
-                <filter id="glow-strong">
-                    <feGaussianBlur stdDeviation="3" result="coloredBlur" />
-                    <feMerge>
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="coloredBlur" />
-                        <feMergeNode in="SourceGraphic" />
-                    </feMerge>
-                </filter>
-                <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0%" stopColor="#00f3ff" stopOpacity="0" />
-                    <stop offset="50%" stopColor="#00f3ff" stopOpacity="0.5" />
-                    <stop offset="100%" stopColor="#00f3ff" stopOpacity="0" />
-                </linearGradient>
-            </defs>
-            
-            {/* 连接线 */}
-            {nodes.map((node, i) => 
-                nodes.slice(i + 1).filter((_, j) => j < 3).map((target, j) => (
-                    <motion.line
-                        key={`${i}-${j}`}
-                        x1={`${node.x}%`}
-                        y1={`${node.y}%`}
-                        x2={`${target.x}%`}
-                        y2={`${target.y}%`}
-                        stroke="url(#lineGradient)"
-                        strokeWidth="0.5"
-                        initial={{ pathLength: 0, opacity: 0 }}
-                        animate={{ pathLength: 1, opacity: [0, 0.5, 0] }}
-                        transition={{
-                            duration: 4,
-                            delay: node.delay,
-                            repeat: Infinity,
-                            repeatDelay: 2,
+        <>
+            <style>{`
+                @keyframes node-pulse {
+                    0%, 100% { opacity: 0; transform: scale(0); }
+                    20% { opacity: 1; transform: scale(1); }
+                    50% { opacity: 0.5; transform: scale(1.2); }
+                    80% { opacity: 1; transform: scale(1); }
+                }
+                @keyframes line-fade {
+                    0%, 100% { opacity: 0; }
+                    50% { opacity: 0.5; }
+                }
+            `}</style>
+            <svg className="absolute inset-0 w-full h-full pointer-events-none opacity-30">
+                <defs>
+                    <linearGradient id="lineGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                        <stop offset="0%" stopColor="#00f3ff" stopOpacity="0" />
+                        <stop offset="50%" stopColor="#00f3ff" stopOpacity="0.5" />
+                        <stop offset="100%" stopColor="#00f3ff" stopOpacity="0" />
+                    </linearGradient>
+                </defs>
+                
+                {/* 连接线 - 使用CSS动画 */}
+                {connections.map(([fromIdx, toIdx], i) => {
+                    const from = nodes[fromIdx];
+                    const to = nodes[toIdx];
+                    return (
+                        <line
+                            key={`line-${i}`}
+                            x1={`${from.x}%`}
+                            y1={`${from.y}%`}
+                            x2={`${to.x}%`}
+                            y2={`${to.y}%`}
+                            stroke="url(#lineGradient)"
+                            strokeWidth="0.5"
+                            className="will-change-[opacity]"
+                            style={{
+                                animation: `line-fade 6s ease-in-out ${from.delay}s infinite`,
+                            }}
+                        />
+                    );
+                })}
+                
+                {/* 节点 - 使用CSS动画替代framer-motion以提升性能 */}
+                {nodes.map((node) => (
+                    <circle
+                        key={node.id}
+                        cx={`${node.x}%`}
+                        cy={`${node.y}%`}
+                        r={node.size}
+                        fill="#00f3ff"
+                        className="will-change-[opacity,transform]"
+                        style={{
+                            animation: `node-pulse 8s ease-in-out ${node.delay}s infinite`,
+                            transformOrigin: `${node.x}% ${node.y}%`,
+                            filter: 'drop-shadow(0 0 4px #00f3ff)',
                         }}
                     />
-                ))
-            )}
-            
-            {/* 节点 */}
-            {nodes.map((node) => (
-                <motion.circle
-                    key={node.id}
-                    cx={`${node.x}%`}
-                    cy={`${node.y}%`}
-                    r={node.size}
-                    fill="#00f3ff"
-                    filter="url(#glow-strong)"
-                    initial={{ opacity: 0, scale: 0 }}
-                    animate={{ 
-                        opacity: [0, 1, 0.5, 1, 0],
-                        scale: [0, 1, 1.2, 1, 0],
-                    }}
-                    transition={{
-                        duration: 5,
-                        delay: node.delay,
-                        repeat: Infinity,
-                        repeatDelay: 3,
+                ))}
+            </svg>
+        </>
+    );
+});
+
+// 大型旋转六边形框架 - 使用CSS动画优化性能
+const HexagonFrame: React.FC<{ size: number; duration: number; reverse?: boolean; opacity?: number }> = React.memo(({ 
+    size, duration, reverse = false, opacity = 0.3 
+}) => (
+    <>
+        <style>{`
+            @keyframes rotate-cw { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }
+            @keyframes rotate-ccw { from { transform: rotate(0deg); } to { transform: rotate(-360deg); } }
+        `}</style>
+        <div
+            className="absolute will-change-transform"
+            style={{
+                width: size,
+                height: size,
+                left: '50%',
+                top: '50%',
+                marginLeft: -size / 2,
+                marginTop: -size / 2,
+                animation: `${reverse ? 'rotate-ccw' : 'rotate-cw'} ${duration}s linear infinite`,
+            }}
+        >
+            <svg viewBox="0 0 100 100" className="w-full h-full">
+                <polygon
+                    points="50 2, 93 25, 93 75, 50 98, 7 75, 7 25"
+                    fill="none"
+                    stroke="#00f3ff"
+                    strokeWidth="0.3"
+                    opacity={opacity}
+                />
+            </svg>
+        </div>
+    </>
+));
+
+// 轨道能量粒子 - 使用CSS动画优化性能
+const OrbitingParticle: React.FC<{ radius: number; duration: number; delay: number; color: string }> = React.memo(({
+    radius, duration, delay, color
+}) => (
+    <>
+        <style>{`
+            @keyframes particle-pulse {
+                0%, 100% { transform: scale(1); opacity: 0.8; }
+                50% { transform: scale(1.5); opacity: 1; }
+            }
+        `}</style>
+        <div
+            className="absolute left-1/2 top-1/2 will-change-transform"
+            style={{ 
+                width: radius * 2, 
+                height: radius * 2, 
+                marginLeft: -radius, 
+                marginTop: -radius,
+                animation: `rotate-cw ${duration}s linear ${delay}s infinite`,
+            }}
+        >
+            <div
+                className="absolute w-3 h-3 rounded-full"
+                style={{ 
+                    backgroundColor: color,
+                    boxShadow: `0 0 20px ${color}, 0 0 40px ${color}`,
+                    top: 0,
+                    left: '50%',
+                    marginLeft: -6,
+                    animation: 'particle-pulse 1s ease-in-out infinite',
+                }}
+            />
+        </div>
+    </>
+));
+
+// 脉动核心 - 使用CSS动画优化性能
+const CentralCore: React.FC = React.memo(() => (
+    <>
+        <style>{`
+            @keyframes pulse-ring-0 {
+                from { width: 100px; height: 100px; opacity: 0.6; }
+                to { width: 400px; height: 400px; opacity: 0; }
+            }
+            @keyframes pulse-ring-1 {
+                from { width: 100px; height: 100px; opacity: 0.6; }
+                to { width: 500px; height: 500px; opacity: 0; }
+            }
+            @keyframes pulse-ring-2 {
+                from { width: 100px; height: 100px; opacity: 0.6; }
+                to { width: 600px; height: 600px; opacity: 0; }
+            }
+            @keyframes core-glow {
+                0%, 100% { transform: scale(1); opacity: 0.6; }
+                50% { transform: scale(1.3); opacity: 1; }
+            }
+        `}</style>
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
+            {/* 外部脉冲环 */}
+            {[0, 1, 2].map((i) => (
+                <div
+                    key={i}
+                    className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-neon-cyan/30 will-change-[width,height,opacity]"
+                    style={{
+                        animation: `pulse-ring-${i} 3s ease-out ${i}s infinite`,
                     }}
                 />
             ))}
-        </svg>
-    );
-};
-
-// 大型旋转六边形框架
-const HexagonFrame: React.FC<{ size: number; duration: number; reverse?: boolean; opacity?: number }> = ({ 
-    size, duration, reverse = false, opacity = 0.3 
-}) => (
-    <motion.div
-        className="absolute"
-        style={{
-            width: size,
-            height: size,
-            left: '50%',
-            top: '50%',
-            marginLeft: -size / 2,
-            marginTop: -size / 2,
-        }}
-        animate={{ rotate: reverse ? -360 : 360 }}
-        transition={{ duration, repeat: Infinity, ease: 'linear' }}
-    >
-        <svg viewBox="0 0 100 100" className="w-full h-full">
-            <polygon
-                points="50 2, 93 25, 93 75, 50 98, 7 75, 7 25"
-                fill="none"
-                stroke="#00f3ff"
-                strokeWidth="0.3"
-                opacity={opacity}
-            />
-        </svg>
-    </motion.div>
-);
-
-// 轨道能量粒子
-const OrbitingParticle: React.FC<{ radius: number; duration: number; delay: number; color: string }> = ({
-    radius, duration, delay, color
-}) => (
-    <motion.div
-        className="absolute left-1/2 top-1/2"
-        style={{ width: radius * 2, height: radius * 2, marginLeft: -radius, marginTop: -radius }}
-        animate={{ rotate: 360 }}
-        transition={{ duration, delay, repeat: Infinity, ease: 'linear' }}
-    >
-        <motion.div
-            className="absolute w-3 h-3 rounded-full"
-            style={{ 
-                backgroundColor: color,
-                boxShadow: `0 0 20px ${color}, 0 0 40px ${color}`,
-                top: 0,
-                left: '50%',
-                marginLeft: -6,
-            }}
-            animate={{ scale: [1, 1.5, 1], opacity: [0.8, 1, 0.8] }}
-            transition={{ duration: 1, repeat: Infinity }}
-        />
-    </motion.div>
-);
-
-// 脉动核心
-const CentralCore: React.FC = () => (
-    <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-        {/* 外部脉冲环 */}
-        {[...Array(3)].map((_, i) => (
-            <motion.div
-                key={i}
-                className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-full border border-neon-cyan/30"
-                initial={{ width: 100, height: 100, opacity: 0.8 }}
-                animate={{ 
-                    width: [100, 400 + i * 100],
-                    height: [100, 400 + i * 100],
-                    opacity: [0.6, 0],
-                }}
-                transition={{
-                    duration: 3,
-                    delay: i * 1,
-                    repeat: Infinity,
-                    ease: 'easeOut',
+            
+            {/* 核心光晕 */}
+            <div
+                className="w-32 h-32 rounded-full will-change-transform"
+                style={{
+                    background: 'radial-gradient(circle, rgba(0, 243, 255, 0.4) 0%, rgba(0, 243, 255, 0.1) 50%, transparent 70%)',
+                    animation: 'core-glow 2s ease-in-out infinite',
                 }}
             />
-        ))}
-        
-        {/* 核心光晕 */}
-        <motion.div
-            className="w-32 h-32 rounded-full"
-            style={{
-                background: 'radial-gradient(circle, rgba(0, 243, 255, 0.4) 0%, rgba(0, 243, 255, 0.1) 50%, transparent 70%)',
-            }}
-            animate={{
-                scale: [1, 1.3, 1],
-                opacity: [0.6, 1, 0.6],
-            }}
-            transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
-        />
-    </div>
-);
+        </div>
+    </>
+));
 
-// 漂浮故障碎片
-const GlitchFragment: React.FC<{ index: number }> = ({ index }) => {
-    const style = useMemo(() => ({
-        left: `${10 + Math.random() * 80}%`,
-        top: `${10 + Math.random() * 80}%`,
-        width: 20 + Math.random() * 60,
-        height: 2 + Math.random() * 4,
-    }), []);
+// 漂浮故障碎片 - 使用基于 index 的确定性值以确保纯函数
+const GlitchFragment: React.FC<{ index: number }> = React.memo(({ index }) => {
+    // 使用基于 index 的确定性值替代 Math.random()
+    const fragmentStyles = useMemo(() => [
+        { left: '15%', top: '20%', width: 45, height: 3 },
+        { left: '72%', top: '35%', width: 60, height: 2 },
+        { left: '28%', top: '65%', width: 35, height: 4 },
+        { left: '85%', top: '50%', width: 50, height: 3 },
+        { left: '40%', top: '80%', width: 55, height: 2 },
+        { left: '60%', top: '15%', width: 40, height: 3 },
+        { left: '10%', top: '45%', width: 65, height: 2 },
+        { left: '50%', top: '70%', width: 30, height: 4 },
+    ], []);
+
+    const style = fragmentStyles[index % fragmentStyles.length];
+    const xOffset = (index % 3 - 1) * 25; // -25, 0, or 25
+    const delayOffset = index * 1.5;
+    const repeatDelayValue = 8 + (index % 4) * 2; // 8, 10, 12, or 14
 
     return (
         <motion.div
-            className="absolute bg-glitch-red"
+            className="absolute bg-glitch-red will-change-[opacity,transform]"
             style={style}
             initial={{ opacity: 0, scaleX: 0 }}
             animate={{
                 opacity: [0, 0.8, 0],
                 scaleX: [0, 1, 0],
-                x: [0, (Math.random() - 0.5) * 50],
+                x: [0, xOffset],
             }}
             transition={{
                 duration: 0.3,
-                delay: index * 0.5 + Math.random() * 5,
+                delay: delayOffset,
                 repeat: Infinity,
-                repeatDelay: 5 + Math.random() * 10,
+                repeatDelay: repeatDelayValue,
             }}
         />
     );
-};
+});
 
 // 带有戏剧性揭示效果的动画标题
 const AnimatedTitle: React.FC = () => {
@@ -292,7 +338,7 @@ const AnimatedTitle: React.FC = () => {
                             className="absolute inset-0 text-glitch-red"
                             style={{ clipPath: 'polygon(0 0, 100% 0, 100% 30%, 0 30%)' }}
                             animate={{ x: [-2, 2, -2], opacity: [0, 0.8, 0] }}
-                            transition={{ duration: 0.1, repeat: Infinity, repeatDelay: 3 + Math.random() * 2 }}
+                            transition={{ duration: 0.1, repeat: Infinity, repeatDelay: 3 + i * 0.5 }}
                         >
                             {char}
                         </motion.span>
@@ -300,7 +346,7 @@ const AnimatedTitle: React.FC = () => {
                             className="absolute inset-0 text-neon-cyan"
                             style={{ clipPath: 'polygon(0 70%, 100% 70%, 100% 100%, 0 100%)' }}
                             animate={{ x: [2, -2, 2], opacity: [0, 0.8, 0] }}
-                            transition={{ duration: 0.1, delay: 0.05, repeat: Infinity, repeatDelay: 4 + Math.random() * 2 }}
+                            transition={{ duration: 0.1, delay: 0.05, repeat: Infinity, repeatDelay: 4.5 + i * 0.5 }}
                         >
                             {char}
                         </motion.span>
@@ -311,9 +357,13 @@ const AnimatedTitle: React.FC = () => {
     );
 };
 
-// 漂浮全息卡片
-const HolographicCard: React.FC<{ delay: number; position: { x: string; y: string } }> = ({ delay, position }) => {
-    const cardId = useMemo(() => Math.random().toString(36).substr(2, 6).toUpperCase(), []);
+// 漂浮全息卡片 - 使用 delay 参数生成确定性 ID
+const HolographicCard: React.FC<{ delay: number; position: { x: string; y: string } }> = React.memo(({ delay, position }) => {
+    // 使用 delay 参数生成确定性 ID
+    const cardId = useMemo(() => {
+        const ids = ['A7F3C2', 'B9D4E1', 'C2A5F8', 'D6B3E9', 'E1C7A4', 'F8D2B6'];
+        return ids[Math.floor(delay) % ids.length];
+    }, [delay]);
     
     return (
         <motion.div
@@ -340,7 +390,7 @@ const HolographicCard: React.FC<{ delay: number; position: { x: string; y: strin
                 }}
             >
                 <div className="p-2 text-[8px] font-mono text-neon-cyan/60">
-                    <div className="mb-1">ID: {cardId}</div>
+                    <div className="mb-1">编号: {cardId}</div>
                     <div className="w-full h-12 border border-neon-cyan/20 mb-2" />
                     <div className="space-y-1">
                         <div className="h-1 bg-neon-cyan/20 w-3/4" />
@@ -350,7 +400,7 @@ const HolographicCard: React.FC<{ delay: number; position: { x: string; y: strin
             </div>
         </motion.div>
     );
-};
+});
 
 // 从中心射出的能量束
 const EnergyBeam: React.FC<{ angle: number; delay: number }> = ({ angle, delay }) => (
@@ -382,7 +432,7 @@ export const TitleScreen: React.FC = () => {
     }, []);
 
     return (
-        <div className="w-full h-full flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
             {/* 图层 1：数字雨背景 */}
             <DigitalRain />
 
@@ -465,7 +515,7 @@ export const TitleScreen: React.FC = () => {
                     {/* 主标题 */}
                     <AnimatedTitle />
 
-                    {/* 带有打字机效果的英文副标题 */}
+                    {/* 带有打字机效果的副标题 */}
                     <motion.div
                         className="mt-6 overflow-hidden"
                         initial={{ opacity: 0 }}
@@ -484,7 +534,7 @@ export const TitleScreen: React.FC = () => {
                     </motion.div>
 
                     {/* 标语 */}
-                    <motion.p
+                    <motion.div
                         className="text-gray-400 font-mono italic text-lg mt-8 relative"
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
@@ -501,7 +551,7 @@ export const TitleScreen: React.FC = () => {
                             animate={{ scaleX: 1 }}
                             transition={{ delay: 3, duration: 1 }}
                         />
-                    </motion.p>
+                    </motion.div>
                 </div>
             )}
 

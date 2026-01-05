@@ -51,7 +51,7 @@ const ConstructCard: React.FC<{
             {/* 生命值条 */}
             <div className="mb-2">
                 <div className="flex justify-between text-xs font-mono mb-1">
-                    <span className="text-gray-500">HP</span>
+                    <span className="text-gray-500">生命值</span>
                     <span className={hpPercent < 30 ? 'text-glitch-red' : 'text-stable'}>
                         {construct.hp}/{construct.maxHp}
                     </span>
@@ -240,7 +240,7 @@ export const BattleField: React.FC = () => {
     } = useBattleSequence();
 
     return (
-        <div className="w-full h-full bg-deep-space relative overflow-hidden flex flex-col">
+        <div className="w-full h-screen bg-deep-space relative overflow-hidden flex flex-col">
             {/* 背景特效 */}
             <div className="hex-grid-bg opacity-30" />
             <div className="data-stream opacity-20" />

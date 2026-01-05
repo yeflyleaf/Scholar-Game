@@ -401,7 +401,7 @@ const GeometricNode: React.FC<{
                             animate={{ opacity: [1, 0.5, 1] }}
                             transition={{ duration: 0.5, repeat: Infinity }}
                         >
-                            ⚠ ENTROPY ALERT
+                            ⚠ 熵警报
                         </motion.span>
                     )}
                 </div>
@@ -583,7 +583,7 @@ export const GrandUnificationSim: React.FC = () => {
     };
 
     return (
-        <div className="w-full h-full bg-black relative overflow-hidden flex">
+        <div className="w-full h-screen bg-black relative overflow-hidden flex">
             {/* 背景 */}
             <NebulaBackground />
 
@@ -599,7 +599,7 @@ export const GrandUnificationSim: React.FC = () => {
                         大统一理论演练
                     </h1>
                     <p className="text-sm font-mono text-gray-500 mt-1 tracking-widest">
-                        GRAND UNIFICATION SIMULATION
+                        大统一理论演练
                     </p>
                 </motion.div>
 
@@ -653,7 +653,7 @@ export const GrandUnificationSim: React.FC = () => {
                             />
                             <h2 className="text-2xl font-display text-cyan-400">扇区分析</h2>
                         </div>
-                        <p className="text-xs font-mono text-gray-500 mt-1">SECTOR ANALYSIS</p>
+                        <p className="text-xs font-mono text-gray-500 mt-1">扇区分析</p>
                     </div>
 
                     <div className="flex-1 overflow-hidden">

@@ -164,8 +164,8 @@ export const useGameStore = create<GameState>((set, get) => ({
             glitchIntensity: 0
         });
         
-        get().addBattleLog(`Entering Sector: ${sector.name}`, 'system');
-        get().addBattleLog(`Entropy Levels: ${sector.status}`, 'system');
+        get().addBattleLog(`进入扇区: ${sector.name}`, 'system');
+        get().addBattleLog(`熵状态: ${sector.status === 'STABLE' ? '稳定' : sector.status === 'HIGH_ENTROPY' ? '高熵警报' : '已锁定'}`, 'system');
     },
 
     resetBattle: () => {
@@ -187,11 +187,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         
         if (!construct || !skill) return;
         if (skill.currentCooldown > 0) {
-            addBattleLog(`${skill.name} is on cooldown!`, 'system');
+            addBattleLog(`${skill.name} 正在冷却中！`, 'system');
             return;
         }
         if (construct.energy < (skill.cost || 0)) {
-            addBattleLog(`Insufficient Energy for ${skill.name}!`, 'system');
+            addBattleLog(`能量不足，无法使用 ${skill.name}！`, 'system');
             return;
         }
 
@@ -215,7 +215,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 }
                 return e;
             });
-            addBattleLog(`${construct.name} used ${skill.name} on target!`, 'combat');
+            addBattleLog(`${construct.name} 对目标使用了 ${skill.name}！`, 'combat');
         } else if (skill.targetType === 'all_enemies') {
              updatedEnemies = updatedEnemies.map(e => {
                 const damage = 30; // AOE 伤害
@@ -223,7 +223,7 @@ export const useGameStore = create<GameState>((set, get) => ({
                 addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
                 return { ...e, hp: newHp, isDead: newHp <= 0 };
             });
-            addBattleLog(`${construct.name} used ${skill.name} on ALL enemies!`, 'combat');
+            addBattleLog(`${construct.name} 对所有敌人使用了 ${skill.name}！`, 'combat');
         }
 
         // 设置冷却
@@ -253,7 +253,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         const isCorrect = currentQuestion.correctOptionIndex === optionIndex; // 简化为单选
 
         if (isCorrect) {
-            addBattleLog('Logic Verified. Entropy Reduced.', 'system');
+            addBattleLog('逻辑验证成功！熵值降低。', 'system');
             // 对随机敌人或所有敌人造成伤害
             const damage = GAME_CONFIG.baseDamage;
             const updatedEnemies = entropyEntities.map(e => {
@@ -273,7 +273,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             }
 
         } else {
-            addBattleLog('Logic Error! Entropy Increasing!', 'system');
+            addBattleLog('逻辑错误！熵值上升！', 'system');
             set({ glitchIntensity: Math.min(1, get().glitchIntensity + 0.2) });
             // 受到伤害
             const damage = 20;

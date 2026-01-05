@@ -103,7 +103,7 @@ export const SettingsScreen: React.FC = () => {
     };
 
     return (
-        <div className="w-full h-full bg-deep-space relative overflow-y-auto">
+        <div className="w-full h-screen bg-deep-space relative overflow-y-auto">
             {/* 背景特效 */}
             <div className="hex-grid-bg opacity-20" />
             <div className="data-stream opacity-10" />
@@ -119,7 +119,7 @@ export const SettingsScreen: React.FC = () => {
                         <h1 className="text-4xl font-display font-bold text-neon-cyan glitch-text" data-text="系统配置">
                             系统配置
                         </h1>
-                        <p className="text-sm font-mono text-gray-500 mt-1">SYSTEM CONFIGURATION // AKASHIC HUB</p>
+                        <p className="text-sm font-mono text-gray-500 mt-1">系统配置 // 灵感中枢</p>
                     </div>
                     <motion.button
                         onClick={() => setScreen('TITLE')}
@@ -139,18 +139,18 @@ export const SettingsScreen: React.FC = () => {
                     transition={{ delay: 0.2 }}
                 >
                     <div className="flex items-center gap-8">
-                        <StatusIndicator isActive={isElectronEnv} label="Electron 环境" />
+                        <StatusIndicator isActive={isElectronEnv} label="桌面应用环境" />
                         <StatusIndicator isActive={isConfigured} label="AI 核心连接" />
                     </div>
                     <span className="text-xs font-mono text-gray-500">
-                        版本 1.0.0 // Scholar Protocol
+                        版本 1.0.0 // 学者协议
                     </span>
                 </motion.div>
 
                 {/* API Key 区域 */}
                 <SectionPanel
-                    title="GEMINI 链接"
-                    subtitle="NEURAL LINK CONFIGURATION"
+                    title="AI 核心链接"
+                    subtitle="神经链接配置"
                     icon={<span className="text-neon-cyan">◈</span>}
                 >
                     <div className="space-y-4">
@@ -160,7 +160,7 @@ export const SettingsScreen: React.FC = () => {
                                     type="password"
                                     value={apiKeyInput}
                                     onChange={(e) => setApiKeyInput(e.target.value)}
-                                    placeholder="输入 Gemini API Key..."
+                                    placeholder="输入 Gemini 密钥..."
                                     className="fui-input w-full pr-12"
                                 />
                                 {isConfigured && (
@@ -198,7 +198,7 @@ export const SettingsScreen: React.FC = () => {
                         )}
 
                         <p className="text-xs font-mono text-gray-500 leading-relaxed">
-                            连接 Google Gemini AI 核心以启用知识生成功能。API Key 将安全存储于本地。
+                            连接 Google Gemini AI 核心以启用知识生成功能。密钥将安全存储于本地。
                         </p>
                     </div>
                 </SectionPanel>
@@ -206,7 +206,7 @@ export const SettingsScreen: React.FC = () => {
                 {/* 生成区域 */}
                 <SectionPanel
                     title="数据合成"
-                    subtitle="KNOWLEDGE SYNTHESIS ENGINE"
+                    subtitle="知识合成引擎"
                     icon={<span className="text-holographic-gold">⬡</span>}
                 >
                     <div className="space-y-6">
@@ -357,7 +357,7 @@ export const SettingsScreen: React.FC = () => {
                     transition={{ delay: 0.5 }}
                 >
                     <p className="text-xs font-mono text-gray-500">
-                        PROJECT SCHOLAR // THE STUDY ASCENSION
+                        学者计划 // 学习飞升
                     </p>
                     <p className="text-xs font-mono text-gray-600">
                         为世界上所有的不挂科而战
