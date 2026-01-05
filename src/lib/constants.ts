@@ -208,7 +208,7 @@ export const STAR_SECTORS: StarSector[] = [
         description: "Boot Sector - 这里的逻辑尚且稳定，适合进行基础演练。",
         status: "STABLE",
         difficulty: 1,
-        position: { x: 100, y: 300 },
+        position: { x: 10, y: 50 },
         totalQuestions: 5,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[0]],
         rewards: { exp: 100 }
@@ -218,11 +218,44 @@ export const STAR_SECTORS: StarSector[] = [
         name: "虚存的迷宫",
         description: "Labyrinth of Virtual Memory - 页面置换算法失效，小心缺页中断。",
         status: "HIGH_ENTROPY",
+        difficulty: 2,
+        position: { x: 25, y: 20 },
+        totalQuestions: 8,
+        entropyEntities: [INITIAL_ENTROPY_ENTITIES[1]],
+        rewards: { exp: 200 }
+    },
+    {
+        id: "sector-3",
+        name: "并发的洪流",
+        description: "Concurrency Torrent - 线程同步机制紊乱，竞态条件频发。",
+        status: "LOCKED",
         difficulty: 3,
-        position: { x: 300, y: 150 },
+        position: { x: 40, y: 80 },
         totalQuestions: 10,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[1]],
         rewards: { exp: 300 }
+    },
+    {
+        id: "sector-4",
+        name: "协议的废墟",
+        description: "Protocol Ruins - 握手失败，连接超时，数据包大量丢失。",
+        status: "LOCKED",
+        difficulty: 4,
+        position: { x: 55, y: 30 },
+        totalQuestions: 12,
+        entropyEntities: [INITIAL_ENTROPY_ENTITIES[1]],
+        rewards: { exp: 500 }
+    },
+    {
+        id: "sector-5",
+        name: "算法的深渊",
+        description: "Algorithm Abyss - 递归深度过大，栈溢出警告。",
+        status: "LOCKED",
+        difficulty: 4,
+        position: { x: 70, y: 70 },
+        totalQuestions: 15,
+        entropyEntities: [INITIAL_ENTROPY_ENTITIES[2]],
+        rewards: { exp: 700 }
     },
     {
         id: "sector-boss",
@@ -230,8 +263,8 @@ export const STAR_SECTORS: StarSector[] = [
         description: "Singularity: Thrashing - 系统的最终防线，必须在此重构底层逻辑。",
         status: "LOCKED",
         difficulty: 5,
-        position: { x: 600, y: 300 },
-        totalQuestions: 15,
+        position: { x: 85, y: 50 },
+        totalQuestions: 20,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[2]],
         rewards: { exp: 1000 }
     }
