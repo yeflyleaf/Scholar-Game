@@ -6,7 +6,7 @@ import { useGameStore } from '../../stores/useGameStore';
 // 数字雨特效（黑客帝国风格）
 const DigitalRain: React.FC = () => {
     const columns = 30;
-    const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ学者計画真理';
+    const chars = '学者计划-真理知识-智慧未来-科技系统-网络数据-代码连接-进化飞升';
     
     const rainColumns = useMemo(() => 
         [...Array(columns)].map((_, i) => ({
@@ -576,20 +576,6 @@ export const TitleScreen: React.FC = () => {
                 animate={{ opacity: 0.6 }}
                 transition={{ delay: 3.5 }}
             >
-                <div className="flex items-center gap-6 text-xs font-mono text-gray-500">
-                    <motion.div
-                        className="flex items-center gap-2"
-                        animate={{ opacity: [0.5, 1, 0.5] }}
-                        transition={{ duration: 2, repeat: Infinity }}
-                    >
-                        <div className="w-2 h-2 bg-stable rounded-full" />
-                        <span>系统在线</span>
-                    </motion.div>
-                    <span className="text-gray-700">|</span>
-                    <span>AKASHIC HUB // ROOT ACCESS</span>
-                    <span className="text-gray-700">|</span>
-                    <span>纪元 XIII</span>
-                </div>
             </motion.div>
 
             {/* 全屏角落装饰 */}
