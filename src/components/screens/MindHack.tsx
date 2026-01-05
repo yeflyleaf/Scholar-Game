@@ -1,12 +1,13 @@
+// 页面：思维骇入 (MindHack) - 抽卡/获取物品界面
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
 import { useGameStore } from '../../stores/useGameStore';
 
-// Quantum vortex animation component
+// 量子漩涡动画组件
 const QuantumVortex: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     return (
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none overflow-hidden">
-            {/* Multiple rotating rings */}
+            {/* 多重旋转环 */}
             {[...Array(5)].map((_, i) => (
                 <motion.div
                     key={i}
@@ -28,7 +29,7 @@ const QuantumVortex: React.FC<{ isActive: boolean }> = ({ isActive }) => {
                 />
             ))}
             
-            {/* Central glow */}
+            {/* 中心光晕 */}
             <motion.div
                 className="absolute w-64 h-64 rounded-full"
                 style={{
@@ -44,7 +45,7 @@ const QuantumVortex: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     );
 };
 
-// Floating data fragments
+// 漂浮数据碎片
 const DataFragment: React.FC<{ delay: number }> = ({ delay }) => {
     const chars = '01アイウエオカキクケコ';
     const randomChar = () => chars[Math.floor(Math.random() * chars.length)];
@@ -74,7 +75,7 @@ const DataFragment: React.FC<{ delay: number }> = ({ delay }) => {
     );
 };
 
-// Rarity color mapping
+// 稀有度颜色映射
 const rarityConfig: Record<string, { bg: string; border: string; text: string; glow: string }> = {
     SSR: { bg: 'from-yellow-500/20 to-orange-500/20', border: 'border-holographic-gold', text: 'text-holographic-gold', glow: 'rgba(255, 215, 0, 0.5)' },
     SR: { bg: 'from-purple-500/20 to-pink-500/20', border: 'border-plasma-purple', text: 'text-plasma-purple', glow: 'rgba(153, 69, 255, 0.5)' },
@@ -92,7 +93,7 @@ export const MindHack: React.FC = () => {
         setIsHacking(true);
         setPhase('hacking');
         
-        // Simulated hacking delay for dramatic effect
+        // 模拟骇入延迟以增强戏剧效果
         await new Promise(resolve => setTimeout(resolve, 2500));
         
         const item = performMindHack();
@@ -110,20 +111,20 @@ export const MindHack: React.FC = () => {
 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
-            {/* Background effects */}
+            {/* 背景特效 */}
             <div className="hex-grid-bg opacity-50" />
             <div className="data-stream opacity-40" />
             <div className="scan-line opacity-30" />
 
-            {/* Floating data fragments */}
+            {/* 漂浮数据碎片 */}
             {[...Array(15)].map((_, i) => (
                 <DataFragment key={i} delay={i * 0.5} />
             ))}
 
-            {/* Quantum vortex */}
+            {/* 量子漩涡 */}
             <QuantumVortex isActive={isHacking || phase === 'reveal'} />
 
-            {/* Title */}
+            {/* 标题 */}
             <motion.div
                 className="absolute top-10 left-0 right-0 text-center z-20"
                 initial={{ opacity: 0, y: -30 }}
@@ -135,7 +136,7 @@ export const MindHack: React.FC = () => {
                 <p className="text-sm font-mono text-gray-500 tracking-widest">MIND HACK // QUANTUM RETRIEVAL SYSTEM</p>
             </motion.div>
 
-            {/* Main content */}
+            {/* 主内容 */}
             <div className="z-10 flex flex-col items-center gap-8">
                 <AnimatePresence mode="wait">
                     {phase === 'idle' && (
@@ -146,24 +147,24 @@ export const MindHack: React.FC = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.8 }}
                         >
-                            {/* Hack button */}
+                            {/* 骇入按钮 */}
                             <motion.button
                                 onClick={handleHack}
                                 className="relative w-72 h-72 rounded-full flex items-center justify-center group"
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                {/* Outer ring */}
+                                {/* 外环 */}
                                 <div className="absolute inset-0 rounded-full border-2 border-neon-cyan/30" />
                                 
-                                {/* Spinning dashed ring */}
+                                {/* 旋转虚线环 */}
                                 <motion.div
                                     className="absolute inset-2 rounded-full border border-dashed border-neon-cyan/50"
                                     animate={{ rotate: 360 }}
                                     transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                                 />
                                 
-                                {/* Inner glow circle */}
+                                {/* 内部光晕圆 */}
                                 <motion.div
                                     className="absolute inset-8 rounded-full bg-gradient-to-br from-neon-cyan/10 to-transparent"
                                     animate={{
@@ -176,7 +177,7 @@ export const MindHack: React.FC = () => {
                                     transition={{ duration: 2, repeat: Infinity }}
                                 />
                                 
-                                {/* Hexagon icon */}
+                                {/* 六边形图标 */}
                                 <motion.div
                                     className="relative z-10"
                                     animate={{
@@ -189,7 +190,7 @@ export const MindHack: React.FC = () => {
                                     </span>
                                 </motion.div>
                                 
-                                {/* Text */}
+                                {/* 文本 */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                                     <span className="text-2xl font-display text-neon-cyan group-hover:text-white transition-colors mt-24">
                                         启动骇入
@@ -215,7 +216,7 @@ export const MindHack: React.FC = () => {
                             animate={{ opacity: 1 }}
                             exit={{ opacity: 0 }}
                         >
-                            {/* Processing animation */}
+                            {/* 处理中动画 */}
                             <div className="processing-ring" />
                             
                             <motion.p
@@ -262,7 +263,7 @@ export const MindHack: React.FC = () => {
                                 boxShadow: `0 0 60px ${config.glow}`,
                             }}
                         >
-                            {/* Shine effect */}
+                            {/* 闪光特效 */}
                             <motion.div
                                 className="absolute inset-0"
                                 style={{
@@ -273,7 +274,7 @@ export const MindHack: React.FC = () => {
                                 transition={{ duration: 1, delay: 0.5 }}
                             />
 
-                            {/* Hexagon icon */}
+                            {/* 六边形图标 */}
                             <motion.div
                                 className={`text-8xl ${config.text}`}
                                 animate={{
@@ -291,7 +292,7 @@ export const MindHack: React.FC = () => {
                                 ⬡
                             </motion.div>
 
-                            {/* Rarity badge */}
+                            {/* 稀有度徽章 */}
                             <motion.div
                                 className={`px-4 py-1 ${config.bg} ${config.border} border-2 rounded-full font-display font-bold text-sm ${config.text}`}
                                 initial={{ scale: 0 }}
@@ -301,7 +302,7 @@ export const MindHack: React.FC = () => {
                                 {result.rarity}
                             </motion.div>
 
-                            {/* Item name */}
+                            {/* 物品名称 */}
                             <motion.h2
                                 className={`text-3xl font-display font-bold ${config.text} text-center glitch-text`}
                                 data-text={result.name}
@@ -312,7 +313,7 @@ export const MindHack: React.FC = () => {
                                 {result.name}
                             </motion.h2>
 
-                            {/* Description */}
+                            {/* 描述 */}
                             <motion.p
                                 className="text-center text-gray-300 font-mono text-sm leading-relaxed max-w-sm"
                                 initial={{ opacity: 0 }}
@@ -322,7 +323,7 @@ export const MindHack: React.FC = () => {
                                 "{result.description}"
                             </motion.p>
 
-                            {/* Confirm button */}
+                            {/* 确认按钮 */}
                             <motion.button
                                 onClick={handleConfirm}
                                 className="hex-button mt-4 px-8 py-3"
@@ -338,7 +339,7 @@ export const MindHack: React.FC = () => {
                     )}
                 </AnimatePresence>
 
-                {/* Back button */}
+                {/* 返回按钮 */}
                 <motion.button
                     onClick={() => setScreen('GRAND_UNIFICATION_SIM')}
                     className="hex-button z-10 mt-8"
@@ -352,7 +353,7 @@ export const MindHack: React.FC = () => {
                 </motion.button>
             </div>
 
-            {/* Corner decorations */}
+            {/* 角落装饰 */}
             <div className="absolute top-6 left-6 w-20 h-20 border-t-2 border-l-2 border-neon-cyan/30" />
             <div className="absolute top-6 right-6 w-20 h-20 border-t-2 border-r-2 border-neon-cyan/30" />
             <div className="absolute bottom-6 left-6 w-20 h-20 border-b-2 border-l-2 border-neon-cyan/30" />

@@ -1,10 +1,11 @@
+// 页面：战场 (BattleField) - 核心战斗界面，包含构造体、敌人和答题区域
 import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
 import { useBattleSequence } from '../../hooks/useBattleSequence';
 import { useGameStore } from '../../stores/useGameStore';
 import { QuestionCard } from '../molecules/QuestionCard';
 
-// Construct portrait component
+// 构造体肖像组件
 const ConstructCard: React.FC<{
     construct: any;
     useSkill: (constructId: string, skillId: string) => void;
@@ -24,7 +25,7 @@ const ConstructCard: React.FC<{
                     : undefined,
             }}
         >
-            {/* Active indicator */}
+            {/* 激活指示器 */}
             {isActive && (
                 <motion.div
                     className="absolute -left-1 top-0 bottom-0 w-1 bg-neon-cyan"
@@ -33,13 +34,13 @@ const ConstructCard: React.FC<{
                 />
             )}
 
-            {/* Header */}
+            {/* 头部 */}
             <div className="flex justify-between items-start mb-3">
                 <div>
                     <h3 className="text-neon-cyan font-display font-bold text-lg">{construct.name}</h3>
                     <span className="text-xs text-gray-500 font-mono">{construct.model}</span>
                 </div>
-                {/* Status icons */}
+                {/* 状态图标 */}
                 <div className="flex gap-1">
                     {!construct.isDead && (
                         <div className="w-2 h-2 bg-stable rounded-full animate-pulse" />
@@ -47,7 +48,7 @@ const ConstructCard: React.FC<{
                 </div>
             </div>
 
-            {/* HP Bar */}
+            {/* 生命值条 */}
             <div className="mb-2">
                 <div className="flex justify-between text-xs font-mono mb-1">
                     <span className="text-gray-500">HP</span>
@@ -65,7 +66,7 @@ const ConstructCard: React.FC<{
                 </div>
             </div>
 
-            {/* Energy Bar */}
+            {/* 能量条 */}
             <div className="mb-4">
                 <div className="flex justify-between text-xs font-mono mb-1">
                     <span className="text-gray-500">能量</span>
@@ -81,7 +82,7 @@ const ConstructCard: React.FC<{
                 </div>
             </div>
 
-            {/* Skills */}
+            {/* 技能 */}
             <div className="flex gap-2">
                 {construct.skills.map((skill: any) => {
                     const canUse = !construct.isDead && skill.currentCooldown === 0 && construct.energy >= (skill.cost || 0);
@@ -116,7 +117,7 @@ const ConstructCard: React.FC<{
     );
 };
 
-// Entropy Entity component
+// 熵实体组件
 const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
     const hpPercent = (entity.hp / entity.maxHp) * 100;
 
@@ -129,7 +130,7 @@ const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
                 exit={{ opacity: 0 }}
                 transition={{ duration: 0.5 }}
             >
-                {/* Death effect */}
+                {/* 死亡特效 */}
                 <div className="absolute inset-0 flex items-center justify-center">
                     <span className="text-glitch-red font-mono text-sm">已消除</span>
                 </div>
@@ -146,7 +147,7 @@ const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
                 boxShadow: '0 0 30px rgba(255, 0, 60, 0.2)',
             }}
         >
-            {/* Corruption effect overlay */}
+            {/* 腐蚀特效遮罩 */}
             <motion.div
                 className="absolute inset-0 pointer-events-none"
                 style={{
@@ -162,7 +163,7 @@ const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
                 }}
             />
 
-            {/* Header */}
+            {/* 头部 */}
             <div className="flex justify-between items-start mb-3 relative">
                 <div>
                     <h3 className="text-glitch-red font-display font-bold text-lg glitch-text" data-text={entity.name}>
@@ -170,14 +171,14 @@ const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
                     </h3>
                     <span className="text-xs text-gray-500 font-mono">{entity.form}</span>
                 </div>
-                {/* Threat indicator */}
+                {/* 威胁指示器 */}
                 <div className="flex items-center gap-1">
                     <span className="text-xs text-glitch-red/60 font-mono">威胁</span>
                     <div className="w-2 h-2 bg-glitch-red rounded-full animate-pulse" />
                 </div>
             </div>
 
-            {/* HP Bar */}
+            {/* 生命值条 */}
             <div className="relative">
                 <div className="flex justify-between text-xs font-mono mb-1">
                     <span className="text-gray-500">完整性</span>
@@ -195,7 +196,7 @@ const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
     );
 };
 
-// Battle log component
+// 战斗日志组件
 const BattleLog: React.FC<{ logs: any[] }> = ({ logs }) => (
     <div className="absolute bottom-0 left-0 right-0 max-h-32 overflow-y-auto bg-black/90 backdrop-blur-sm p-3 border-t border-neon-cyan/20">
         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700/50">
@@ -240,11 +241,11 @@ export const BattleField: React.FC = () => {
 
     return (
         <div className="w-full h-full bg-deep-space relative overflow-hidden flex flex-col">
-            {/* Background effects */}
+            {/* 背景特效 */}
             <div className="hex-grid-bg opacity-30" />
             <div className="data-stream opacity-20" />
 
-            {/* Top Bar */}
+            {/* 顶部栏 */}
             <motion.div
                 className="flex justify-between items-center p-4 fui-panel m-2 rounded relative z-20"
                 initial={{ y: -50, opacity: 0 }}
@@ -265,7 +266,7 @@ export const BattleField: React.FC = () => {
                     </div>
                 </div>
 
-                {/* Status message */}
+                {/* 状态消息 */}
                 <motion.div
                     className="text-xl font-display text-white glitch-text"
                     data-text={statusMessage}
@@ -276,7 +277,7 @@ export const BattleField: React.FC = () => {
                     {statusMessage}
                 </motion.div>
 
-                {/* Processing indicator */}
+                {/* 处理指示器 */}
                 <div className="w-32 flex justify-end">
                     {isProcessing && (
                         <motion.div
@@ -291,9 +292,9 @@ export const BattleField: React.FC = () => {
                 </div>
             </motion.div>
 
-            {/* Main Battle Area */}
+            {/* 主战斗区域 */}
             <div className="flex-1 flex gap-4 p-4 overflow-hidden relative">
-                {/* Left: Constructs */}
+                {/* 左侧：构造体 */}
                 <motion.div
                     className="w-1/4 flex flex-col gap-3 overflow-y-auto pr-2"
                     initial={{ x: -100, opacity: 0 }}
@@ -314,7 +315,7 @@ export const BattleField: React.FC = () => {
                     ))}
                 </motion.div>
 
-                {/* Center: Question */}
+                {/* 中间：问题 */}
                 <div className="flex-1 flex items-center justify-center relative pb-32">
                     <AnimatePresence mode="wait">
                         {currentQuestion && battleState === 'PLAYER_TURN' && (
@@ -328,11 +329,11 @@ export const BattleField: React.FC = () => {
                         )}
                     </AnimatePresence>
 
-                    {/* Battle Log */}
+                    {/* 战斗日志 */}
                     <BattleLog logs={battleLog} />
                 </div>
 
-                {/* Right: Entropy Entities */}
+                {/* 右侧：熵实体 */}
                 <motion.div
                     className="w-1/4 flex flex-col gap-3 overflow-y-auto pl-2"
                     initial={{ x: 100, opacity: 0 }}
@@ -351,7 +352,7 @@ export const BattleField: React.FC = () => {
                 </motion.div>
             </div>
 
-            {/* Corner decorations */}
+            {/* 角落装饰 */}
             <div className="absolute top-16 left-4 w-12 h-12 border-t border-l border-neon-cyan/20 pointer-events-none" />
             <div className="absolute top-16 right-4 w-12 h-12 border-t border-r border-neon-cyan/20 pointer-events-none" />
             <div className="absolute bottom-4 left-4 w-12 h-12 border-b border-l border-neon-cyan/20 pointer-events-none" />

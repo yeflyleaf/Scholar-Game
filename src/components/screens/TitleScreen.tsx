@@ -1,8 +1,9 @@
+// 页面：标题画面 (TitleScreen) - 游戏启动界面，包含炫酷的视觉特效
 import { motion } from 'framer-motion';
 import React, { useEffect, useMemo, useState } from 'react';
 import { useGameStore } from '../../stores/useGameStore';
 
-// Digital rain effect (Matrix-style)
+// 数字雨特效（黑客帝国风格）
 const DigitalRain: React.FC = () => {
     const columns = 30;
     const chars = '01アイウエオカキクケコサシスセソタチツテトナニヌネノ学者計画真理';
@@ -47,7 +48,7 @@ const DigitalRain: React.FC = () => {
     );
 };
 
-// Animated constellation/neural network background
+// 动画星座/神经网络背景
 const NeuralNetwork: React.FC = () => {
     const nodes = useMemo(() => 
         [...Array(25)].map((_, i) => ({
@@ -77,7 +78,7 @@ const NeuralNetwork: React.FC = () => {
                 </linearGradient>
             </defs>
             
-            {/* Connection lines */}
+            {/* 连接线 */}
             {nodes.map((node, i) => 
                 nodes.slice(i + 1).filter((_, j) => j < 3).map((target, j) => (
                     <motion.line
@@ -100,7 +101,7 @@ const NeuralNetwork: React.FC = () => {
                 ))
             )}
             
-            {/* Nodes */}
+            {/* 节点 */}
             {nodes.map((node) => (
                 <motion.circle
                     key={node.id}
@@ -126,7 +127,7 @@ const NeuralNetwork: React.FC = () => {
     );
 };
 
-// Large rotating hexagon frame
+// 大型旋转六边形框架
 const HexagonFrame: React.FC<{ size: number; duration: number; reverse?: boolean; opacity?: number }> = ({ 
     size, duration, reverse = false, opacity = 0.3 
 }) => (
@@ -155,7 +156,7 @@ const HexagonFrame: React.FC<{ size: number; duration: number; reverse?: boolean
     </motion.div>
 );
 
-// Orbiting energy particles
+// 轨道能量粒子
 const OrbitingParticle: React.FC<{ radius: number; duration: number; delay: number; color: string }> = ({
     radius, duration, delay, color
 }) => (
@@ -180,10 +181,10 @@ const OrbitingParticle: React.FC<{ radius: number; duration: number; delay: numb
     </motion.div>
 );
 
-// Pulsing central core
+// 脉动核心
 const CentralCore: React.FC = () => (
     <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none">
-        {/* Outer pulse rings */}
+        {/* 外部脉冲环 */}
         {[...Array(3)].map((_, i) => (
             <motion.div
                 key={i}
@@ -203,7 +204,7 @@ const CentralCore: React.FC = () => (
             />
         ))}
         
-        {/* Core glow */}
+        {/* 核心光晕 */}
         <motion.div
             className="w-32 h-32 rounded-full"
             style={{
@@ -218,7 +219,7 @@ const CentralCore: React.FC = () => (
     </div>
 );
 
-// Floating glitch fragments
+// 漂浮故障碎片
 const GlitchFragment: React.FC<{ index: number }> = ({ index }) => {
     const style = useMemo(() => ({
         left: `${10 + Math.random() * 80}%`,
@@ -247,13 +248,13 @@ const GlitchFragment: React.FC<{ index: number }> = ({ index }) => {
     );
 };
 
-// Animated title with dramatic reveal
+// 带有戏剧性揭示效果的动画标题
 const AnimatedTitle: React.FC = () => {
     const titleChars = '学习飞升'.split('');
 
     return (
         <motion.div className="relative">
-            {/* Background flash on reveal */}
+            {/* 揭示时的背景闪光 */}
             <motion.div
                 className="absolute inset-0 bg-white rounded-lg"
                 initial={{ opacity: 0, scale: 0.8 }}
@@ -261,7 +262,7 @@ const AnimatedTitle: React.FC = () => {
                 transition={{ duration: 0.6, delay: 0.5 }}
             />
 
-            {/* Main title with per-character animation */}
+            {/* 带有逐字动画的主标题 */}
             <div className="flex justify-center gap-2">
                 {titleChars.map((char, i) => (
                     <motion.span
@@ -286,7 +287,7 @@ const AnimatedTitle: React.FC = () => {
                     >
                         <span className="gradient-text-cyber">{char}</span>
                         
-                        {/* Glitch layers */}
+                        {/* 故障图层 */}
                         <motion.span
                             className="absolute inset-0 text-glitch-red"
                             style={{ clipPath: 'polygon(0 0, 100% 0, 100% 30%, 0 30%)' }}
@@ -310,7 +311,7 @@ const AnimatedTitle: React.FC = () => {
     );
 };
 
-// Floating holographic cards
+// 漂浮全息卡片
 const HolographicCard: React.FC<{ delay: number; position: { x: string; y: string } }> = ({ delay, position }) => {
     const cardId = useMemo(() => Math.random().toString(36).substr(2, 6).toUpperCase(), []);
     
@@ -351,7 +352,7 @@ const HolographicCard: React.FC<{ delay: number; position: { x: string; y: strin
     );
 };
 
-// Energy beams shooting from center
+// 从中心射出的能量束
 const EnergyBeam: React.FC<{ angle: number; delay: number }> = ({ angle, delay }) => (
     <motion.div
         className="absolute left-1/2 top-1/2 origin-left h-0.5"
@@ -382,46 +383,46 @@ export const TitleScreen: React.FC = () => {
 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
-            {/* Layer 1: Digital rain background */}
+            {/* 图层 1：数字雨背景 */}
             <DigitalRain />
 
-            {/* Layer 2: Neural network */}
+            {/* 图层 2：神经网络 */}
             <NeuralNetwork />
 
-            {/* Layer 3: Rotating hexagon frames */}
+            {/* 图层 3：旋转六边形框架 */}
             <HexagonFrame size={600} duration={60} opacity={0.15} />
             <HexagonFrame size={500} duration={45} reverse opacity={0.2} />
             <HexagonFrame size={400} duration={30} opacity={0.25} />
             <HexagonFrame size={300} duration={20} reverse opacity={0.3} />
 
-            {/* Layer 4: Energy beams */}
+            {/* 图层 4：能量束 */}
             {[0, 45, 90, 135, 180, 225, 270, 315].map((angle, i) => (
                 <EnergyBeam key={angle} angle={angle} delay={i * 0.3} />
             ))}
 
-            {/* Layer 5: Orbiting particles */}
+            {/* 图层 5：轨道粒子 */}
             <OrbitingParticle radius={180} duration={12} delay={0} color="#00f3ff" />
             <OrbitingParticle radius={220} duration={15} delay={1} color="#ffd700" />
             <OrbitingParticle radius={260} duration={18} delay={2} color="#9945ff" />
 
-            {/* Layer 6: Central core */}
+            {/* 图层 6：中心核心 */}
             <CentralCore />
 
-            {/* Layer 7: Glitch fragments */}
+            {/* 图层 7：故障碎片 */}
             {[...Array(8)].map((_, i) => (
                 <GlitchFragment key={i} index={i} />
             ))}
 
-            {/* Layer 8: Holographic floating cards */}
+            {/* 图层 8：漂浮全息卡片 */}
             <HolographicCard delay={0} position={{ x: '8%', y: '20%' }} />
             <HolographicCard delay={2} position={{ x: '85%', y: '25%' }} />
             <HolographicCard delay={4} position={{ x: '5%', y: '65%' }} />
             <HolographicCard delay={6} position={{ x: '88%', y: '70%' }} />
 
-            {/* Main Content */}
+            {/* 主内容 */}
             {isLoaded && (
                 <div className="relative z-20 flex flex-col items-center">
-                    {/* Project codename with scanning effect */}
+                    {/* 带有扫描效果的项目代号 */}
                     <motion.div
                         className="mb-6 relative overflow-hidden"
                         initial={{ opacity: 0 }}
@@ -452,7 +453,7 @@ export const TitleScreen: React.FC = () => {
                             />
                         </div>
                         
-                        {/* Scanning line */}
+                        {/* 扫描线 */}
                         <motion.div
                             className="absolute top-0 left-0 w-full h-full bg-gradient-to-r from-transparent via-neon-cyan/30 to-transparent"
                             initial={{ x: '-100%' }}
@@ -461,10 +462,10 @@ export const TitleScreen: React.FC = () => {
                         />
                     </motion.div>
 
-                    {/* Main title */}
+                    {/* 主标题 */}
                     <AnimatedTitle />
 
-                    {/* English subtitle with typewriter effect */}
+                    {/* 带有打字机效果的英文副标题 */}
                     <motion.div
                         className="mt-6 overflow-hidden"
                         initial={{ opacity: 0 }}
@@ -482,7 +483,7 @@ export const TitleScreen: React.FC = () => {
                         </motion.p>
                     </motion.div>
 
-                    {/* Tagline */}
+                    {/* 标语 */}
                     <motion.p
                         className="text-gray-400 font-mono italic text-lg mt-8 relative"
                         initial={{ opacity: 0 }}
@@ -493,7 +494,7 @@ export const TitleScreen: React.FC = () => {
                         为世界上所有的不挂科而战！
                         <span className="text-glitch-red">"</span>
                         
-                        {/* Underline animation */}
+                        {/* 下划线动画 */}
                         <motion.div
                             className="absolute bottom-0 left-0 h-px bg-gradient-to-r from-transparent via-gray-500 to-transparent w-full"
                             initial={{ scaleX: 0 }}
@@ -504,14 +505,14 @@ export const TitleScreen: React.FC = () => {
                 </div>
             )}
 
-            {/* Buttons Section */}
+            {/* 按钮区域 */}
             <motion.div
                 className="relative z-20 mt-16 flex flex-col gap-5"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 3 }}
             >
-                {/* Primary button with extra effects */}
+                {/* 带有额外特效的主按钮 */}
                 <motion.button
                     onClick={() => setScreen('GRAND_UNIFICATION_SIM')}
                     className="group relative w-80 py-5 font-display text-xl tracking-widest overflow-hidden"
@@ -526,7 +527,7 @@ export const TitleScreen: React.FC = () => {
                     }}
                     whileTap={{ scale: 0.98 }}
                 >
-                    {/* Animated border */}
+                    {/* 动画边框 */}
                     <motion.div
                         className="absolute inset-0 opacity-0 group-hover:opacity-100"
                         style={{
@@ -536,7 +537,7 @@ export const TitleScreen: React.FC = () => {
                         transition={{ duration: 1.5, repeat: Infinity }}
                     />
                     
-                    {/* Corner accents */}
+                    {/* 角落装饰 */}
                     <div className="absolute top-0 left-0 w-4 h-4 border-t-2 border-l-2 border-neon-cyan" />
                     <div className="absolute bottom-0 right-0 w-4 h-4 border-b-2 border-r-2 border-neon-cyan" />
                     
@@ -544,7 +545,7 @@ export const TitleScreen: React.FC = () => {
                         开始链接
                     </span>
                     
-                    {/* Arrow indicator */}
+                    {/* 箭头指示器 */}
                     <motion.span
                         className="absolute right-6 top-1/2 -translate-y-1/2 text-neon-cyan opacity-0 group-hover:opacity-100"
                         animate={{ x: [0, 5, 0] }}
@@ -554,7 +555,7 @@ export const TitleScreen: React.FC = () => {
                     </motion.span>
                 </motion.button>
 
-                {/* Settings button */}
+                {/* 设置按钮 */}
                 <motion.button
                     onClick={() => setScreen('SETTINGS')}
                     className="w-80 py-3 font-mono text-sm tracking-widest text-gray-400 border border-gray-600 hover:border-neon-cyan/50 hover:text-neon-cyan transition-all duration-300"
@@ -568,7 +569,7 @@ export const TitleScreen: React.FC = () => {
                 </motion.button>
             </motion.div>
 
-            {/* Bottom status bar */}
+            {/* 底部状态栏 */}
             <motion.div
                 className="absolute bottom-8 left-0 right-0 flex justify-center"
                 initial={{ opacity: 0 }}
@@ -591,7 +592,7 @@ export const TitleScreen: React.FC = () => {
                 </div>
             </motion.div>
 
-            {/* Full-screen corner decorations */}
+            {/* 全屏角落装饰 */}
             <div className="absolute top-8 left-8 w-32 h-32">
                 <div className="w-full h-full border-t-2 border-l-2 border-neon-cyan/20" />
                 <motion.div
@@ -617,7 +618,7 @@ export const TitleScreen: React.FC = () => {
                 />
             </div>
 
-            {/* Vignette effect */}
+            {/* 晕影效果 */}
             <div 
                 className="absolute inset-0 pointer-events-none"
                 style={{

@@ -1,5 +1,5 @@
 // ============================
-// Project Scholar: The Study Ascension - Type Definitions
+// 学者计划：飞升学习 - 类型定义
 // ============================
 
 // 1. Core Entities - 核心实体
@@ -10,7 +10,7 @@ export type ConstructModel = "ARBITER" | "WEAVER" | "ARCHITECT";
 // Entropy Form - 认知熵形态 (敌人类型)
 export type EntropyForm = "WHITE_NOISE" | "IMAGINARY_COLLAPSE" | "SINGULARITY";
 
-// Question Types - 题目类型 (Unchanged)
+// Question Types - 题目类型
 export type QuestionType =
   | "Single"
   | "Multi"
@@ -26,15 +26,15 @@ export type BattleState =
   | "PROCESSING"
   | "VICTORY"
   | "DEFEAT"
-  | "CAUSALITY_RECORD"; // Settlement
+  | "CAUSALITY_RECORD"; // 结算
 
 // Game Screen - 游戏场景
 export type GameScreen =
   | "TITLE"
-  | "GRAND_UNIFICATION_SIM" // Level Select (was KnowledgeGrid)
-  | "MIND_HACK" // Gacha System
+  | "GRAND_UNIFICATION_SIM" // 关卡选择 (原 KnowledgeGrid)
+  | "MIND_HACK" // 抽卡系统
   | "BATTLE"
-  | "CAUSALITY_RECORD" // Battle Result (was Reward/GameOver)
+  | "CAUSALITY_RECORD" // 战斗结果 (原 Reward/GameOver)
   | "SETTINGS";
 
 // Node Status - 星球/节点状态
@@ -42,15 +42,15 @@ export type NodeStatus = "LOCKED" | "HIGH_ENTROPY" | "STABLE";
 
 // 2. Combat System - 战斗系统
 
-// Status Effect Type
+// 状态效果类型
 export type StatusEffectType =
   | "damage_boost"
   | "damage_reduce"
   | "heal_over_time"
   | "shield"
   | "stunned"
-  | "logic_lock" // 逻辑死锁 (Stun equivalent)
-  | "flow_state" // 心流
+  | "logic_lock" // 逻辑死锁 (相当于眩晕)
+  | "flow_state" // 心流状态
   | "entropy_erosion"; // 熵侵蚀
 
 export interface StatusEffect {
@@ -71,18 +71,18 @@ export interface Skill {
   currentCooldown: number;
   type: "active" | "passive" | "ultimate";
   targetType: "self" | "single_enemy" | "all_enemies";
-  cost?: number; // Energy/MP cost
-  visualEffect?: "data_deletion" | "binary_stream" | "hex_shield"; // For VFX
+  cost?: number; // 能量/MP 消耗
+  visualEffect?: "data_deletion" | "binary_stream" | "hex_shield"; // 用于视觉特效
 }
 
 export interface Construct {
   id: string;
   model: ConstructModel;
   name: string;
-  title: string; // e.g., "The Arbiter"
+  title: string; // 例如："The Arbiter"
   hp: number;
   maxHp: number;
-  energy: number; // For skills
+  energy: number; // 用于技能
   maxEnergy: number;
   skills: Skill[];
   statusEffects: StatusEffect[];
@@ -96,10 +96,10 @@ export interface EntropyEntity {
   hp: number;
   maxHp: number;
   damage: number;
-  questionBank: Question[]; // The "knowledge" they stole
+  questionBank: Question[]; // 它们窃取的“知识”
   statusEffects: StatusEffect[];
   isDead: boolean;
-  visualGlitchIntensity: number; // 0-1, for rendering glitch effects
+  visualGlitchIntensity: number; // 0-1，用于渲染故障特效
 }
 
 export interface Question {
@@ -124,17 +124,17 @@ export interface Inscription {
   rarity: "R" | "SR" | "SSR";
   description: string;
   effect: (target: Construct | EntropyEntity) => void;
-  icon: string; // Hexagon icon path
+  icon: string; // 六边形图标路径
 }
 
 // Level/Chapter - 章节/星球
 export interface StarSector {
   id: string;
-  name: string; // e.g., "Boot Sector"
+  name: string; // 例如："Boot Sector"
   description: string;
   status: NodeStatus;
   difficulty: 1 | 2 | 3 | 4 | 5;
-  position: { x: number; y: number }; // For star map UI
+  position: { x: number; y: number }; // 用于星图 UI
   totalQuestions: number;
   entropyEntities: EntropyEntity[];
   rewards: {
@@ -152,24 +152,24 @@ export interface ObserverProfile {
   unlockedConstructs: ConstructModel[];
   inventory: Inscription[];
   clearedSectors: string[];
-  entropyStabilized: number; // Total entropy reduced (score)
+  entropyStabilized: number; // 总共降低的熵值 (分数)
 }
 
-// 4. Visuals & Logs
+// 4. 视觉效果与日志
 
 export interface BattleLogEntry {
   id: string;
   message: string;
   type: "system" | "combat" | "dialogue";
-  speaker?: string; // e.g., "Arbiter"
+  speaker?: string; // 例如："Arbiter"
   timestamp: number;
 }
 
 export interface DamageIndicator {
   id: string;
-  value: string | number; // Can be "MISS" or "CRIT"
+  value: string | number; // 可以是 "MISS" 或 "CRIT"
   x: number;
   y: number;
-  type: "damage" | "heal" | "critical" | "deletion"; // deletion = special kill effect
+  type: "damage" | "heal" | "critical" | "deletion"; // deletion = 特殊击杀特效
   timestamp: number;
 }

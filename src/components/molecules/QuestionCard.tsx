@@ -1,3 +1,4 @@
+// 组件：问题卡片 (QuestionCard) - 显示问题和选项，处理用户回答
 import { motion } from 'framer-motion';
 import React from 'react';
 import type { Question } from '../../types/game';
@@ -10,7 +11,7 @@ interface QuestionCardProps {
     isCorrect?: boolean | null;
 }
 
-// Data corruption effect for wrong answers
+// 错误答案的数据腐蚀特效
 const CorruptionOverlay: React.FC = () => (
     <motion.div
         className="absolute inset-0 pointer-events-none"
@@ -27,7 +28,7 @@ const CorruptionOverlay: React.FC = () => (
     />
 );
 
-// Success particles
+// 成功粒子
 const SuccessParticles: React.FC = () => (
     <div className="absolute inset-0 pointer-events-none overflow-hidden">
         {[...Array(10)].map((_, i) => (
@@ -78,11 +79,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     : '0 0 40px rgba(0, 243, 255, 0.2)',
             }}
         >
-            {/* Effects based on answer state */}
+            {/* 基于回答状态的特效 */}
             {hasAnswered && isCorrect && <SuccessParticles />}
             {hasAnswered && !isCorrect && <CorruptionOverlay />}
 
-            {/* Animated top border */}
+            {/* 动画顶部边框 */}
             <motion.div
                 className="absolute top-0 left-0 h-1"
                 style={{
@@ -97,10 +98,10 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 transition={{ duration: 0.5 }}
             />
 
-            {/* Header */}
+            {/* 头部 */}
             <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-700/50">
                 <div className="flex items-center gap-4">
-                    {/* Type badge */}
+                    {/* 类型徽章 */}
                     <motion.div
                         className="px-3 py-1 bg-neon-cyan/10 border border-neon-cyan/30 rounded"
                         initial={{ opacity: 0, x: -20 }}
@@ -112,7 +113,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                         </span>
                     </motion.div>
                     
-                    {/* Difficulty indicator */}
+                    {/* 难度指示器 */}
                     <motion.div
                         className="flex gap-1"
                         initial={{ opacity: 0 }}
@@ -132,7 +133,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     </motion.div>
                 </div>
 
-                {/* Timer or status indicator */}
+                {/* 计时器或状态指示器 */}
                 <motion.div
                     className="flex items-center gap-2"
                     initial={{ opacity: 0, x: 20 }}
@@ -153,14 +154,14 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 </motion.div>
             </div>
 
-            {/* Question Text */}
+            {/* 问题文本 */}
             <motion.div
                 className="mb-10 relative"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
             >
-                {/* Question number decoration */}
+                {/* 题号装饰 */}
                 <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-neon-cyan via-neon-cyan/50 to-transparent" />
                 
                 <p className="text-2xl font-display text-white leading-relaxed pl-4">
@@ -168,13 +169,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 </p>
             </motion.div>
 
-            {/* Options */}
+            {/* 选项 */}
             <div className="grid grid-cols-1 gap-4">
                 {question.options.map((option, index) => {
                     const isSelected = selectedIndex === index;
                     const optionLetter = String.fromCharCode(65 + index); // A, B, C, D...
 
-                    // Determine option state
+                    // 确定选项状态
                     let stateClass = '';
                     let borderColor = 'border-gray-600/50';
                     let bgGradient = 'from-black/40 to-black/20';
@@ -211,7 +212,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             whileHover={!disabled ? { x: 10, scale: 1.01 } : {}}
                             whileTap={!disabled ? { scale: 0.99 } : {}}
                         >
-                            {/* Option letter */}
+                            {/* 选项字母 */}
                             <span className={`
                                 inline-flex items-center justify-center
                                 w-10 h-10 mr-4
@@ -228,7 +229,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                                 {optionLetter}
                             </span>
                             
-                            {/* Option text */}
+                            {/* 选项文本 */}
                             <span className={`
                                 font-mono text-lg
                                 ${isSelected 
@@ -240,7 +241,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                                 {option}
                             </span>
 
-                            {/* Hover scan effect */}
+                            {/* 悬停扫描特效 */}
                             <motion.div
                                 className="absolute inset-0 pointer-events-none"
                                 style={{
@@ -251,7 +252,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                                 transition={{ duration: 0.6 }}
                             />
 
-                            {/* Selection indicator */}
+                            {/* 选择指示器 */}
                             {isSelected && (
                                 <motion.div
                                     className={`absolute right-4 top-1/2 -translate-y-1/2 text-2xl ${
@@ -269,7 +270,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 })}
             </div>
 
-            {/* Corner decorations */}
+            {/* 角落装饰 */}
             <motion.div
                 className="absolute top-0 right-0 p-3"
                 initial={{ opacity: 0 }}
@@ -287,7 +288,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 <div className="w-12 h-12 border-b-2 border-l-2 border-neon-cyan" />
             </motion.div>
 
-            {/* Data stream on the side */}
+            {/* 侧边数据流 */}
             <div className="absolute left-0 top-0 bottom-0 w-1 overflow-hidden opacity-30">
                 <motion.div
                     className="w-full bg-gradient-to-b from-transparent via-neon-cyan to-transparent"

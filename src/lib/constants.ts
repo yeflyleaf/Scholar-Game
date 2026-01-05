@@ -1,5 +1,5 @@
 // ============================
-// Project Scholar: The Study Ascension - Constants & Config
+// 学者计划：飞升学习 - 常量与配置
 // ============================
 
 import type {
@@ -10,26 +10,26 @@ import type {
     StarSector,
 } from "../types/game";
 
-// 1. Visual Aesthetics - 视觉美学
+// 1. 视觉美学
 export const COLORS = {
-    // Core Palette
+    // 核心色板
     coldWhite: "#F0F8FF",
     deepSpaceBlue: "#0B0E14",
     glitchRed: "#FF003C",
     holographicGold: "#D4AF37",
     neonCyan: "#00F3FF",
     
-    // UI Elements
+    // UI 元素
     hexBorder: "rgba(0, 243, 255, 0.3)",
     hexFill: "rgba(11, 14, 20, 0.85)",
     
-    // Status
+    // 状态
     stable: "#39FF14",
     highEntropy: "#FF003C",
     locked: "#4A4A4A",
 } as const;
 
-// 2. Construct Definitions - 逻辑构造体
+// 2. 逻辑构造体定义
 export const INITIAL_CONSTRUCTS: Construct[] = [
     {
         id: "construct-01",
@@ -115,7 +115,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
                 cooldown: 3,
                 currentCooldown: 0,
                 type: "active",
-                targetType: "self", // Affects team via logic
+                targetType: "self", // 通过逻辑影响团队
                 cost: 35,
                 visualEffect: "hex_shield"
             }
@@ -123,7 +123,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     }
 ];
 
-// 3. Sample Questions - 样本题目
+// 3. 样本题目
 export const SAMPLE_QUESTIONS: Question[] = [
     {
         id: "q1",
@@ -160,7 +160,7 @@ export const SAMPLE_QUESTIONS: Question[] = [
     }
 ];
 
-// 4. Entropy Entities - 认知熵实体 (Enemies)
+// 4. 认知熵实体 (敌人)
 export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     {
         id: "entropy-1",
@@ -200,7 +200,7 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     }
 ];
 
-// 5. Star Sectors - 星图关卡
+// 5. 星图关卡
 export const STAR_SECTORS: StarSector[] = [
     {
         id: "sector-1",
@@ -270,14 +270,14 @@ export const STAR_SECTORS: StarSector[] = [
     }
 ];
 
-// 6. Inscriptions - 铭文 (Gacha Items)
+// 6. 铭文 (抽卡物品)
 export const INSCRIPTIONS: Inscription[] = [
     {
         id: "inscription-banker",
         name: "银行家算法",
         rarity: "SSR",
         description: "前文明用来规避资源死锁的神圣逻辑。装备后，对'死锁级'崩坏兽伤害提升 50%。",
-        effect: () => {}, // Implemented in logic
+        effect: () => {}, // 在逻辑中实现
         icon: "banker_algo_icon"
     },
     {
@@ -290,10 +290,10 @@ export const INSCRIPTIONS: Inscription[] = [
     }
 ];
 
-// 7. Game Config
+// 7. 游戏配置
 export const GAME_CONFIG = {
-    entropyThreshold: 100, // Max entropy before game over
+    entropyThreshold: 100, // 游戏结束前的最大熵值
     baseDamage: 30,
-    comboThreshold: 3, // For "Flow State" or special moves
-    gachaCost: 100, // Cost to pull Mind Hack
+    comboThreshold: 3, // 用于“心流状态”或特殊招式
+    gachaCost: 100, // 思维骇入抽卡消耗
 } as const;

@@ -1,10 +1,11 @@
+// 页面：系统配置 (SettingsScreen) - 设置 API Key 和生成题目
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { useGemini } from '../../hooks/useGemini';
 import { useGameStore } from '../../stores/useGameStore';
 import { isElectron } from '../../types/electron';
 
-// Animated status indicator
+// 动画状态指示器
 const StatusIndicator: React.FC<{ isActive: boolean; label: string }> = ({ isActive, label }) => (
     <div className="flex items-center gap-2">
         <motion.div
@@ -18,7 +19,7 @@ const StatusIndicator: React.FC<{ isActive: boolean; label: string }> = ({ isAct
     </div>
 );
 
-// Section panel component
+// 区域面板组件
 const SectionPanel: React.FC<{
     title: string;
     subtitle?: string;
@@ -31,7 +32,7 @@ const SectionPanel: React.FC<{
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
     >
-        {/* Header */}
+        {/* 头部 */}
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-700/50">
             <div className="flex items-center gap-3">
                 {icon && (
@@ -103,12 +104,12 @@ export const SettingsScreen: React.FC = () => {
 
     return (
         <div className="w-full h-full bg-deep-space relative overflow-y-auto">
-            {/* Background effects */}
+            {/* 背景特效 */}
             <div className="hex-grid-bg opacity-20" />
             <div className="data-stream opacity-10" />
 
             <div className="max-w-5xl mx-auto p-8 space-y-8 relative z-10">
-                {/* Header */}
+                {/* 头部 */}
                 <motion.div
                     className="flex items-center justify-between"
                     initial={{ opacity: 0, y: -20 }}
@@ -130,7 +131,7 @@ export const SettingsScreen: React.FC = () => {
                     </motion.button>
                 </motion.div>
 
-                {/* Status overview */}
+                {/* 状态概览 */}
                 <motion.div
                     className="fui-panel p-4 flex items-center justify-between"
                     initial={{ opacity: 0 }}
@@ -146,7 +147,7 @@ export const SettingsScreen: React.FC = () => {
                     </span>
                 </motion.div>
 
-                {/* API Key Section */}
+                {/* API Key 区域 */}
                 <SectionPanel
                     title="GEMINI 链接"
                     subtitle="NEURAL LINK CONFIGURATION"
@@ -202,14 +203,14 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                 </SectionPanel>
 
-                {/* Generation Section */}
+                {/* 生成区域 */}
                 <SectionPanel
                     title="数据合成"
                     subtitle="KNOWLEDGE SYNTHESIS ENGINE"
                     icon={<span className="text-holographic-gold">⬡</span>}
                 >
                     <div className="space-y-6">
-                        {/* Chapter Title */}
+                        {/* 章节标题 */}
                         <div className="space-y-2">
                             <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-neon-cyan" />
@@ -224,7 +225,7 @@ export const SettingsScreen: React.FC = () => {
                             />
                         </div>
 
-                        {/* Difficulty */}
+                        {/* 难度 */}
                         <div className="space-y-2">
                             <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-holographic-gold" />
@@ -261,7 +262,7 @@ export const SettingsScreen: React.FC = () => {
                             </p>
                         </div>
 
-                        {/* Source Content */}
+                        {/* 源内容 */}
                         <div className="space-y-2">
                             <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-neon-cyan" />
@@ -280,7 +281,7 @@ export const SettingsScreen: React.FC = () => {
                             </div>
                         </div>
 
-                        {/* Generate Button */}
+                        {/* 生成按钮 */}
                         <motion.button
                             onClick={handleGenerateChapter}
                             disabled={generationStatus === 'loading' || !isConfigured || !textContent.trim() || !chapterTitle.trim()}
@@ -302,7 +303,7 @@ export const SettingsScreen: React.FC = () => {
                                 </span>
                             )}
 
-                            {/* Animated background for loading */}
+                            {/* 加载时的动画背景 */}
                             {generationStatus === 'loading' && (
                                 <motion.div
                                     className="absolute inset-0 bg-gradient-to-r from-neon-cyan/10 via-neon-cyan/30 to-neon-cyan/10"
@@ -312,7 +313,7 @@ export const SettingsScreen: React.FC = () => {
                             )}
                         </motion.button>
 
-                        {/* Status messages */}
+                        {/* 状态消息 */}
                         <AnimatePresence mode="wait">
                             {generationStatus === 'success' && (
                                 <motion.div
@@ -348,7 +349,7 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                 </SectionPanel>
 
-                {/* Info section */}
+                {/* 信息区域 */}
                 <motion.div
                     className="text-center py-8 space-y-2"
                     initial={{ opacity: 0 }}
@@ -364,7 +365,7 @@ export const SettingsScreen: React.FC = () => {
                 </motion.div>
             </div>
 
-            {/* Corner decorations */}
+            {/* 角落装饰 */}
             <div className="fixed top-6 left-6 w-16 h-16 border-t-2 border-l-2 border-neon-cyan/20 pointer-events-none" />
             <div className="fixed top-6 right-6 w-16 h-16 border-t-2 border-r-2 border-neon-cyan/20 pointer-events-none" />
             <div className="fixed bottom-6 left-6 w-16 h-16 border-b-2 border-l-2 border-neon-cyan/20 pointer-events-none" />

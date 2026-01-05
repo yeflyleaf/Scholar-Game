@@ -1,3 +1,4 @@
+// Hook：战斗序列 (useBattleSequence) - 处理战斗回合、答题逻辑和状态消息
 import { useCallback, useState } from 'react';
 import { useGameStore } from '../stores/useGameStore';
 
@@ -37,7 +38,7 @@ export function useBattleSequence(): BattleSequenceReturn {
       
       setStatusMessage(correct ? '逻辑验证通过' : '逻辑错误');
 
-      // Wait for visual feedback
+      // 等待视觉反馈
       setTimeout(() => {
           answerQuestion(selectedIndex);
           setIsProcessing(false);

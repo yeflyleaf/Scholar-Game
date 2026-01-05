@@ -1,3 +1,4 @@
+// 应用程序入口 (App) - 处理屏幕路由切换
 import { AnimatePresence, motion } from 'framer-motion';
 import {
     BattleField,

@@ -1,11 +1,11 @@
 /**
- * Electron API type definitions
- * These types match the APIs exposed in preload.js
+ * Electron API 类型定义
+ * 这些类型与 preload.js 中暴露的 API 相匹配
  */
 
 import type { EntropyEntity, Question } from './game';
 
-// Generated Chapter Data
+// 生成的章节数据
 export interface GeneratedChapter {
   chapter: {
     id: string;
@@ -22,7 +22,7 @@ export interface GeneratedChapter {
   };
 }
 
-// Generated Knowledge Tree
+// 生成的知识树
 export interface GeneratedKnowledgeTree {
   nodes: Array<{
     id: string;
@@ -42,7 +42,7 @@ export interface GeneratedKnowledgeTree {
   };
 }
 
-// Question Generation Options
+// 题目生成选项
 export interface QuestionGenerationOptions {
   count?: number;
   difficulty?: 1 | 2 | 3 | 4 | 5 | 'mixed';
@@ -50,14 +50,14 @@ export interface QuestionGenerationOptions {
   language?: string;
 }
 
-// API Response types
+// API 响应类型
 export interface APIResponse<T> {
   success: boolean;
   data?: T;
   error?: string;
 }
 
-// Gemini API interface
+// Gemini API 接口
 export interface GeminiAPI {
   setApiKey: (apiKey: string) => Promise<APIResponse<void>>;
   checkStatus: () => Promise<{ configured: boolean }>;
@@ -75,33 +75,33 @@ export interface GeminiAPI {
   ) => Promise<APIResponse<GeneratedChapter>>;
 }
 
-// File System API interface
+// 文件系统 API 接口
 export interface FileSystemAPI {
   readFile: (filePath: string) => Promise<APIResponse<string>>;
   selectFile: (options?: { filters?: Array<{ name: string; extensions: string[] }> }) => Promise<APIResponse<string>>;
 }
 
-// App API interface
+// 应用 API 接口
 export interface AppAPI {
   getVersion: () => Promise<string>;
   getPlatform: () => string;
 }
 
-// Complete Electron API interface
+// 完整的 Electron API 接口
 export interface ElectronAPI {
   gemini: GeminiAPI;
   fs: FileSystemAPI;
   app: AppAPI;
 }
 
-// Extend Window interface
+// 扩展 Window 接口
 declare global {
   interface Window {
     electronAPI?: ElectronAPI;
   }
 }
 
-// Check if running in Electron
+// 检查是否在 Electron 中运行
 export function isElectron(): boolean {
   return typeof window !== 'undefined' && !!window.electronAPI;
 }

@@ -1,8 +1,9 @@
+// 页面：因果录入 (CausalityRecord) - 战斗结算界面，显示胜利或失败结果
 import { motion } from 'framer-motion';
-import React from 'react';
+import React, { useState } from 'react';
 import { useGameStore } from '../../stores/useGameStore';
 
-// Particle explosion effect for victory
+// 胜利时的粒子爆炸特效
 const VictoryParticles: React.FC = () => {
     const particles = Array.from({ length: 30 }, (_, i) => ({
         id: i,
@@ -37,7 +38,7 @@ const VictoryParticles: React.FC = () => {
     );
 };
 
-// Glitch distortion lines for defeat
+// 失败时的故障扭曲线条特效
 const DefeatGlitchLines: React.FC = () => {
     return (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -64,15 +65,15 @@ const DefeatGlitchLines: React.FC = () => {
     );
 };
 
-// Digital reconstruction effect
+// 数字化重构特效
 const ReconstructionEffect: React.FC = () => {
-    const blocks = Array.from({ length: 20 }, (_, i) => ({
+    const [blocks] = useState(() => Array.from({ length: 20 }, (_, i) => ({
         id: i,
         left: `${Math.random() * 100}%`,
         top: `${Math.random() * 100}%`,
         size: 4 + Math.random() * 8,
         delay: i * 0.15,
-    }));
+    })));
 
     return (
         <div className="absolute inset-0 pointer-events-none overflow-hidden">
@@ -113,7 +114,7 @@ export const CausalityRecord: React.FC = () => {
 
     return (
         <div className="w-full h-full flex flex-col items-center justify-center bg-deep-space relative overflow-hidden">
-            {/* Background dim overlay */}
+            {/* 背景暗化遮罩 */}
             <motion.div
                 className="absolute inset-0 bg-black"
                 initial={{ opacity: 0 }}
@@ -121,12 +122,12 @@ export const CausalityRecord: React.FC = () => {
                 transition={{ duration: 1 }}
             />
 
-            {/* Background effects based on result */}
+            {/* 基于结果的背景特效 */}
             {isVictory ? (
                 <>
                     <VictoryParticles />
                     <ReconstructionEffect />
-                    {/* Victory glow */}
+                    {/* 胜利光晕 */}
                     <motion.div
                         className="absolute w-[600px] h-[600px] rounded-full"
                         style={{
@@ -146,7 +147,7 @@ export const CausalityRecord: React.FC = () => {
             ) : (
                 <>
                     <DefeatGlitchLines />
-                    {/* Error overlay */}
+                    {/* 错误遮罩 */}
                     <motion.div
                         className="absolute inset-0"
                         style={{
@@ -164,7 +165,7 @@ export const CausalityRecord: React.FC = () => {
                 </>
             )}
 
-            {/* Main content panel */}
+            {/* 主内容面板 */}
             <motion.div
                 initial={{ opacity: 0, y: 30, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -178,7 +179,7 @@ export const CausalityRecord: React.FC = () => {
                         : '0 0 60px rgba(255, 0, 60, 0.3), inset 0 0 30px rgba(255, 0, 60, 0.1)',
                 }}
             >
-                {/* Top decoration line */}
+                {/* 顶部装饰线 */}
                 <motion.div
                     className={`absolute top-0 left-0 right-0 h-1 ${isVictory ? 'bg-neon-cyan' : 'bg-glitch-red'}`}
                     initial={{ scaleX: 0 }}
@@ -186,7 +187,7 @@ export const CausalityRecord: React.FC = () => {
                     transition={{ duration: 0.8, delay: 0.5 }}
                 />
 
-                {/* Status icon */}
+                {/* 状态图标 */}
                 <motion.div
                     className={`text-8xl ${isVictory ? 'text-neon-cyan' : 'text-glitch-red'}`}
                     initial={{ scale: 0, rotate: -180 }}
@@ -201,7 +202,7 @@ export const CausalityRecord: React.FC = () => {
                     {isVictory ? '◆' : '✕'}
                 </motion.div>
 
-                {/* Main title */}
+                {/* 主标题 */}
                 <motion.h1
                     className={`text-5xl md:text-6xl font-display font-bold ${
                         isVictory ? 'text-neon-cyan victory-glow' : 'text-glitch-red defeat-glow glitch-text-heavy'
@@ -214,7 +215,7 @@ export const CausalityRecord: React.FC = () => {
                     {isVictory ? '逻辑重构完成' : '致命错误'}
                 </motion.h1>
 
-                {/* English subtitle */}
+                {/* 英文副标题 */}
                 <motion.p
                     className={`text-sm font-mono tracking-widest ${isVictory ? 'text-neon-cyan/70' : 'text-glitch-red/70'}`}
                     initial={{ opacity: 0 }}
@@ -224,7 +225,7 @@ export const CausalityRecord: React.FC = () => {
                     {isVictory ? 'LOGIC RECONSTRUCTED' : 'FATAL ERROR'}
                 </motion.p>
 
-                {/* Divider */}
+                {/* 分隔线 */}
                 <motion.div
                     className={`w-48 h-px ${isVictory ? 'bg-neon-cyan/50' : 'bg-glitch-red/50'}`}
                     initial={{ scaleX: 0 }}
@@ -232,7 +233,7 @@ export const CausalityRecord: React.FC = () => {
                     transition={{ delay: 0.8 }}
                 />
 
-                {/* Details */}
+                {/* 详情 */}
                 <motion.div
                     className="text-center space-y-4"
                     initial={{ opacity: 0, y: 10 }}
@@ -276,7 +277,7 @@ export const CausalityRecord: React.FC = () => {
                     )}
                 </motion.div>
 
-                {/* Action button */}
+                {/* 操作按钮 */}
                 <motion.button
                     onClick={handleContinue}
                     className={`hex-button text-lg px-12 py-4 mt-4 ${
@@ -292,7 +293,7 @@ export const CausalityRecord: React.FC = () => {
                 </motion.button>
             </motion.div>
 
-            {/* Bottom status bar */}
+            {/* 底部状态栏 */}
             <motion.div
                 className="absolute bottom-6 left-0 right-0 flex justify-center"
                 initial={{ opacity: 0 }}
@@ -306,7 +307,7 @@ export const CausalityRecord: React.FC = () => {
                 </div>
             </motion.div>
 
-            {/* Corner decorations */}
+            {/* 角落装饰 */}
             <div className={`absolute top-6 left-6 w-20 h-20 border-t-2 border-l-2 ${isVictory ? 'border-neon-cyan/30' : 'border-glitch-red/30'}`} />
             <div className={`absolute top-6 right-6 w-20 h-20 border-t-2 border-r-2 ${isVictory ? 'border-neon-cyan/30' : 'border-glitch-red/30'}`} />
             <div className={`absolute bottom-6 left-6 w-20 h-20 border-b-2 border-l-2 ${isVictory ? 'border-neon-cyan/30' : 'border-glitch-red/30'}`} />

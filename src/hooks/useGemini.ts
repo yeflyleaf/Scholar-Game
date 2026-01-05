@@ -10,12 +10,12 @@ import type {
 } from '../types/game';
 
 interface UseGeminiReturn {
-  // Status
+  // 状态
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
   
-  // Actions
+  // 动作
   setApiKey: (key: string) => Promise<boolean>;
   checkStatus: () => Promise<boolean>;
   generateQuestions: (content: string, options?: QuestionGenerationOptions) => Promise<Question[] | null>;
@@ -23,7 +23,7 @@ interface UseGeminiReturn {
   generateEnemies: (topic: string, difficulty?: number) => Promise<EntropyEntity[] | null>;
   generateChapter: (title: string, content: string, difficulty?: number) => Promise<GeneratedChapter | null>;
   
-  // Utility
+  // 工具
   clearError: () => void;
 }
 
@@ -32,7 +32,7 @@ export function useGemini(): UseGeminiReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Check if running in Electron
+  // 检查是否在 Electron 中运行
   const electronAPI = typeof window !== 'undefined' ? window.electronAPI : undefined;
 
   const clearError = useCallback(() => {

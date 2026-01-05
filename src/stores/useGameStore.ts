@@ -1,3 +1,4 @@
+// Store：游戏状态 (useGameStore) - 管理全局游戏状态、导航和数据
 import { create } from 'zustand';
 import {
     GAME_CONFIG,
@@ -21,63 +22,63 @@ import type {
 } from '../types/game';
 
 interface GameState {
-    // === Navigation ===
+    // === 导航 ===
     currentScreen: GameScreen;
     setScreen: (screen: GameScreen) => void;
 
-    // === Player Profile ===
+    // === 玩家档案 ===
     observerProfile: ObserverProfile;
     
-    // === Grand Unification Sim (Level Select) ===
+    // === 大统一理论演练 (关卡选择) ===
     sectors: StarSector[];
     currentSector: StarSector | null;
     selectSector: (sectorId: string) => void;
     unlockSector: (sectorId: string) => void;
 
-    // === Mind Hack (Gacha) ===
+    // === 思维骇入 (抽卡) ===
     performMindHack: () => Inscription;
 
-    // === Battle System ===
+    // === 战斗系统 ===
     battleState: BattleState;
     currentTurn: number;
     
-    // Entities
-    constructs: Construct[]; // Player party
-    entropyEntities: EntropyEntity[]; // Enemies
+    // 实体
+    constructs: Construct[]; // 玩家队伍
+    entropyEntities: EntropyEntity[]; // 敌人
     
-    // Selection
+    // 选择
     activeConstructId: string | null;
     selectedTargetId: string | null;
     
-    // Questions
+    // 问题
     currentQuestion: Question | null;
     questionQueue: Question[];
     
-    // Visuals
+    // 视觉效果
     battleLog: BattleLogEntry[];
     damageIndicators: DamageIndicator[];
     isScreenShaking: boolean;
     glitchIntensity: number; // 0-1
 
-    // === Actions ===
-    // Setup
+    // === 动作 ===
+    // 设置
     startBattle: (sectorId: string) => void;
     resetBattle: () => void;
     
-    // Combat
+    // 战斗
     setActiveConstruct: (id: string | null) => void;
     setSelectedTarget: (id: string | null) => void;
     useSkill: (constructId: string, skillId: string, targetId?: string) => void;
     answerQuestion: (optionIndex: number | number[]) => void;
     nextTurn: () => void;
     
-    // Visual Helpers
+    // 视觉辅助
     addBattleLog: (message: string, type: BattleLogEntry['type']) => void;
     addDamageIndicator: (indicator: Omit<DamageIndicator, 'id' | 'timestamp'>) => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
-    // === Initial State ===
+    // === 初始状态 ===
     currentScreen: 'TITLE',
     
     observerProfile: {
@@ -110,10 +111,10 @@ export const useGameStore = create<GameState>((set, get) => ({
     isScreenShaking: false,
     glitchIntensity: 0,
 
-    // === Navigation ===
+    // === 导航 ===
     setScreen: (screen) => set({ currentScreen: screen }),
 
-    // === Grand Unification Sim ===
+    // === 大统一理论演练 ===
     selectSector: (sectorId) => {
         const sector = get().sectors.find(s => s.id === sectorId);
         if (sector) {
@@ -129,9 +130,9 @@ export const useGameStore = create<GameState>((set, get) => ({
         }));
     },
 
-    // === Mind Hack ===
+    // === 思维骇入 ===
     performMindHack: () => {
-        // Simple random gacha logic
+        // 简单的随机抽卡逻辑
         const randomIndex = Math.floor(Math.random() * INSCRIPTIONS.length);
         const item = INSCRIPTIONS[randomIndex];
         
@@ -145,7 +146,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         return item;
     },
 
-    // === Battle Setup ===
+    // === 战斗设置 ===
     startBattle: (sectorId) => {
         const sector = get().sectors.find(s => s.id === sectorId);
         if (!sector) return;
@@ -153,12 +154,12 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({
             currentScreen: 'BATTLE',
             currentSector: sector,
-            entropyEntities: JSON.parse(JSON.stringify(sector.entropyEntities)), // Deep copy
-            constructs: JSON.parse(JSON.stringify(INITIAL_CONSTRUCTS)), // Reset party
+            entropyEntities: JSON.parse(JSON.stringify(sector.entropyEntities)), // 深拷贝
+            constructs: JSON.parse(JSON.stringify(INITIAL_CONSTRUCTS)), // 重置队伍
             battleState: 'PLAYER_TURN',
             currentTurn: 1,
             battleLog: [],
-            questionQueue: [...SAMPLE_QUESTIONS], // In real app, fetch from sector
+            questionQueue: [...SAMPLE_QUESTIONS], // 在实际应用中，从扇区获取
             currentQuestion: SAMPLE_QUESTIONS[0],
             glitchIntensity: 0
         });
@@ -175,7 +176,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         });
     },
 
-    // === Combat Actions ===
+    // === 战斗动作 ===
     setActiveConstruct: (id) => set({ activeConstructId: id }),
     setSelectedTarget: (id) => set({ selectedTargetId: id }),
 
@@ -194,22 +195,22 @@ export const useGameStore = create<GameState>((set, get) => ({
             return;
         }
 
-        // Deduct Cost
+        // 扣除消耗
         const updatedConstructs = constructs.map(c => 
             c.id === constructId 
                 ? { ...c, energy: c.energy - (skill.cost || 0) } 
                 : c
         );
 
-        // Apply Effects
+        // 应用效果
         let updatedEnemies = [...entropyEntities];
         
         if (skill.targetType === 'single_enemy' && targetId) {
             updatedEnemies = updatedEnemies.map(e => {
                 if (e.id === targetId) {
-                    const damage = 50; // Base skill damage
+                    const damage = 50; // 基础技能伤害
                     const newHp = Math.max(0, e.hp - damage);
-                    addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); // Mock coords
+                    addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); // 模拟坐标
                     return { ...e, hp: newHp, isDead: newHp <= 0 };
                 }
                 return e;
@@ -217,7 +218,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             addBattleLog(`${construct.name} used ${skill.name} on target!`, 'combat');
         } else if (skill.targetType === 'all_enemies') {
              updatedEnemies = updatedEnemies.map(e => {
-                const damage = 30; // AOE damage
+                const damage = 30; // AOE 伤害
                 const newHp = Math.max(0, e.hp - damage);
                 addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
                 return { ...e, hp: newHp, isDead: newHp <= 0 };
@@ -225,7 +226,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             addBattleLog(`${construct.name} used ${skill.name} on ALL enemies!`, 'combat');
         }
 
-        // Set Cooldown
+        // 设置冷却
         const finalConstructs = updatedConstructs.map(c => 
             c.id === constructId 
                 ? { 
@@ -237,7 +238,7 @@ export const useGameStore = create<GameState>((set, get) => ({
 
         set({ constructs: finalConstructs, entropyEntities: updatedEnemies });
         
-        // Check Victory
+        // 检查胜利
         if (updatedEnemies.every(e => e.isDead)) {
             setTimeout(() => set({ battleState: 'VICTORY', currentScreen: 'CAUSALITY_RECORD' }), 1000);
         } else {
@@ -249,11 +250,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         const { currentQuestion, entropyEntities, addBattleLog, addDamageIndicator } = get();
         if (!currentQuestion) return;
 
-        const isCorrect = currentQuestion.correctOptionIndex === optionIndex; // Simplify for single choice
+        const isCorrect = currentQuestion.correctOptionIndex === optionIndex; // 简化为单选
 
         if (isCorrect) {
             addBattleLog('Logic Verified. Entropy Reduced.', 'system');
-            // Deal damage to random enemy or all
+            // 对随机敌人或所有敌人造成伤害
             const damage = GAME_CONFIG.baseDamage;
             const updatedEnemies = entropyEntities.map(e => {
                 if (!e.isDead) {
@@ -274,11 +275,11 @@ export const useGameStore = create<GameState>((set, get) => ({
         } else {
             addBattleLog('Logic Error! Entropy Increasing!', 'system');
             set({ glitchIntensity: Math.min(1, get().glitchIntensity + 0.2) });
-            // Take damage
+            // 受到伤害
             const damage = 20;
             const updatedConstructs = get().constructs.map(c => {
                  const newHp = Math.max(0, c.hp - damage);
-                 addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); // Should be on player
+                 addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); // 应该在玩家身上
                  return { ...c, hp: newHp, isDead: newHp <= 0 };
             });
             set({ constructs: updatedConstructs });
@@ -294,13 +295,13 @@ export const useGameStore = create<GameState>((set, get) => ({
     nextTurn: () => {
         const { currentTurn, questionQueue } = get();
         
-        // Cooldown reduction
+        // 冷却减少
         const updatedConstructs = get().constructs.map(c => ({
             ...c,
             skills: c.skills.map(s => ({ ...s, currentCooldown: Math.max(0, s.currentCooldown - 1) }))
         }));
 
-        // Next Question
+        // 下一个问题
         const nextQ = questionQueue.length > 0 ? questionQueue[0] : SAMPLE_QUESTIONS[0];
         const remainingQ = questionQueue.slice(1);
 
@@ -308,11 +309,11 @@ export const useGameStore = create<GameState>((set, get) => ({
             currentTurn: currentTurn + 1,
             constructs: updatedConstructs,
             currentQuestion: nextQ,
-            questionQueue: remainingQ.length > 0 ? remainingQ : SAMPLE_QUESTIONS // Loop for demo
+            questionQueue: remainingQ.length > 0 ? remainingQ : SAMPLE_QUESTIONS // 演示循环
         });
     },
 
-    // === Visual Helpers ===
+    // === 视觉辅助 ===
     addBattleLog: (message, type) => {
         const entry: BattleLogEntry = {
             id: generateId('log'),
