@@ -105,7 +105,8 @@ const ReconstructionEffect: React.FC = () => {
 
 export const CausalityRecord: React.FC = () => {
     const { setScreen, battleState, currentSector, resetBattle } = useGameStore();
-    const isVictory = battleState === 'VICTORY';
+    // 使用本地状态锁定结果，防止在点击继续（重置战斗状态）时闪烁错误页面
+    const [isVictory] = useState(battleState === 'VICTORY');
 
     const handleContinue = () => {
         resetBattle();
@@ -243,7 +244,7 @@ export const CausalityRecord: React.FC = () => {
                     <p className="text-2xl text-white font-display">
                         {isVictory
                             ? `扇区「${currentSector?.name}」已恢复稳定。`
-                            : '连接丢失。观察者，世界已回归虚无。'}
+                            : '连接丢失。智者，世界已回归虚无。'}
                     </p>
 
                     {isVictory && (
@@ -272,7 +273,7 @@ export const CausalityRecord: React.FC = () => {
                             animate={{ opacity: 1 }}
                             transition={{ delay: 1.1 }}
                         >
-                            ERROR CODE: 0xDEAD_LOGIC // 逻辑单元全损
+                            ERROR CODE: 0xDEAD_LOGIC | 逻辑单元全损
                         </motion.p>
                     )}
                 </motion.div>

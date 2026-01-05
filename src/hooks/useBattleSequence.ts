@@ -29,11 +29,14 @@ export function useBattleSequence(): BattleSequenceReturn {
       setIsProcessing(true);
       setSelectedAnswerIndex(selectedIndex);
 
-      const correctIndex = Array.isArray(currentQuestion.correctOptionIndex)
-        ? currentQuestion.correctOptionIndex[0]
-        : currentQuestion.correctOptionIndex;
-
-      const correct = selectedIndex === correctIndex;
+      const userAnswers = [selectedIndex];
+      const correctAnswers = Array.isArray(currentQuestion.correctOptionIndex)
+        ? currentQuestion.correctOptionIndex
+        : [currentQuestion.correctOptionIndex];
+      
+      const correct = userAnswers.length === correctAnswers.length &&
+        userAnswers.every(a => correctAnswers.includes(a));
+      
       setIsCorrect(correct);
       
       setStatusMessage(correct ? '逻辑验证通过' : '逻辑错误');

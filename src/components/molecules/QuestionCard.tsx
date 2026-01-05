@@ -85,24 +85,28 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             transition={{ duration: 0.5, type: 'spring' }}
             style={{
                 boxShadow: hasAnswered
-                    ? isCorrect
+                    ? isCorrect === true
                         ? '0 0 40px rgba(57, 255, 20, 0.3)'
-                        : '0 0 40px rgba(255, 0, 60, 0.3)'
+                        : isCorrect === false
+                            ? '0 0 40px rgba(255, 0, 60, 0.3)'
+                            : '0 0 40px rgba(0, 243, 255, 0.2)'
                     : '0 0 40px rgba(0, 243, 255, 0.2)',
             }}
         >
             {/* 基于回答状态的特效 */}
-            {hasAnswered && isCorrect && <SuccessParticles />}
-            {hasAnswered && !isCorrect && <CorruptionOverlay />}
+            {hasAnswered && isCorrect === true && <SuccessParticles />}
+            {hasAnswered && isCorrect === false && <CorruptionOverlay />}
 
             {/* 动画顶部边框 */}
             <motion.div
                 className="absolute top-0 left-0 h-1"
                 style={{
                     background: hasAnswered
-                        ? isCorrect
+                        ? isCorrect === true
                             ? 'linear-gradient(90deg, transparent, #39ff14, transparent)'
-                            : 'linear-gradient(90deg, transparent, #ff003c, transparent)'
+                            : isCorrect === false
+                                ? 'linear-gradient(90deg, transparent, #ff003c, transparent)'
+                                : 'linear-gradient(90deg, transparent, #00f3ff, transparent)'
                         : 'linear-gradient(90deg, transparent, #00f3ff, transparent)',
                 }}
                 initial={{ width: '0%', left: '50%' }}
@@ -154,12 +158,12 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 >
                     <div className={`w-3 h-3 rounded-full ${
                         hasAnswered
-                            ? isCorrect ? 'bg-stable' : 'bg-glitch-red'
+                            ? isCorrect === true ? 'bg-stable' : isCorrect === false ? 'bg-glitch-red' : 'bg-neon-cyan'
                             : 'bg-neon-cyan animate-pulse'
                     }`} />
                     <span className="text-sm font-mono text-gray-400">
                         {hasAnswered
-                            ? isCorrect ? '正确' : '错误'
+                            ? isCorrect === true ? '正确' : isCorrect === false ? '错误' : '验证中...'
                             : '等待输入'
                         }
                     </span>
@@ -198,17 +202,21 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     let bgGradient = 'from-black/40 to-black/20';
                     
                     if (isSelected) {
-                        if (isCorrect) {
+                        if (isCorrect === true) {
                             stateClass = 'correct';
                             borderColor = 'border-stable';
                             bgGradient = 'from-stable/20 to-stable/5';
-                        } else {
+                        } else if (isCorrect === false) {
                             stateClass = 'incorrect';
                             borderColor = 'border-glitch-red';
                             bgGradient = 'from-glitch-red/20 to-glitch-red/5';
+                        } else {
+                            // Processing state
+                            borderColor = 'border-neon-cyan';
+                            bgGradient = 'from-neon-cyan/20 to-neon-cyan/5';
                         }
-                    } else if (hasAnswered && isActualCorrect) {
-                        // Highlight the correct answer if the user missed it
+                    } else if (hasAnswered && isActualCorrect && isCorrect === false) {
+                        // Highlight the correct answer ONLY if the user missed it (and validation is done)
                         stateClass = 'correct-missed';
                         borderColor = 'border-stable';
                         bgGradient = 'from-stable/10 to-stable/5';

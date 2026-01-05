@@ -7,7 +7,7 @@ import {
     SAMPLE_QUESTIONS,
     STAR_SECTORS
 } from '../lib/constants';
-import { generateId } from '../lib/utils';
+import { generateId, shuffleArray } from '../lib/utils';
 import type {
     BattleLogEntry,
     BattleState,
@@ -21,6 +21,30 @@ import type {
     Question,
     StarSector
 } from '../types/game';
+
+// 辅助函数：随机打乱题目选项
+const shuffleQuestion = (question: Question): Question => {
+    const indices = question.options.map((_, i) => i);
+    const shuffledIndices = shuffleArray(indices);
+    
+    const newOptions = shuffledIndices.map(i => question.options[i]);
+    
+    let newCorrectIndex: number | number[];
+    
+    if (Array.isArray(question.correctOptionIndex)) {
+        newCorrectIndex = question.correctOptionIndex.map(oldIdx => 
+            shuffledIndices.indexOf(oldIdx)
+        );
+    } else {
+        newCorrectIndex = shuffledIndices.indexOf(question.correctOptionIndex);
+    }
+    
+    return {
+        ...question,
+        options: newOptions,
+        correctOptionIndex: newCorrectIndex
+    };
+};
 
 interface GameState {
     // === 导航 ===
@@ -203,7 +227,7 @@ export const useGameStore = create<GameState>((set, get) => ({
             currentTurn: 1,
             battleLog: [],
             questionQueue: [...SAMPLE_QUESTIONS], // 在实际应用中，从扇区获取
-            currentQuestion: SAMPLE_QUESTIONS[0],
+            currentQuestion: shuffleQuestion(SAMPLE_QUESTIONS[0]),
             glitchIntensity: 0
         });
         
@@ -293,7 +317,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         const { currentQuestion, entropyEntities, addBattleLog, addDamageIndicator } = get();
         if (!currentQuestion) return;
 
-        const isCorrect = currentQuestion.correctOptionIndex === optionIndex; // 简化为单选
+        const userAnswers = Array.isArray(optionIndex) ? optionIndex : [optionIndex];
+        const correctAnswers = Array.isArray(currentQuestion.correctOptionIndex) 
+            ? currentQuestion.correctOptionIndex 
+            : [currentQuestion.correctOptionIndex];
+
+        const isCorrect = userAnswers.length === correctAnswers.length && 
+            userAnswers.every(a => correctAnswers.includes(a));
 
         if (isCorrect) {
             addBattleLog('逻辑验证成功！熵值降低。', 'system');
@@ -351,7 +381,7 @@ export const useGameStore = create<GameState>((set, get) => ({
         set({
             currentTurn: currentTurn + 1,
             constructs: updatedConstructs,
-            currentQuestion: nextQ,
+            currentQuestion: shuffleQuestion(nextQ),
             questionQueue: remainingQ.length > 0 ? remainingQ : SAMPLE_QUESTIONS // 演示循环
         });
     },

@@ -157,6 +157,39 @@ export const SAMPLE_QUESTIONS: Question[] = [
         timeLimit: 20,
         explanation: "前序遍历：根节点 -> 左子树 -> 右子树。",
         tags: ["DataStructure", "Tree"]
+    },
+    {
+        id: "q4",
+        text: "数据库事务的ACID特性中，I代表什么？",
+        type: "Single",
+        options: ["Isolation (隔离性)", "Integrity (完整性)", "Identity (一致性)", "Immediate (即时性)"],
+        correctOptionIndex: 0,
+        difficulty: 2,
+        timeLimit: 30,
+        explanation: "ACID代表Atomicity(原子性), Consistency(一致性), Isolation(隔离性), Durability(持久性)。",
+        tags: ["Database", "Transaction"]
+    },
+    {
+        id: "q5",
+        text: "快速排序在最坏情况下的时间复杂度是？",
+        type: "Single",
+        options: ["O(n)", "O(n log n)", "O(n^2)", "O(log n)"],
+        correctOptionIndex: 2,
+        difficulty: 3,
+        timeLimit: 30,
+        explanation: "快速排序平均时间复杂度为O(n log n)，但在最坏情况下（如数组已有序）为O(n^2)。",
+        tags: ["Algorithm", "Sorting"]
+    },
+    {
+        id: "q6",
+        text: "CPU缓存（Cache）的主要作用是？",
+        type: "Single",
+        options: ["增加硬盘容量", "解决CPU与内存速度不匹配问题", "提高CPU主频", "防止数据丢失"],
+        correctOptionIndex: 1,
+        difficulty: 2,
+        timeLimit: 25,
+        explanation: "Cache位于CPU和主存之间，用于缓解CPU速度快而内存速度慢的矛盾。",
+        tags: ["Architecture", "Hardware"]
     }
 ];
 
@@ -169,7 +202,7 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
         hp: 50,
         maxHp: 50,
         damage: 10,
-        questionBank: SAMPLE_QUESTIONS.slice(0, 1),
+        questionBank: SAMPLE_QUESTIONS.slice(0, 2),
         statusEffects: [],
         isDead: false,
         visualGlitchIntensity: 0.2
@@ -181,7 +214,7 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
         hp: 120,
         maxHp: 120,
         damage: 25,
-        questionBank: SAMPLE_QUESTIONS.slice(1, 2),
+        questionBank: SAMPLE_QUESTIONS.slice(2, 4),
         statusEffects: [],
         isDead: false,
         visualGlitchIntensity: 0.5
@@ -193,7 +226,7 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
         hp: 300,
         maxHp: 300,
         damage: 40,
-        questionBank: SAMPLE_QUESTIONS.slice(2),
+        questionBank: SAMPLE_QUESTIONS.slice(4),
         statusEffects: [],
         isDead: false,
         visualGlitchIntensity: 0.8
@@ -228,7 +261,7 @@ export const STAR_SECTORS: StarSector[] = [
         id: "sector-3",
         name: "并发的洪流",
         description: "Concurrency Torrent - 线程同步机制紊乱，竞态条件频发。",
-        status: "LOCKED",
+        status: "HIGH_ENTROPY",
         difficulty: 3,
         position: { x: 40, y: 80 },
         totalQuestions: 10,
@@ -239,7 +272,7 @@ export const STAR_SECTORS: StarSector[] = [
         id: "sector-4",
         name: "协议的废墟",
         description: "Protocol Ruins - 握手失败，连接超时，数据包大量丢失。",
-        status: "LOCKED",
+        status: "HIGH_ENTROPY",
         difficulty: 4,
         position: { x: 55, y: 30 },
         totalQuestions: 12,
@@ -250,7 +283,7 @@ export const STAR_SECTORS: StarSector[] = [
         id: "sector-5",
         name: "算法的深渊",
         description: "Algorithm Abyss - 递归深度过大，栈溢出警告。",
-        status: "LOCKED",
+        status: "HIGH_ENTROPY",
         difficulty: 4,
         position: { x: 70, y: 70 },
         totalQuestions: 15,
@@ -261,7 +294,7 @@ export const STAR_SECTORS: StarSector[] = [
         id: "sector-boss",
         name: "奇点·抖动",
         description: "Singularity: Thrashing - 系统的最终防线，必须在此重构底层逻辑。",
-        status: "LOCKED",
+        status: "HIGH_ENTROPY",
         difficulty: 5,
         position: { x: 85, y: 50 },
         totalQuestions: 20,
