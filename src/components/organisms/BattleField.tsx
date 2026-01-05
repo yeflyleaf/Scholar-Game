@@ -40,7 +40,7 @@ const ConstructCard: React.FC<{
             <div className="flex justify-between items-start mb-2 gap-2">
                 <div className="min-w-0 flex-1">
                     <h3 className="text-neon-cyan font-display font-bold text-sm truncate">{construct.name}</h3>
-                    <span className="text-[10px] text-gray-500 font-mono truncate block">{construct.model}</span>
+                    <span className="text-[12px] text-gray-500 font-mono truncate block">{construct.model}</span>
                 </div>
                 {/* 状态图标 */}
                 <div className="flex gap-1 shrink-0">
@@ -52,7 +52,7 @@ const ConstructCard: React.FC<{
 
             {/* 生命值条 */}
             <div className="mb-1">
-                <div className="flex justify-between text-[10px] font-mono mb-0.5">
+                <div className="flex justify-between text-[12px] font-mono mb-0.5">
                     <span className="text-gray-500">HP</span>
                     <span className={hpPercent < 30 ? 'text-glitch-red' : 'text-stable'}>
                         {construct.hp}/{construct.maxHp}
@@ -70,7 +70,7 @@ const ConstructCard: React.FC<{
 
             {/* 能量条 */}
             <div className="mb-2">
-                <div className="flex justify-between text-[10px] font-mono mb-0.5">
+                <div className="flex justify-between text-[12px] font-mono mb-0.5">
                     <span className="text-gray-500">能量</span>
                     <span className="text-holographic-gold">{construct.energy}/{construct.maxEnergy}</span>
                 </div>
@@ -95,7 +95,7 @@ const ConstructCard: React.FC<{
                             onClick={() => canUse && onUseSkill(construct.id, skill.id)}
                             disabled={!canUse}
                             className={`
-                                py-1.5 px-2 text-[10px] font-mono text-center
+                                py-1.5 px-2 text-[14px] font-mono text-center
                                 border transition-all duration-300
                                 ${canUse
                                     ? 'border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/20 hover:border-neon-cyan'
@@ -305,12 +305,12 @@ export const BattleField: React.FC = () => {
             <div className="flex-1 grid grid-cols-[350px_1fr_350px] grid-rows-[1fr_140px] gap-3 p-4 overflow-hidden">
                 {/* 左侧：构造体 - 跨两行 */}
                 <motion.div
-                    className="row-span-2 flex flex-col gap-3 overflow-y-auto pr-2"
+                    className="row-span-2 flex flex-col gap-1 overflow-y-auto pr-2"
                     initial={{ x: -100, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <div className="text-xs font-mono text-neon-cyan mb-2 flex items-center gap-2 shrink-0">
+                    <div className="text-[25px] font-mono text-neon-cyan mb-2 flex items-center gap-2 shrink-0">
                         <div className="w-2 h-2 bg-neon-cyan rounded-full" />
                         逻辑构造体
                     </div>
