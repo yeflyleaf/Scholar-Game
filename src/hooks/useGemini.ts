@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import type {
-  Enemy,
-  Question
-} from '../types';
-import type {
-  GeneratedChapter,
-  GeneratedKnowledgeTree,
-  QuestionGenerationOptions
+    GeneratedChapter,
+    GeneratedKnowledgeTree,
+    QuestionGenerationOptions
 } from '../types/electron';
+import type {
+    EntropyEntity,
+    Question
+} from '../types/game';
 
 interface UseGeminiReturn {
   // Status
@@ -20,7 +20,7 @@ interface UseGeminiReturn {
   checkStatus: () => Promise<boolean>;
   generateQuestions: (content: string, options?: QuestionGenerationOptions) => Promise<Question[] | null>;
   generateKnowledgeTree: (content: string) => Promise<GeneratedKnowledgeTree | null>;
-  generateEnemies: (topic: string, difficulty?: number) => Promise<Enemy[] | null>;
+  generateEnemies: (topic: string, difficulty?: number) => Promise<EntropyEntity[] | null>;
   generateChapter: (title: string, content: string, difficulty?: number) => Promise<GeneratedChapter | null>;
   
   // Utility
@@ -41,7 +41,7 @@ export function useGemini(): UseGeminiReturn {
 
   const setApiKey = useCallback(async (key: string): Promise<boolean> => {
     if (!electronAPI) {
-      setError('Gemini API 只在 Electron 环境中可用');
+      setError('Gemini API only available in Electron');
       return false;
     }
 
@@ -84,7 +84,7 @@ export function useGemini(): UseGeminiReturn {
     options?: QuestionGenerationOptions
   ): Promise<Question[] | null> => {
     if (!electronAPI) {
-      setError('Gemini API 只在 Electron 环境中可用');
+      setError('Gemini API only available in Electron');
       return null;
     }
 
@@ -111,7 +111,7 @@ export function useGemini(): UseGeminiReturn {
     content: string
   ): Promise<GeneratedKnowledgeTree | null> => {
     if (!electronAPI) {
-      setError('Gemini API 只在 Electron 环境中可用');
+      setError('Gemini API only available in Electron');
       return null;
     }
 
@@ -137,9 +137,9 @@ export function useGemini(): UseGeminiReturn {
   const generateEnemies = useCallback(async (
     topic: string,
     difficulty = 3
-  ): Promise<Enemy[] | null> => {
+  ): Promise<EntropyEntity[] | null> => {
     if (!electronAPI) {
-      setError('Gemini API 只在 Electron 环境中可用');
+      setError('Gemini API only available in Electron');
       return null;
     }
 
@@ -168,7 +168,7 @@ export function useGemini(): UseGeminiReturn {
     difficulty = 3
   ): Promise<GeneratedChapter | null> => {
     if (!electronAPI) {
-      setError('Gemini API 只在 Electron 环境中可用');
+      setError('Gemini API only available in Electron');
       return null;
     }
 

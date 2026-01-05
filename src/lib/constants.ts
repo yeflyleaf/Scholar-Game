@@ -1,576 +1,266 @@
 // ============================
-// 赛博学神：神经潜渊 - 常量配置
+// Project Scholar: The Study Ascension - Constants & Config
 // ============================
 
 import type {
-    Character,
-    CyberItem,
-    Enemy,
-    KnowledgeNode,
+    Construct,
+    EntropyEntity,
+    Inscription,
     Question,
-    Skill,
-} from "../types";
+    StarSector,
+} from "../types/game";
 
-// Cyberpunk Academic Design Colors
+// 1. Visual Aesthetics - 视觉美学
 export const COLORS = {
-  // Primary Colors
-  neonGreen: "#39ff14",
-  cyberPink: "#ff00ff",
-  deepVoid: "#0a0a0a",
-  dataBlue: "#00f0ff",
-  warningRed: "#ff3333",
-
-  // Stats Colors
-  hpGreen: "#00ff88",
-  overloadPurple: "#9933ff",
-  overloadYellow: "#ffff00",
-
-  // Effect Colors
-  goldGlow: "#ffd700", // 灵光一闪
-  psychoRed: "#ff0000", // 赛博精神病
-  shieldBlue: "#4488ff",
-  healGreen: "#00ff88",
-  criticalOrange: "#ff6600",
-
-  // UI Colors
-  panelBg: "rgba(10, 10, 10, 0.9)",
-  borderGlow: "rgba(57, 255, 20, 0.3)",
+    // Core Palette
+    coldWhite: "#F0F8FF",
+    deepSpaceBlue: "#0B0E14",
+    glitchRed: "#FF003C",
+    holographicGold: "#D4AF37",
+    neonCyan: "#00F3FF",
+    
+    // UI Elements
+    hexBorder: "rgba(0, 243, 255, 0.3)",
+    hexFill: "rgba(11, 14, 20, 0.85)",
+    
+    // Status
+    stable: "#39FF14",
+    highEntropy: "#FF003C",
+    locked: "#4A4A4A",
 } as const;
 
-// Character Role Configs
-export const CHARACTER_CONFIGS: Record<
-  string,
-  {
-    color: string;
-    archetype: string;
-    icon: string;
-    specialty: string[];
-  }
-> = {
-  LogicEngine: {
-    color: COLORS.dataBlue,
-    archetype: "DPS",
-    icon: "cpu",
-    specialty: ["计算", "推理", "逻辑判断"],
-  },
-  Archivist: {
-    color: COLORS.neonGreen,
-    archetype: "Tank/Control",
-    icon: "database",
-    specialty: ["概念记忆", "填空", "历史"],
-  },
-  Firewall: {
-    color: COLORS.cyberPink,
-    archetype: "Support/Healer",
-    icon: "shield",
-    specialty: ["综合", "判断题"],
-  },
-};
-
-// Role Colors for backward compatibility
-export const ROLE_COLORS: Record<string, string> = {
-  LogicEngine: COLORS.dataBlue,
-  Archivist: COLORS.neonGreen,
-  Firewall: COLORS.cyberPink,
-};
-
-// Enemy Type Colors
-export const ENEMY_TYPE_COLORS: Record<string, string> = {
-  Minion: "#ff6b35",
-  Elite: "#9933ff",
-  Boss: "#ff3333",
-};
-
-// Role Icons (Lucide icon names)
-export const ROLE_ICONS: Record<string, string> = {
-  LogicEngine: "cpu",
-  Archivist: "database",
-  Firewall: "shield",
-};
-
-// Enemy Icons
-export const ENEMY_ICONS: Record<string, string> = {
-  Minion: "bug",
-  Elite: "zap",
-  Boss: "skull",
-};
-
-// Game Constants
-export const GAME_CONFIG = {
-  // Damage
-  baseDamage: 25,
-  criticalMultiplier: 1.5,
-
-  // Overload
-  overloadOnWrongAnswer: 20,
-  overloadOnTimeout: 10, // 超时增加全队过载
-  overloadDecayPerTurn: 5,
-  overloadThreshold: 100,
-
-  // Cyberpsychosis Probability
-  cyberpsychosisChance: 0.7, // 70%
-  optimizationChance: 0.3, // 30%
-
-  // Flow State (灵光一现)
-  flowStateDuration: 3,
-  flowStateOptionsHidden: 2, // 隐藏2个错误选项
-  flowStateDamageMultiplier: 2,
-
-  // Timing
-  enemyTurnDelay: 1500,
-  damageIndicatorDuration: 1500,
-  questionTimeLimit: 30, // 默认30秒
-  bossQuestionTimeLimit: 60, // Boss题目60秒
-
-  // Combo System
-  comboThreshold: 3, // 连续答对3题触发多核运算
-
-  // Passive Effects
-  archivistOverloadReduction: 0.2, // 档案馆员过载伤害减少20%
-  firewallBattleHeal: 5, // 防火墙战斗胜利回复过载值
-} as const;
-
-// Difficulty Multipliers
-export const DIFFICULTY_DAMAGE: Record<number, number> = {
-  1: 20,
-  2: 25,
-  3: 30,
-  4: 35,
-  5: 50,
-};
-
-export const DIFFICULTY_LABELS: Record<number, string> = {
-  1: "简单",
-  2: "普通",
-  3: "中等",
-  4: "困难",
-  5: "极难",
-};
-
-export const DIFFICULTY_COLORS: Record<number, string> = {
-  1: "#39ff14",
-  2: "#00f0ff",
-  3: "#ffff00",
-  4: "#ff9933",
-  5: "#ff3333",
-};
-
-// Default Character Skills
-export const DEFAULT_SKILLS: Record<string, Skill[]> = {
-  LogicEngine: [
+// 2. Construct Definitions - 逻辑构造体
+export const INITIAL_CONSTRUCTS: Construct[] = [
     {
-      id: "brute-force",
-      name: "暴力破解",
-      nameEn: "Brute Force",
-      description: "单体高伤害攻击。若题目涉及公式计算，暴击率翻倍。",
-      cooldown: 0,
-      currentCooldown: 0,
-      type: "active",
-      targetType: "enemy",
+        id: "construct-01",
+        model: "ARBITER",
+        name: "裁决者",
+        title: "The Arbiter",
+        hp: 150,
+        maxHp: 150,
+        energy: 100,
+        maxEnergy: 100,
+        isDead: false,
+        statusEffects: [],
+        skills: [
+            {
+                id: "skill-arbiter-1",
+                name: "强制中断",
+                nameEn: "Force Interrupt",
+                description: "对单体造成高额逻辑伤害，并清除目标所有增益状态。",
+                cooldown: 3,
+                currentCooldown: 0,
+                type: "active",
+                targetType: "single_enemy",
+                cost: 30,
+                visualEffect: "data_deletion"
+            },
+            {
+                id: "skill-arbiter-ult",
+                name: "最终裁定",
+                nameEn: "Final Verdict",
+                description: "消耗所有能量，对全体敌人造成毁灭性打击。若敌人处于逻辑死锁状态，伤害翻倍。",
+                cooldown: 5,
+                currentCooldown: 0,
+                type: "ultimate",
+                targetType: "all_enemies",
+                cost: 100,
+                visualEffect: "binary_stream"
+            }
+        ]
     },
-  ],
-  Archivist: [
     {
-      id: "index-search",
-      name: "数据检索",
-      nameEn: "Index Search",
-      description: "针对多个小怪（填空题）。答对一个空，眩晕敌人一回合。",
-      cooldown: 2,
-      currentCooldown: 0,
-      type: "active",
-      targetType: "enemy",
+        id: "construct-02",
+        model: "WEAVER",
+        name: "织网者",
+        title: "The Weaver",
+        hp: 120,
+        maxHp: 120,
+        energy: 100,
+        maxEnergy: 100,
+        isDead: false,
+        statusEffects: [],
+        skills: [
+            {
+                id: "skill-weaver-1",
+                name: "链路封锁",
+                nameEn: "Link Blockade",
+                description: "对全体敌人造成中等伤害，并施加'逻辑死锁'（无法行动1回合）。",
+                cooldown: 4,
+                currentCooldown: 0,
+                type: "active",
+                targetType: "all_enemies",
+                cost: 40,
+                visualEffect: "hex_shield"
+            }
+        ]
     },
-  ],
-  Firewall: [
     {
-      id: "exception-catch",
-      name: "异常拦截",
-      nameEn: "Exception Catch",
-      description: "为队友施加护盾，抵消一次答错带来的过载增加。",
-      cooldown: 3,
-      currentCooldown: 0,
-      type: "active",
-      targetType: "ally",
-    },
-  ],
-};
-
-// Default Passive Abilities
-export const PASSIVE_ABILITIES: Record<
-  string,
-  {
-    name: string;
-    nameEn: string;
-    description: string;
-  }
-> = {
-  LogicEngine: {
-    name: "多核运算",
-    nameEn: "Multi-Core Processing",
-    description: "连续答对3题后，下一次攻击变为AOE（群体攻击）",
-  },
-  Archivist: {
-    name: "只读存储",
-    nameEn: "Read-Only Storage",
-    description: '自身受到的"过载伤害"降低 20%',
-  },
-  Firewall: {
-    name: "系统重构",
-    nameEn: "System Rebuild",
-    description: "战斗胜利后，微量回复全队过载值",
-  },
-};
-
-// Initial Party - 初始小队
-export const createInitialParty = (): Character[] => [
-  {
-    id: "char-logic",
-    name: "逻辑引擎",
-    nameEn: "Logic Engine",
-    role: "LogicEngine",
-    archetype: "DPS",
-    hp: 100,
-    maxHp: 100,
-    overload: 0,
-    statusEffects: [],
-    skills: DEFAULT_SKILLS.LogicEngine,
-    passiveAbility: {
-      name: "多核运算",
-      nameEn: "Multi-Core Processing",
-      description: "连续答对3题后，下一次攻击变为AOE",
-      isActive: false,
-      stacks: 0,
-    },
-    isDisabled: false,
-    color: COLORS.dataBlue,
-  },
-  {
-    id: "char-archivist",
-    name: "档案馆员",
-    nameEn: "The Archivist",
-    role: "Archivist",
-    archetype: "Tank/Control",
-    hp: 120,
-    maxHp: 120,
-    overload: 0,
-    statusEffects: [],
-    skills: DEFAULT_SKILLS.Archivist,
-    passiveAbility: {
-      name: "只读存储",
-      nameEn: "Read-Only Storage",
-      description: '自身受到的"过载伤害"降低 20%',
-      isActive: true,
-    },
-    isDisabled: false,
-    color: COLORS.neonGreen,
-  },
-  {
-    id: "char-firewall",
-    name: "防火墙",
-    nameEn: "The Firewall",
-    role: "Firewall",
-    archetype: "Support/Healer",
-    hp: 80,
-    maxHp: 80,
-    overload: 0,
-    statusEffects: [],
-    skills: DEFAULT_SKILLS.Firewall,
-    passiveAbility: {
-      name: "系统重构",
-      nameEn: "System Rebuild",
-      description: "战斗胜利后，微量回复全队过载值",
-      isActive: true,
-    },
-    isDisabled: false,
-    color: COLORS.cyberPink,
-  },
+        id: "construct-03",
+        model: "ARCHITECT",
+        name: "虚构者",
+        title: "The Architect",
+        hp: 200,
+        maxHp: 200,
+        energy: 100,
+        maxEnergy: 100,
+        isDead: false,
+        statusEffects: [],
+        skills: [
+            {
+                id: "skill-architect-1",
+                name: "哈希重构",
+                nameEn: "Hash Rebuild",
+                description: "为我方全体施加护盾，并修复受损的逻辑扇区（回血）。",
+                cooldown: 3,
+                currentCooldown: 0,
+                type: "active",
+                targetType: "self", // Affects team via logic
+                cost: 35,
+                visualEffect: "hex_shield"
+            }
+        ]
+    }
 ];
 
-// Sample Questions for Demo
+// 3. Sample Questions - 样本题目
 export const SAMPLE_QUESTIONS: Question[] = [
-  {
-    id: "q1",
-    text: "在JavaScript中，以下哪个方法用于向数组末尾添加元素？",
-    type: "Single",
-    options: ["push()", "pop()", "shift()", "unshift()"],
-    correctOptionIndex: 0,
-    difficulty: 1,
-    timeLimit: 30,
-    explanation:
-      "push() 方法将一个或多个元素添加到数组的末尾，并返回数组的新长度。",
-  },
-  {
-    id: "q2",
-    text: "React Hooks中，useEffect的第二个参数是什么？",
-    type: "Single",
-    options: ["回调函数", "依赖数组", "初始状态", "清理函数"],
-    correctOptionIndex: 1,
-    difficulty: 2,
-    timeLimit: 30,
-    explanation:
-      "useEffect的第二个参数是依赖数组，用于控制副作用何时重新执行。",
-  },
-  {
-    id: "q3",
-    text: "TypeScript中，interface和type的主要区别是什么？",
-    type: "Single",
-    options: [
-      "没有区别",
-      "interface可以被扩展，type可以使用联合类型",
-      "type更快",
-      "interface不支持泛型",
-    ],
-    correctOptionIndex: 1,
-    difficulty: 3,
-    timeLimit: 45,
-    explanation:
-      "interface可以被继承和扩展，而type更适合定义联合类型、交叉类型等。",
-  },
-  {
-    id: "q4",
-    text: "CSS Flexbox中，justify-content的默认值是？",
-    type: "Single",
-    options: ["center", "flex-start", "space-between", "stretch"],
-    correctOptionIndex: 1,
-    difficulty: 2,
-    timeLimit: 30,
-    explanation:
-      "justify-content的默认值是flex-start，将子元素排列在主轴的起始位置。",
-  },
-  {
-    id: "q5",
-    text: '以下哪个HTTP状态码表示"未授权"？',
-    type: "Single",
-    options: ["400", "401", "403", "404"],
-    correctOptionIndex: 1,
-    difficulty: 1,
-    timeLimit: 20,
-    explanation: "401 Unauthorized 表示请求需要用户认证。",
-  },
-  {
-    id: "q6",
-    text: "Promise.all() 在以下哪种情况下会reject？",
-    type: "Single",
-    options: [
-      "所有Promise都resolve",
-      "任意一个Promise reject",
-      "超过一半Promise reject",
-      "最后一个Promise reject",
-    ],
-    correctOptionIndex: 1,
-    difficulty: 3,
-    timeLimit: 30,
-    explanation: "Promise.all() 在任意一个Promise被reject时，整体就会reject。",
-  },
-  {
-    id: "q7",
-    text: "Git中，用于查看提交历史的命令是？",
-    type: "Single",
-    options: ["git status", "git log", "git diff", "git show"],
-    correctOptionIndex: 1,
-    difficulty: 1,
-    timeLimit: 20,
-    explanation: "git log 用于查看项目的提交历史记录。",
-  },
-  {
-    id: "q8",
-    text: "在React中，useState返回的数组第二个元素是什么？",
-    type: "Single",
-    options: ["当前状态值", "状态更新函数", "初始状态", "状态类型"],
-    correctOptionIndex: 1,
-    difficulty: 2,
-    timeLimit: 30,
-    explanation:
-      "useState返回一个数组，第一个元素是当前状态值，第二个元素是更新状态的函数。",
-  },
-];
-
-// Create Initial Enemies - 野生概念体
-export const createInitialEnemies = (): Enemy[] => [
-  {
-    id: 'enemy-1',
-    name: '故障藤蔓',
-    type: 'Minion',
-    hp: 40,
-    maxHp: 40,
-    damage: 10,
-    questionBank: SAMPLE_QUESTIONS.slice(0, 2),
-    isStunned: false,
-    stunDuration: 0,
-  },
-  {
-    id: 'enemy-2',
-    name: '拟态掠食者',
-    type: 'Elite',
-    hp: 80,
-    maxHp: 80,
-    damage: 15,
-    questionBank: SAMPLE_QUESTIONS.slice(2, 5),
-    specialAbility: {
-      name: '伪装诱饵',
-      description: '伪装成无害数据，选错选项会被反咬',
-      triggerCondition: '每3回合触发一次',
+    {
+        id: "q1",
+        text: "在操作系统中，死锁产生的必要条件不包括？",
+        type: "Single",
+        options: ["互斥条件", "请求与保持条件", "不剥夺条件", "时间片轮转条件"],
+        correctOptionIndex: 3,
+        difficulty: 1,
+        timeLimit: 30,
+        explanation: "死锁的四个必要条件是：互斥、请求与保持、不剥夺、循环等待。时间片轮转是调度算法。",
+        tags: ["OS", "Deadlock"]
     },
-    isStunned: false,
-    stunDuration: 0,
-  },
-  {
-    id: 'enemy-3',
-    name: '逻辑泰坦',
-    type: 'Boss',
-    hp: 150,
-    maxHp: 150,
-    damage: 25,
-    questionBank: SAMPLE_QUESTIONS.slice(5),
-    specialAbility: {
-      name: '装甲护盾',
-      description: '需要层层剥开装甲，玩家答错时额外增加熵值',
-      triggerCondition: 'HP低于50%时激活',
+    {
+        id: "q2",
+        text: "TCP协议的三次握手中，第二次握手发送的标志位是？",
+        type: "Single",
+        options: ["SYN", "ACK", "SYN+ACK", "FIN"],
+        correctOptionIndex: 2,
+        difficulty: 2,
+        timeLimit: 30,
+        explanation: "第二次握手是服务器收到SYN后，回复SYN+ACK确认。",
+        tags: ["Network", "TCP"]
     },
-    isStunned: false,
-    stunDuration: 0,
-  },
+    {
+        id: "q3",
+        text: "二叉树的前序遍历顺序是？",
+        type: "Single",
+        options: ["左-根-右", "根-左-右", "左-右-根", "根-右-左"],
+        correctOptionIndex: 1,
+        difficulty: 1,
+        timeLimit: 20,
+        explanation: "前序遍历：根节点 -> 左子树 -> 右子树。",
+        tags: ["DataStructure", "Tree"]
+    }
 ];
 
-// Default Cyber Items - 赛博道具
-export const DEFAULT_ITEMS: CyberItem[] = [
-  {
-    id: "item-ddos",
-    name: "DDOS攻击",
-    nameEn: "DDOS Attack",
-    description: "跳过当前题目，不扣血但也不造成伤害，战斗轮次延后",
-    icon: "skip-forward",
-    quantity: 2,
-    type: "battle",
-    effect: () => {},
-  },
-  {
-    id: "item-sql-injection",
-    name: "SQL注入",
-    nameEn: "SQL Injection",
-    description: "针对多选题，自动选中一个正确选项",
-    icon: "code",
-    quantity: 3,
-    type: "battle",
-    effect: () => {},
-  },
-  {
-    id: "item-antivirus",
-    name: "杀毒软件",
-    nameEn: "Antivirus",
-    description: "休息阶段使用，消除错题本中的记录，降低全队过载值",
-    icon: "shield-check",
-    quantity: 1,
-    type: "rest",
-    effect: () => {},
-  },
-  {
-    id: "item-denoiser",
-    name: "去噪工具",
-    nameEn: "Denoiser",
-    description: "消耗能量使用，清除Boss的记忆干扰效果",
-    icon: "eye",
-    quantity: 2,
-    type: "battle",
-    effect: () => {},
-  },
+// 4. Entropy Entities - 认知熵实体 (Enemies)
+export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
+    {
+        id: "entropy-1",
+        name: "白噪·干扰者",
+        form: "WHITE_NOISE",
+        hp: 50,
+        maxHp: 50,
+        damage: 10,
+        questionBank: SAMPLE_QUESTIONS.slice(0, 1),
+        statusEffects: [],
+        isDead: false,
+        visualGlitchIntensity: 0.2
+    },
+    {
+        id: "entropy-2",
+        name: "虚数·崩坏体",
+        form: "IMAGINARY_COLLAPSE",
+        hp: 120,
+        maxHp: 120,
+        damage: 25,
+        questionBank: SAMPLE_QUESTIONS.slice(1, 2),
+        statusEffects: [],
+        isDead: false,
+        visualGlitchIntensity: 0.5
+    },
+    {
+        id: "entropy-boss",
+        name: "奇点·抖动",
+        form: "SINGULARITY",
+        hp: 300,
+        maxHp: 300,
+        damage: 40,
+        questionBank: SAMPLE_QUESTIONS.slice(2),
+        statusEffects: [],
+        isDead: false,
+        visualGlitchIntensity: 0.8
+    }
 ];
 
-// Knowledge Grid Nodes - 知识网络节点
-export const DEMO_KNOWLEDGE_NODES: KnowledgeNode[] = [
-  {
-    id: "node-basics",
-    name: "JavaScript基础",
-    description: "本章节包含15个知识实体，危险等级：低",
-    status: "available",
-    difficulty: 1,
-    prerequisites: [],
-    position: { x: 10, y: 50 },
-    questionCount: 15,
-    enemies: [],
-    isCompleted: false,
-    isBoss: false,
-  },
-  {
-    id: "node-react-intro",
-    name: "React入门",
-    description: "本章节包含20个知识实体，危险等级：中",
-    status: "locked",
-    difficulty: 2,
-    prerequisites: ["node-basics"],
-    position: { x: 30, y: 30 },
-    questionCount: 20,
-    enemies: [],
-    isCompleted: false,
-    isBoss: false,
-  },
-  {
-    id: "node-typescript",
-    name: "TypeScript进阶",
-    description: "本章节包含25个知识实体，危险等级：高",
-    status: "locked",
-    difficulty: 3,
-    prerequisites: ["node-basics"],
-    position: { x: 30, y: 70 },
-    questionCount: 25,
-    enemies: [],
-    isCompleted: false,
-    isBoss: false,
-  },
-  {
-    id: "node-hooks",
-    name: "React Hooks深入",
-    description: "本章节包含18个知识实体，危险等级：高",
-    status: "locked",
-    difficulty: 3,
-    prerequisites: ["node-react-intro"],
-    position: { x: 50, y: 40 },
-    questionCount: 18,
-    enemies: [],
-    isCompleted: false,
-    isBoss: false,
-  },
-  {
-    id: "node-advanced",
-    name: "高级模式",
-    description: "本章节包含30个知识实体，危险等级：极高",
-    status: "locked",
-    difficulty: 4,
-    prerequisites: ["node-hooks", "node-typescript"],
-    position: { x: 70, y: 50 },
-    questionCount: 30,
-    enemies: [],
-    isCompleted: false,
-    isBoss: false,
-  },
-  {
-    id: "node-boss",
-    name: "图灵审查程序",
-    description: "最终挑战 - 综合案例分析",
-    status: "locked",
-    difficulty: 5,
-    prerequisites: ["node-advanced"],
-    position: { x: 90, y: 50 },
-    questionCount: 10,
-    enemies: [],
-    isCompleted: false,
-    isBoss: true,
-  },
+// 5. Star Sectors - 星图关卡
+export const STAR_SECTORS: StarSector[] = [
+    {
+        id: "sector-1",
+        name: "初始引导扇区",
+        description: "Boot Sector - 这里的逻辑尚且稳定，适合进行基础演练。",
+        status: "STABLE",
+        difficulty: 1,
+        position: { x: 100, y: 300 },
+        totalQuestions: 5,
+        entropyEntities: [INITIAL_ENTROPY_ENTITIES[0]],
+        rewards: { exp: 100 }
+    },
+    {
+        id: "sector-2",
+        name: "虚存的迷宫",
+        description: "Labyrinth of Virtual Memory - 页面置换算法失效，小心缺页中断。",
+        status: "HIGH_ENTROPY",
+        difficulty: 3,
+        position: { x: 300, y: 150 },
+        totalQuestions: 10,
+        entropyEntities: [INITIAL_ENTROPY_ENTITIES[1]],
+        rewards: { exp: 300 }
+    },
+    {
+        id: "sector-boss",
+        name: "奇点·抖动",
+        description: "Singularity: Thrashing - 系统的最终防线，必须在此重构底层逻辑。",
+        status: "LOCKED",
+        difficulty: 5,
+        position: { x: 600, y: 300 },
+        totalQuestions: 15,
+        entropyEntities: [INITIAL_ENTROPY_ENTITIES[2]],
+        rewards: { exp: 1000 }
+    }
 ];
 
-// Narrative Texts - Chrono-Jungle 赛博丛林世界观
-export const NARRATIVE = {
-  worldBackground:
-    "你是恒星级飞船「思维号 (The Mind)」的舰长。飞船正处于「考前视界 (The Exam Horizon)」的边缘，巨大的引力正在撕扯船体——你必须启动「逻辑跃迁引擎」逃离黑洞。",
-  playerIdentity:
-    "你是「收割者舰长 (The Reaper Captain)」。穿上「神经潜行装甲」，手持「算法开山刀」，深入这片霓虹闪烁的赛博热带雨林。",
-  goal: "砍伐疯长的知识藤蔓，狩猎野生概念体，将它们提炼成纯净的「认知燃料」，注满逻辑跃迁引擎。",
-  enemy:
-    "野生概念体 (Feral Concepts) —— 因长期未被访问而发生「次生演化」的知识数据，化为具有攻击性的生物盘踞在飞船各舱室。",
-  // 敌人类型描述
-  enemyTypes: {
-    Minion: "故障藤蔓 (Glitched Vines) - 基础题目，一刀即可收割",
-    Elite: "拟态掠食者 (Mimic Predators) - 陷阱题，选错会被反咬",
-    Boss: "逻辑泰坦 (Logic Titans) - 章节大题，需层层剥开装甲",
-  },
-};
+// 6. Inscriptions - 铭文 (Gacha Items)
+export const INSCRIPTIONS: Inscription[] = [
+    {
+        id: "inscription-banker",
+        name: "银行家算法",
+        rarity: "SSR",
+        description: "前文明用来规避资源死锁的神圣逻辑。装备后，对'死锁级'崩坏兽伤害提升 50%。",
+        effect: () => {}, // Implemented in logic
+        icon: "banker_algo_icon"
+    },
+    {
+        id: "inscription-dijkstra",
+        name: "最短路径",
+        rarity: "SR",
+        description: "在星图中移动时，不消耗行动力。",
+        effect: () => {},
+        icon: "dijkstra_icon"
+    }
+];
+
+// 7. Game Config
+export const GAME_CONFIG = {
+    entropyThreshold: 100, // Max entropy before game over
+    baseDamage: 30,
+    comboThreshold: 3, // For "Flow State" or special moves
+    gachaCost: 100, // Cost to pull Mind Hack
+} as const;

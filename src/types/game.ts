@@ -1,71 +1,67 @@
 // ============================
-// 赛博学神：神经潜渊 - 类型定义
+// Project Scholar: The Study Ascension - Type Definitions
 // ============================
 
-// Character Roles - 神经代理人角色
-export type CharacterRole = 'LogicEngine' | 'Archivist' | 'Firewall';
+// 1. Core Entities - 核心实体
 
-// Enemy Types - 数据幽灵类型
-export type EnemyType = 'Minion' | 'Elite' | 'Boss';
+// Construct Model - 逻辑构造体型号
+export type ConstructModel = "ARBITER" | "WEAVER" | "ARCHITECT";
 
-// Question Types - 题目类型
-export type QuestionType = 'Single' | 'Multi' | 'FillBlank' | 'TrueFalse' | 'CaseAnalysis' | 'Code';
+// Entropy Form - 认知熵形态 (敌人类型)
+export type EntropyForm = "WHITE_NOISE" | "IMAGINARY_COLLAPSE" | "SINGULARITY";
+
+// Question Types - 题目类型 (Unchanged)
+export type QuestionType =
+  | "Single"
+  | "Multi"
+  | "FillBlank"
+  | "TrueFalse"
+  | "CaseAnalysis"
+  | "Code";
 
 // Battle States - 战斗状态
-export type BattleState = 
-  | 'PLAYER_TURN' 
-  | 'ENEMY_TURN' 
-  | 'PROCESSING' 
-  | 'WIN' 
-  | 'LOSE' 
-  | 'REWARD';
+export type BattleState =
+  | "PLAYER_TURN"
+  | "ENEMY_TURN"
+  | "PROCESSING"
+  | "VICTORY"
+  | "DEFEAT"
+  | "CAUSALITY_RECORD"; // Settlement
 
 // Game Screen - 游戏场景
-export type GameScreen = 
-  | 'TITLE' 
-  | 'KNOWLEDGE_GRID' 
-  | 'BATTLE' 
-  | 'REWARD' 
-  | 'REST' 
-  | 'GAME_OVER'
-  | 'SETTINGS';
+export type GameScreen =
+  | "TITLE"
+  | "GRAND_UNIFICATION_SIM" // Level Select (was KnowledgeGrid)
+  | "MIND_HACK" // Gacha System
+  | "BATTLE"
+  | "CAUSALITY_RECORD" // Battle Result (was Reward/GameOver)
+  | "SETTINGS";
 
-// Node Status - 节点状态
-export type NodeStatus = 'locked' | 'available' | 'completed';
+// Node Status - 星球/节点状态
+export type NodeStatus = "LOCKED" | "HIGH_ENTROPY" | "STABLE";
 
-// Overload Result - 过载爆发结果
-export type OverloadResult = 'cyberpsychosis' | 'optimization' | null;
-
-// Cyberpsychosis Symptom - 赛博精神病症状
-export type CyberpsychosisSymptom = 
-  | 'command_refuse'    // 拒绝指令
-  | 'random_answer'     // 乱选
-  | 'despair';          // 绝望
+// 2. Combat System - 战斗系统
 
 // Status Effect Type
-export type StatusEffectType = 
-  | 'damage_boost' 
-  | 'damage_reduce' 
-  | 'heal_over_time' 
-  | 'overload_reduce'
-  | 'shield'           // 护盾
-  | 'stunned'          // 眩晕
-  | 'flow_state'       // 心流状态
-  | 'cyberpsychosis'   // 赛博精神病
-  | 'multi_core';      // 多核运算激活
+export type StatusEffectType =
+  | "damage_boost"
+  | "damage_reduce"
+  | "heal_over_time"
+  | "shield"
+  | "stunned"
+  | "logic_lock" // 逻辑死锁 (Stun equivalent)
+  | "flow_state" // 心流
+  | "entropy_erosion"; // 熵侵蚀
 
-// Status Effect
 export interface StatusEffect {
   id: string;
   name: string;
   duration: number;
-  type: 'buff' | 'debuff';
+  type: "buff" | "debuff";
   effect: StatusEffectType;
   value: number;
-  symptom?: CyberpsychosisSymptom;
 }
 
-// Skill - 技能
 export interface Skill {
   id: string;
   name: string;
@@ -73,146 +69,107 @@ export interface Skill {
   description: string;
   cooldown: number;
   currentCooldown: number;
-  type: 'active' | 'passive';
-  targetType: 'self' | 'ally' | 'enemy' | 'all_allies' | 'all_enemies';
-  cost?: number; // 能量消耗
+  type: "active" | "passive" | "ultimate";
+  targetType: "self" | "single_enemy" | "all_enemies";
+  cost?: number; // Energy/MP cost
+  visualEffect?: "data_deletion" | "binary_stream" | "hex_shield"; // For VFX
 }
 
-// Question Interface - 题目
+export interface Construct {
+  id: string;
+  model: ConstructModel;
+  name: string;
+  title: string; // e.g., "The Arbiter"
+  hp: number;
+  maxHp: number;
+  energy: number; // For skills
+  maxEnergy: number;
+  skills: Skill[];
+  statusEffects: StatusEffect[];
+  isDead: boolean;
+}
+
+export interface EntropyEntity {
+  id: string;
+  name: string;
+  form: EntropyForm;
+  hp: number;
+  maxHp: number;
+  damage: number;
+  questionBank: Question[]; // The "knowledge" they stole
+  statusEffects: StatusEffect[];
+  isDead: boolean;
+  visualGlitchIntensity: number; // 0-1, for rendering glitch effects
+}
+
 export interface Question {
   id: string;
   text: string;
   type: QuestionType;
   options: string[];
-  correctOptionIndex: number | number[]; // number[] for Multi type
+  correctOptionIndex: number | number[];
   difficulty: 1 | 2 | 3 | 4 | 5;
-  timeLimit?: number; // 答题时限（秒）
-  hint?: string; // 提示
-  explanation?: string; // 解析
-  tags?: string[]; // 知识点标签
-  isObfuscated?: boolean; // 是否被干扰（马赛克）
+  timeLimit?: number;
+  hint?: string;
+  explanation?: string;
+  tags?: string[];
 }
 
-// Character Interface - 神经代理人
-export interface Character {
+// 3. Progression System - 进度系统
+
+// Inscription - 核心铭文 (Gacha Items)
+export interface Inscription {
   id: string;
   name: string;
-  nameEn: string;
-  role: CharacterRole;
-  archetype: string; // 原型（DPS/Tank/Support）
-  hp: number;
-  maxHp: number;
-  overload: number; // 0-100
-  statusEffects: StatusEffect[];
-  skills: Skill[];
-  passiveAbility: {
-    name: string;
-    nameEn: string;
-    description: string;
-    isActive: boolean;
-    stacks?: number; // 如逻辑引擎的连续答对计数
-  };
-  isDisabled: boolean; // 是否被禁用（赛博精神病拒绝指令）
-  avatar?: string;
-  color: string;
+  rarity: "R" | "SR" | "SSR";
+  description: string;
+  effect: (target: Construct | EntropyEntity) => void;
+  icon: string; // Hexagon icon path
 }
 
-// Enemy Interface - 数据幽灵
-export interface Enemy {
+// Level/Chapter - 章节/星球
+export interface StarSector {
   id: string;
-  name: string;
-  type: EnemyType;
-  hp: number;
-  maxHp: number;
-  damage: number;
-  questionBank: Question[];
-  specialAbility?: {
-    name: string;
-    description: string;
-    triggerCondition: string;
-  };
-  avatar?: string;
-  isStunned: boolean;
-  stunDuration: number;
-}
-
-// Knowledge Node - 知识节点
-export interface KnowledgeNode {
-  id: string;
-  name: string;
+  name: string; // e.g., "Boot Sector"
   description: string;
   status: NodeStatus;
   difficulty: 1 | 2 | 3 | 4 | 5;
-  prerequisites: string[]; // 前置节点ID
-  position: { x: number; y: number };
-  questionCount: number;
-  enemies: Enemy[];
-  rewards?: {
-    exp?: number;
-    items?: string[];
-    skillUpgrade?: string;
+  position: { x: number; y: number }; // For star map UI
+  totalQuestions: number;
+  entropyEntities: EntropyEntity[];
+  rewards: {
+    exp: number;
+    inscriptions?: Inscription[];
   };
-  isCompleted: boolean;
-  isBoss: boolean;
 }
 
-// Cyber Items - 赛博道具
-export interface CyberItem {
-  id: string;
+// Player Progress - 观测者档案
+export interface ObserverProfile {
   name: string;
-  nameEn: string;
-  description: string;
-  icon: string;
-  quantity: number;
-  type: 'battle' | 'rest' | 'passive';
-  effect: () => void;
+  level: number;
+  exp: number;
+  maxExp: number;
+  unlockedConstructs: ConstructModel[];
+  inventory: Inscription[];
+  clearedSectors: string[];
+  entropyStabilized: number; // Total entropy reduced (score)
 }
 
-// Damage Indicator for floating damage numbers
-export interface DamageIndicator {
-  id: string;
-  value: number;
-  x: number;
-  y: number;
-  type: 'damage' | 'heal' | 'overload' | 'critical' | 'shield' | 'miss';
-  timestamp: number;
-  text?: string;
-  color?: string;
-}
+// 4. Visuals & Logs
 
-// Battle Log Entry
 export interface BattleLogEntry {
   id: string;
   message: string;
-  type: 'info' | 'damage' | 'heal' | 'overload' | 'system' | 'skill' | 'critical' | 'cyberpsychosis' | 'optimization';
+  type: "system" | "combat" | "dialogue";
+  speaker?: string; // e.g., "Arbiter"
   timestamp: number;
-  icon?: string;
 }
 
-// Game Progress
-export interface GameProgress {
-  currentChapter: number;
-  completedNodes: string[];
-  totalExp: number;
-  itemsCollected: CyberItem[];
-  wrongAnswers: Question[]; // 错题本
-  correctStreak: number;
-  totalQuestions: number;
-  correctAnswers: number;
-}
-
-// Timer State
-export interface TimerState {
-  isRunning: boolean;
-  timeRemaining: number;
-  totalTime: number;
-}
-
-// Skill Animation
-export interface SkillAnimation {
-  skillId: string;
-  characterId: string;
-  targetId?: string;
-  isPlaying: boolean;
-  type: 'attack' | 'heal' | 'buff' | 'debuff' | 'special';
+export interface DamageIndicator {
+  id: string;
+  value: string | number; // Can be "MISS" or "CRIT"
+  x: number;
+  y: number;
+  type: "damage" | "heal" | "critical" | "deletion"; // deletion = special kill effect
+  timestamp: number;
 }

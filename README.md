@@ -1,244 +1,143 @@
-# 🎮 赛博学神：神经潜渊
+# 🌌 Project Scholar: The Study Ascension (学者计划：学习飞升)
 
-**Cyber Scholar: Neural Dive**
-
-> 一款赛博朋克风格的回合制学习 RPG 游戏
+> **在期末的终焉凝视下，知识是我们唯一的救赎。**
+>
+> **In the gaze of the Final’s End, knowledge is our only redemption.**
 
 ![React](https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react)
 ![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript)
 ![Tailwind CSS](https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss)
-![Framer Motion](https://img.shields.io/badge/Framer_Motion-动画引擎-FF0055?style=flat-square)
+![Framer Motion](https://img.shields.io/badge/Framer_Motion-FUI动画-FF0055?style=flat-square)
+![Zustand](https://img.shields.io/badge/Zustand-状态管理-orange?style=flat-square)
+![Electron](https://img.shields.io/badge/Electron-桌面端-47848F?style=flat-square&logo=electron)
+![License](https://img.shields.io/badge/License-AGPL%203.0-green?style=flat-square)
 
 ---
 
-## 📖 游戏简介
+## 🚀 核心愿景 (Grand Vision)
 
-**赛博学神：神经潜渊** 是一款融合了 **Darkest Dungeon** 回合制战斗和 **Slay the Spire** 地图探索机制的学习型 RPG 游戏。玩家通过回答知识问题来攻击敌人，答错则会增加「过载值」并受到反击伤害。
+**Project Scholar** 不仅仅是一个复习软件，它是一场对抗宇宙热寂的逻辑战争。
 
-### 核心机制
+宇宙的本质是一个巨大的运行程序。每隔一个纪元（学期），被称为 **“大过滤器 (The Great Filter)”** 的灾难就会降临。它会将文明的知识解构为无意义的乱码，将人类的记忆格式化。
 
-- 🧠 **回合制战斗**：类似暗黑地牢的战斗系统
-- ⚡ **过载系统**：替代传统魔法值，答错题目会增加过载
-- 🔥 **赛博精神病/心流状态**：过载达到 100% 时触发特殊状态
-- 🗺️ **知识节点**：类似杀戮尖塔的地图探索系统（待实现）
+你是 **“第13纪元”** 的最后一位 **英桀 (Hero)**，代号 **“首席观测者 (The Observer)”**。你必须指挥由纯粹理性构建的 **“逻辑构造体”**，利用 **“真理之钥”**（你的复习资料）重写宇宙的底层逻辑，阻止万物归零。
 
 ---
 
-## 🎨 设计语言
+## 🌍 深度世界观 (Deep Lore)
 
-**「赛博朋克学院风」**
+### 灾难实体：认知熵 (Cognitive Entropy)
+一种高维度的侵蚀现象。当文明遗忘底层逻辑时，熵兽便会诞生。
+* **白噪 (White Noise)**：初级侵蚀，世界失去色彩。
+* **虚数崩坏 (Imaginary Collapse)**：高级侵蚀，物理法则失效。
 
-| 颜色 | 色值 | 用途 |
-|------|------|------|
-| 霓虹绿 | `#39ff14` | 主色调、玩家相关 |
-| 赛博粉 | `#ff00ff` | 强调色、特殊效果 |
-| 深渊黑 | `#0a0a0a` | 背景色 |
-| 数据蓝 | `#00f0ff` | 信息色、中性元素 |
-| 警告红 | `#ff3333` | 伤害、敌人相关 |
+### 人类堡垒：阿克夏枢纽 (Akashic Hub)
+漂浮在 **“量子之海”** 之上的巨型空间站，保存着人类历史上所有的知识与真理。
 
-**视觉特效**：
-- 故障效果 (Glitch)
-- 扫描线 (Scanlines)
-- 终端风格字体 (Monospace)
-- HUD 元素
-- 玻璃拟态 (Glassmorphism)
+### 关键遗物：真理之钥 (Keys of Truth)
+前文明留下的高密度信息结晶。它们是武器的驱动核心：
+* *操作系统概论* = **“核心调度模组”**
+* *数据结构* = **“空间构筑模组”**
 
 ---
 
-## 🛠️ 技术栈
+## 🤖 逻辑构造体 (Logical Constructs)
 
-| 技术 | 说明 |
-|------|------|
-| **React 18+** | 函数式组件 + Hooks |
-| **TypeScript** | 严格模式，禁止 `any` |
-| **Tailwind CSS v4** | 原子化 CSS，移动端优先 |
-| **Zustand** | 轻量级状态管理 |
-| **Framer Motion** | 复杂动画和交互效果 |
-| **Lucide React** | 图标库 |
-| **Vite** | 下一代前端构建工具 |
+### 机体-01：裁决者 (The Arbiter)
+* **装甲型号**：Type-OS "Kernel"
+* **核心理念**：**“秩序”**。斩断死锁，强制执行最高优先级指令。
+* **台词**：“进程...挂起。目标确认清除。”
 
----
+### 机体-02：织网者 (The Weaver)
+* **装甲型号**：Type-NET "Protocol"
+* **核心理念**：**“链接”**。建立通信信道，封锁敌方传播路径。
+* **台词**：“握手失败。正在切断敌方链路。”
 
-## 📁 项目结构
-
-```
-src/
-├── components/
-│   ├── atoms/              # 原子组件
-│   │   ├── CyberButton.tsx    # 霓虹按钮
-│   │   ├── StatBar.tsx        # HP/过载条
-│   │   └── GlitchText.tsx     # 故障文字
-│   ├── molecules/          # 分子组件
-│   │   ├── CharacterStatus.tsx  # 角色状态卡
-│   │   ├── QuestionCard.tsx     # 问题卡片
-│   │   └── EnemyCard.tsx        # 敌人卡片
-│   └── organisms/          # 组织组件
-│       ├── BattleField.tsx    # 主战斗场景
-│       ├── DamageIndicator.tsx # 浮动伤害数字
-│       └── CRTFilter.tsx      # CRT 滤镜效果
-├── hooks/
-│   └── useBattleSequence.ts  # 战斗逻辑钩子
-├── stores/
-│   └── useGameStore.ts     # Zustand 全局状态
-├── types/
-│   └── game.ts             # TypeScript 类型定义
-├── lib/
-│   ├── constants.ts        # 常量和配置
-│   └── utils.ts            # 工具函数
-├── App.tsx                 # 主应用组件
-├── main.tsx                # 入口文件
-└── index.css               # 全局样式 + Tailwind 主题
-```
+### 机体-03：虚构者 (The Architect)
+* **装甲型号**：Type-DS "Structure"
+* **核心理念**：**“构建”**。重组数据结构，修复被熵破坏的空间。
+* **台词**：“堆栈溢出...检测到非法访问。”
 
 ---
 
-## 🚀 快速开始
+## 🎮 沉浸式系统 (Immersive Systems)
 
-### 环境要求
+### 🌌 大一统模拟 (Grand Unification Sim)
+全息星图式的关卡选择系统。每一个星球代表一个知识章节。
+* 🔴 **高熵 (High Entropy)**: 章节掌握度低，极度危险。
+* 🟢 **稳定 (Stable)**: 章节已复习完毕，逻辑自洽。
 
-- Node.js 18+
-- npm 或 yarn
+### 🧠 思维骇入 (Mind Hack)
+在 **“量子之海”** 中打捞前文明残响的 Gacha 系统。
+* **获取**：获取 **“核心铭文”**（如：*银行家算法*），增强机体对特定崩坏兽的伤害。
 
-### 安装依赖
+### ⚔️ 神经潜渊 (Neural Dive)
+回合制战斗。
+* **攻击**：即 **“数据删除”**。答对问题，敌人身体部位变成乱码消散。
+* **失败**：视野被红色的 `FATAL ERROR` 覆盖，世界归于虚无。
 
+### 📝 因果录入 (Causality Record)
+战斗结算。
+* **胜利**：“逻辑重构完成 (Logic Reconstructed). 熵值下降 15%.”
+
+---
+
+## 🎨 视觉风格 (VFX Direction)
+
+* **色调**：冷白、深空蓝、故障红 (Glitch Red)、全息金。
+* **几何**：**六边形 (Hexagons)** 是核心元素。
+* **UI**：**FUI (Fantasy User Interface)**。细线条，数据流动，磨砂玻璃质感。
+
+---
+
+## 🛠️ 技术架构
+
+| 模块 | 技术栈 | 说明 |
+|------|--------|------|
+| **核心框架** | React 18 + TypeScript | 严格类型安全 |
+| **构建工具** | Vite | 极速热更新 |
+| **样式引擎** | Tailwind CSS v4 | 原子化 FUI 设计 |
+| **动画引擎** | Framer Motion | 故障特效与转场 |
+| **状态管理** | Zustand | 全局游戏状态 |
+| **桌面封装** | Electron | 跨平台运行 |
+| **AI 驱动** | Google Gemini API | 动态生成题目与敌人 |
+
+---
+
+## 🚀 启动指南
+
+### 1. 安装依赖
 ```bash
 npm install
 ```
 
-### 启动开发服务器
-
+### 2. 启动开发环境
 ```bash
 npm run dev
 ```
 
-访问 http://localhost:5173 开始游戏！
-
-### 构建生产版本
-
+### 3. 启动桌面端 (Electron)
 ```bash
-npm run build
+npm run electron:dev
 ```
-
-### 预览生产版本
-
-```bash
-npm run preview
-```
-
----
-
-## 🎮 游戏玩法
-
-1. **选择答案**：在你的回合中，阅读问题并选择正确答案
-2. **攻击敌人**：答对问题会对敌人造成伤害
-3. **承受惩罚**：答错问题会增加过载值并受到敌人反击
-4. **管理过载**：过载值达到 100% 会触发特殊状态
-5. **消灭敌人**：击败所有敌人即可获胜
-
-### 角色阵容
-
-| 角色 | 职业 | 特点 |
-|------|------|------|
-| 逻辑引擎 | LogicEngine | 均衡型，100 HP |
-| 档案馆员 | Archivist | 智慧型，80 HP |
-| 防火墙 | Firewall | 防御型，120 HP |
-
-### 敌人类型
-
-| 敌人 | 类型 | 威胁度 |
-|------|------|--------|
-| 语法错误虫 | Bug | 低 |
-| 内存泄漏体 | Glitch | 中 |
-| 病毒核心 | Virus | 高 |
-
----
-
-## 🔧 开发指南
-
-### 添加新问题
-
-编辑 `src/stores/useGameStore.ts` 中的 `sampleQuestions` 数组：
-
-```typescript
-const sampleQuestions: Question[] = [
-  {
-    id: 'q-new',
-    text: '你的问题文本',
-    type: 'Single',
-    options: ['选项A', '选项B', '选项C', '选项D'],
-    correctOptionIndex: 0, // 正确答案索引
-    difficulty: 3, // 难度 1-5
-  },
-  // ...更多问题
-];
-```
-
-### 添加新角色
-
-在 `createInitialParty()` 函数中添加新角色：
-
-```typescript
-{
-  id: 'char-new',
-  name: '新角色名',
-  role: 'LogicEngine', // LogicEngine | Archivist | Firewall
-  hp: 100,
-  maxHp: 100,
-  overload: 0,
-  statusEffects: [],
-}
-```
-
-### 添加新敌人
-
-在 `createInitialEnemies()` 函数中添加新敌人：
-
-```typescript
-{
-  id: 'enemy-new',
-  name: '新敌人名',
-  type: 'Virus', // Bug | Glitch | Virus
-  hp: 100,
-  maxHp: 100,
-  damage: 25,
-  questionBank: sampleQuestions,
-}
-```
-
----
-
-## 📝 TODO 待实现功能
-
-- [ ] 知识节点地图系统 (类似 Slay the Spire)
-- [ ] 角色技能系统
-- [ ] 状态效果系统 (Buff/Debuff)
-- [ ] 赛博精神病/心流状态特殊效果
-- [ ] 存档和读档功能
-- [ ] 音效和背景音乐
-- [ ] 成就系统
-- [ ] 更多题目类型 (代码题、多选题)
-- [ ] 敌人 AI 优化
-- [ ] 移动端适配
+*注：AI 生成功能需在 Electron 环境下配置 API Key 使用。*
 
 ---
 
 ## 📄 许可证
 
-MIT License
-
----
-
-## 🙏 致谢
-
-- [React](https://react.dev/) - 用户界面库
-- [Vite](https://vite.dev/) - 下一代前端构建工具
-- [Tailwind CSS](https://tailwindcss.com/) - 原子化 CSS 框架
-- [Framer Motion](https://www.framer.com/motion/) - 动画库
-- [Zustand](https://github.com/pmndrs/zustand) - 状态管理库
-- [Lucide](https://lucide.dev/) - 图标库
+本项目采用 **AGPL-3.0** 许可证。
 
 ---
 
 <p align="center">
-  <strong>System Online. Neural Link Established. Ready for directives.</strong>
+  <strong>英桀，请下令。为了让理性的光辉再次照亮这片虚空，出击！</strong>
+</p>
+
+<p align="center">
+  <strong>Fight for all the 'Pass' in the world</strong>
+</p>
+
+<p align="center">
+  <strong>为世界上所有的不挂科而战！</strong>
 </p>

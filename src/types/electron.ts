@@ -3,7 +3,7 @@
  * These types match the APIs exposed in preload.js
  */
 
-import type { Enemy, Question } from './game';
+import type { EntropyEntity, Question } from './game';
 
 // Generated Chapter Data
 export interface GeneratedChapter {
@@ -14,7 +14,7 @@ export interface GeneratedChapter {
     difficulty: number;
     estimatedTime: string;
   };
-  enemies: Enemy[];
+  enemies: EntropyEntity[];
   questions: Question[];
   rewards: {
     exp: number;
@@ -66,7 +66,7 @@ export interface GeminiAPI {
     options?: QuestionGenerationOptions
   ) => Promise<APIResponse<Question[]>>;
   generateKnowledgeTree: (content: string) => Promise<APIResponse<GeneratedKnowledgeTree>>;
-  generateEnemies: (topic: string, difficulty?: number) => Promise<APIResponse<Enemy[]>>;
+  generateEnemies: (topic: string, difficulty?: number) => Promise<APIResponse<EntropyEntity[]>>;
   parseDocument: (filePath: string) => Promise<APIResponse<string>>;
   generateChapter: (
     title: string,
