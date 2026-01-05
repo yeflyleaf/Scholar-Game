@@ -187,6 +187,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     const isSelected = selectedIndex === index;
                     const optionLetter = String.fromCharCode(65 + index); // A, B, C, D...
 
+                    // Determine if this specific option is the correct answer
+                    const isActualCorrect = Array.isArray(question.correctOptionIndex)
+                        ? question.correctOptionIndex.includes(index)
+                        : question.correctOptionIndex === index;
+
                     // 确定选项状态
                     let stateClass = '';
                     let borderColor = 'border-gray-600/50';
@@ -202,6 +207,11 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             borderColor = 'border-glitch-red';
                             bgGradient = 'from-glitch-red/20 to-glitch-red/5';
                         }
+                    } else if (hasAnswered && isActualCorrect) {
+                        // Highlight the correct answer if the user missed it
+                        stateClass = 'correct-missed';
+                        borderColor = 'border-stable';
+                        bgGradient = 'from-stable/10 to-stable/5';
                     }
 
                     return (
@@ -228,11 +238,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             <span className={`
                                 inline-flex items-center justify-center
                                 w-8 h-8 mr-3
-                                border-2 ${isSelected ? borderColor : 'border-neon-cyan/30'}
+                                border-2 ${isSelected || (hasAnswered && isActualCorrect) ? borderColor : 'border-neon-cyan/30'}
                                 text-base font-display font-bold
                                 ${isSelected 
                                     ? isCorrect ? 'text-stable bg-stable/10' : 'text-glitch-red bg-glitch-red/10'
-                                    : 'text-neon-cyan/70 group-hover:text-neon-cyan group-hover:border-neon-cyan'
+                                    : hasAnswered && isActualCorrect
+                                        ? 'text-stable bg-stable/10'
+                                        : 'text-neon-cyan/70 group-hover:text-neon-cyan group-hover:border-neon-cyan'
                                 }
                                 transition-all duration-300
                             `}
@@ -246,7 +258,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                                 font-mono text-base
                                 ${isSelected 
                                     ? isCorrect ? 'text-stable' : 'text-glitch-red'
-                                    : 'text-gray-200 group-hover:text-white'
+                                    : hasAnswered && isActualCorrect
+                                        ? 'text-stable'
+                                        : 'text-gray-200 group-hover:text-white'
                                 }
                                 transition-colors duration-300
                             `}>
@@ -265,16 +279,19 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             />
 
                             {/* 选择指示器 */}
-                            {isSelected && (
+                            {(isSelected || (hasAnswered && isActualCorrect)) && (
                                 <motion.div
                                     className={`absolute right-4 top-1/2 -translate-y-1/2 text-2xl ${
-                                        isCorrect ? 'text-stable' : 'text-glitch-red'
+                                        (isSelected && !isCorrect) ? 'text-glitch-red' : 'text-stable'
                                     }`}
                                     initial={{ scale: 0, rotate: -180 }}
                                     animate={{ scale: 1, rotate: 0 }}
                                     transition={{ type: 'spring', stiffness: 300 }}
                                 >
-                                    {isCorrect ? '✓' : '✕'}
+                                    {isSelected 
+                                        ? (isCorrect ? '✓' : '✕')
+                                        : '✓' // Missed correct answer gets a checkmark
+                                    }
                                 </motion.div>
                             )}
                         </motion.button>
