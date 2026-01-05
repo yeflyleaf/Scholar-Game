@@ -139,7 +139,7 @@ export const SettingsScreen: React.FC = () => {
                         <h1 className="text-4xl font-display font-bold text-neon-cyan glitch-text" data-text="系统配置">
                             系统配置
                         </h1>
-                        <p className="text-sm font-mono text-gray-500 mt-1">系统配置 // 灵感中枢</p>
+                        <p className="text-sm font-mono text-gray-500 mt-1">系统配置 | 灵感中枢</p>
                     </div>
                     <motion.button
                         onClick={() => setScreen('TITLE')}
