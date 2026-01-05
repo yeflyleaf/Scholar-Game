@@ -28,31 +28,43 @@ const CorruptionOverlay: React.FC = () => (
     />
 );
 
-// 成功粒子
-const SuccessParticles: React.FC = () => (
-    <div className="absolute inset-0 pointer-events-none overflow-hidden">
-        {[...Array(10)].map((_, i) => (
-            <motion.div
-                key={i}
-                className="absolute w-1 h-1 bg-stable rounded-full"
-                style={{
-                    left: `${Math.random() * 100}%`,
-                    top: `${Math.random() * 100}%`,
-                }}
-                initial={{ scale: 0, opacity: 1 }}
-                animate={{
-                    scale: [0, 1.5, 0],
-                    opacity: [1, 0.5, 0],
-                    y: [-10, -30],
-                }}
-                transition={{
-                    duration: 1,
-                    delay: i * 0.05,
-                }}
-            />
-        ))}
-    </div>
-);
+// 成功粒子 - 预计算随机位置以避免渲染时调用不纯函数
+const SuccessParticles: React.FC = () => {
+    // 在组件挂载时预计算粒子位置
+    // 在组件挂载时预计算粒子位置
+    const [particles] = React.useState(() => 
+        [...Array(10)].map((_, i) => ({
+            id: i,
+            left: `${Math.random() * 100}%`,
+            top: `${Math.random() * 100}%`,
+        }))
+    );
+
+    return (
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+            {particles.map((particle) => (
+                <motion.div
+                    key={particle.id}
+                    className="absolute w-1 h-1 bg-stable rounded-full"
+                    style={{
+                        left: particle.left,
+                        top: particle.top,
+                    }}
+                    initial={{ scale: 0, opacity: 1 }}
+                    animate={{
+                        scale: [0, 1.5, 0],
+                        opacity: [1, 0.5, 0],
+                        y: [-10, -30],
+                    }}
+                    transition={{
+                        duration: 1,
+                        delay: particle.id * 0.05,
+                    }}
+                />
+            ))}
+        </div>
+    );
+};
 
 export const QuestionCard: React.FC<QuestionCardProps> = ({
     question,

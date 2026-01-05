@@ -2,6 +2,7 @@
   "name": "cyber-scholar-neural-dive",
   "private": true,
   "version": "1.0.0",
+  "description": "智者计划 - 为世界上所有的不挂科而战！",
   "license": "AGPL-3.0",
   "main": "electron/main.cjs",
   "type": "module",

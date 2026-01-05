@@ -1,21 +1,22 @@
 // 页面：大统一理论演练 (GrandUnificationSim) - 关卡选择界面，显示星图和扇区信息
 import { AnimatePresence, motion } from 'framer-motion';
-import React, { useMemo } from 'react';
+import React from 'react';
 import { useGameStore } from '../../stores/useGameStore';
 import type { StarSector } from '../../types/game';
 
+// 预生成的星星数据 - 在模块加载时计算，避免渲染时调用不纯函数
+const PRECOMPUTED_STARS = [...Array(80)].map((_, i) => ({
+    id: i,
+    size: Math.random() * 2 + 1,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    duration: 2 + Math.random() * 3,
+    delay: Math.random() * 2,
+}));
+
 // 星云背景
 const NebulaBackground: React.FC = () => {
-    const stars = useMemo(() => 
-        [...Array(80)].map((_, i) => ({
-            id: i,
-            size: Math.random() * 2 + 1,
-            left: `${Math.random() * 100}%`,
-            top: `${Math.random() * 100}%`,
-            duration: 2 + Math.random() * 3,
-            delay: Math.random() * 2,
-        })), []
-    );
+    const stars = PRECOMPUTED_STARS;
 
     return (
         <div className="absolute inset-0 overflow-hidden">

@@ -2,6 +2,7 @@
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useState } from 'react';
 import { useGameStore } from '../../stores/useGameStore';
+import type { Inscription } from '../../types/game';
 
 // 量子漩涡动画组件
 const QuantumVortex: React.FC<{ isActive: boolean }> = ({ isActive }) => {
@@ -45,17 +46,27 @@ const QuantumVortex: React.FC<{ isActive: boolean }> = ({ isActive }) => {
     );
 };
 
+// 预生成数据碎片数据 - 在模块加载时计算，避免渲染时调用不纯函数
+const CHARS = '01中文符号数据流量';
+const PRECOMPUTED_FRAGMENTS = [...Array(20)].map((_, i) => ({
+    id: i,
+    left: `${Math.random() * 100}%`,
+    top: `${Math.random() * 100}%`,
+    repeatDelay: Math.random() * 5,
+    text: Array(3).fill(0).map(() => CHARS[Math.floor(Math.random() * CHARS.length)]).join(''),
+}));
+
 // 漂浮数据碎片
-const DataFragment: React.FC<{ delay: number }> = ({ delay }) => {
-    const chars = '01アイウエオカキクケコ';
-    const randomChar = () => chars[Math.floor(Math.random() * chars.length)];
+const DataFragment: React.FC<{ delay: number; fragmentIndex: number }> = ({ delay, fragmentIndex }) => {
+    // 使用预计算的碎片数据
+    const fragment = PRECOMPUTED_FRAGMENTS[fragmentIndex % PRECOMPUTED_FRAGMENTS.length];
     
     return (
         <motion.div
             className="absolute text-neon-cyan/30 font-mono text-xs"
             style={{
-                left: `${Math.random() * 100}%`,
-                top: `${Math.random() * 100}%`,
+                left: fragment.left,
+                top: fragment.top,
             }}
             initial={{ opacity: 0, scale: 0 }}
             animate={{
@@ -67,10 +78,10 @@ const DataFragment: React.FC<{ delay: number }> = ({ delay }) => {
                 duration: 3,
                 delay,
                 repeat: Infinity,
-                repeatDelay: Math.random() * 5,
+                repeatDelay: fragment.repeatDelay,
             }}
         >
-            {randomChar()}{randomChar()}{randomChar()}
+            {fragment.text}
         </motion.div>
     );
 };
@@ -85,7 +96,7 @@ const rarityConfig: Record<string, { bg: string; border: string; text: string; g
 
 export const MindHack: React.FC = () => {
     const { setScreen, performMindHack } = useGameStore();
-    const [result, setResult] = useState<any>(null);
+    const [result, setResult] = useState<Inscription | null>(null);
     const [isHacking, setIsHacking] = useState(false);
     const [phase, setPhase] = useState<'idle' | 'hacking' | 'reveal'>('idle');
 
@@ -118,7 +129,7 @@ export const MindHack: React.FC = () => {
 
             {/* 漂浮数据碎片 */}
             {[...Array(15)].map((_, i) => (
-                <DataFragment key={i} delay={i * 0.5} />
+                <DataFragment key={i} delay={i * 0.5} fragmentIndex={i} />
             ))}
 
             {/* 量子漩涡 */}

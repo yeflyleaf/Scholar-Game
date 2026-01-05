@@ -9,7 +9,7 @@
    增强豪华版
    ============================ */
 
-@theme {
+:root {
   /* 颜色 - 增强色板 */
   --color-cold-white: #f0f8ff;
   --color-deep-space-blue: #05080d;
@@ -29,6 +29,7 @@
   --font-sans: "Inter", "Roboto", sans-serif;
   --font-display: "Orbitron", "Inter", sans-serif;
 }
+
 
 /* ============================
    基础样式 - 增强版
