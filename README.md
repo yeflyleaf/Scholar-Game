@@ -1,4 +1,4 @@
-# 🌌 Project Scholar: The Study Ascension (学者计划：学习飞升)
+# <p align="center"> Project Scholar: The Study Ascension (智者计划：学习飞升)</p>
 
 > **在期末的终焉凝视下，知识是我们唯一的救赎。**
 >
