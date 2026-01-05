@@ -325,19 +325,6 @@ const GeometricNode: React.FC<{
                             >
                                 {sector.difficulty}
                             </span>
-                            {/* 难度星级 */}
-                            <div className="flex gap-0.5 mt-1">
-                                {[...Array(6)].map((_, i) => (
-                                    <div
-                                        key={i}
-                                        className="w-1.5 h-1.5 rounded-full"
-                                        style={{
-                                            background: i < sector.difficulty ? accentColor : `${primaryColor}30`,
-                                            boxShadow: i < sector.difficulty ? `0 0 5px ${accentColor}` : 'none',
-                                        }}
-                                    />
-                                ))}
-                            </div>
                         </>
                     )}
                 </div>
