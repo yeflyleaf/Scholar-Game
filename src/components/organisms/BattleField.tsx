@@ -3,26 +3,28 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
 import { useBattleSequence } from '../../hooks/useBattleSequence';
 import { useGameStore } from '../../stores/useGameStore';
+import type { BattleLogEntry, Construct, EntropyEntity, Skill } from '../../types/game';
 import { QuestionCard } from '../molecules/QuestionCard';
 
 // 构造体肖像组件
 const ConstructCard: React.FC<{
-    construct: any;
-    useSkill: (constructId: string, skillId: string) => void;
+    construct: Construct;
+    onUseSkill: (constructId: string, skillId: string) => void;
     isActive: boolean;
-}> = ({ construct, useSkill, isActive }) => {
+}> = ({ construct, onUseSkill, isActive }) => {
     const hpPercent = (construct.hp / construct.maxHp) * 100;
     const energyPercent = (construct.energy / construct.maxEnergy) * 100;
 
     return (
         <motion.div
-            className={`fui-panel p-4 relative ${construct.isDead ? 'opacity-40 grayscale' : ''}`}
+            className={`fui-panel p-6 relative shrink-0 ${construct.isDead ? 'opacity-40 grayscale' : ''}`}
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
             style={{
                 boxShadow: isActive
                     ? '0 0 30px rgba(0, 243, 255, 0.4), inset 0 0 20px rgba(0, 243, 255, 0.1)'
                     : undefined,
+                overflow: 'visible',
             }}
         >
             {/* 激活指示器 */}
@@ -35,13 +37,13 @@ const ConstructCard: React.FC<{
             )}
 
             {/* 头部 */}
-            <div className="flex justify-between items-start mb-3">
-                <div>
-                    <h3 className="text-neon-cyan font-display font-bold text-lg">{construct.name}</h3>
-                    <span className="text-xs text-gray-500 font-mono">{construct.model}</span>
+            <div className="flex justify-between items-start mb-2 gap-2">
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-neon-cyan font-display font-bold text-sm truncate">{construct.name}</h3>
+                    <span className="text-[10px] text-gray-500 font-mono truncate block">{construct.model}</span>
                 </div>
                 {/* 状态图标 */}
-                <div className="flex gap-1">
+                <div className="flex gap-1 shrink-0">
                     {!construct.isDead && (
                         <div className="w-2 h-2 bg-stable rounded-full animate-pulse" />
                     )}
@@ -49,14 +51,14 @@ const ConstructCard: React.FC<{
             </div>
 
             {/* 生命值条 */}
-            <div className="mb-2">
-                <div className="flex justify-between text-xs font-mono mb-1">
-                    <span className="text-gray-500">生命值</span>
+            <div className="mb-1">
+                <div className="flex justify-between text-[10px] font-mono mb-0.5">
+                    <span className="text-gray-500">HP</span>
                     <span className={hpPercent < 30 ? 'text-glitch-red' : 'text-stable'}>
                         {construct.hp}/{construct.maxHp}
                     </span>
                 </div>
-                <div className="energy-bar">
+                <div className="energy-bar h-1.5">
                     <motion.div
                         className="energy-bar-fill hp"
                         initial={{ width: 0 }}
@@ -67,8 +69,8 @@ const ConstructCard: React.FC<{
             </div>
 
             {/* 能量条 */}
-            <div className="mb-4">
-                <div className="flex justify-between text-xs font-mono mb-1">
+            <div className="mb-2">
+                <div className="flex justify-between text-[10px] font-mono mb-0.5">
                     <span className="text-gray-500">能量</span>
                     <span className="text-holographic-gold">{construct.energy}/{construct.maxEnergy}</span>
                 </div>
@@ -82,32 +84,32 @@ const ConstructCard: React.FC<{
                 </div>
             </div>
 
-            {/* 技能 */}
-            <div className="flex gap-2">
-                {construct.skills.map((skill: any) => {
+            {/* 技能 - 使用网格布局 */}
+            <div className="grid grid-cols-2 gap-1">
+                {construct.skills.map((skill: Skill) => {
                     const canUse = !construct.isDead && skill.currentCooldown === 0 && construct.energy >= (skill.cost || 0);
                     
                     return (
                         <motion.button
                             key={skill.id}
-                            onClick={() => canUse && useSkill(construct.id, skill.id)}
+                            onClick={() => canUse && onUseSkill(construct.id, skill.id)}
                             disabled={!canUse}
                             className={`
-                                flex-1 py-2 px-2 text-xs font-mono
+                                py-1.5 px-2 text-[10px] font-mono text-center
                                 border transition-all duration-300
                                 ${canUse
                                     ? 'border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/20 hover:border-neon-cyan'
                                     : 'border-gray-700 text-gray-600 cursor-not-allowed'
                                 }
                             `}
-                            title={skill.description}
+                            title={`${skill.name}: ${skill.description}`}
                             whileHover={canUse ? { scale: 1.05 } : {}}
                             whileTap={canUse ? { scale: 0.95 } : {}}
                         >
                             {skill.currentCooldown > 0 ? (
-                                <span className="text-gray-500">{skill.currentCooldown}</span>
+                                <span className="text-gray-500">CD:{skill.currentCooldown}</span>
                             ) : (
-                                skill.name
+                                <span className="truncate block">{skill.name}</span>
                             )}
                         </motion.button>
                     );
@@ -118,7 +120,7 @@ const ConstructCard: React.FC<{
 };
 
 // 熵实体组件
-const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
+const EntropyCard: React.FC<{ entity: EntropyEntity }> = ({ entity }) => {
     const hpPercent = (entity.hp / entity.maxHp) * 100;
 
     if (entity.isDead) {
@@ -164,15 +166,15 @@ const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
             />
 
             {/* 头部 */}
-            <div className="flex justify-between items-start mb-3 relative">
-                <div>
-                    <h3 className="text-glitch-red font-display font-bold text-lg glitch-text" data-text={entity.name}>
+            <div className="flex justify-between items-start mb-3 relative gap-2">
+                <div className="min-w-0 flex-1">
+                    <h3 className="text-glitch-red font-display font-bold text-base glitch-text truncate" data-text={entity.name}>
                         {entity.name}
                     </h3>
-                    <span className="text-xs text-gray-500 font-mono">{entity.form}</span>
+                    <span className="text-xs text-gray-500 font-mono truncate block">{entity.form}</span>
                 </div>
                 {/* 威胁指示器 */}
-                <div className="flex items-center gap-1">
+                <div className="flex items-center gap-1 shrink-0">
                     <span className="text-xs text-glitch-red/60 font-mono">威胁</span>
                     <div className="w-2 h-2 bg-glitch-red rounded-full animate-pulse" />
                 </div>
@@ -196,27 +198,34 @@ const EntropyCard: React.FC<{ entity: any }> = ({ entity }) => {
     );
 };
 
-// 战斗日志组件
-const BattleLog: React.FC<{ logs: any[] }> = ({ logs }) => (
-    <div className="absolute bottom-0 left-0 right-0 max-h-32 overflow-y-auto bg-black/90 backdrop-blur-sm p-3 border-t border-neon-cyan/20">
-        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700/50">
+// 战斗日志组件 - 使用固定高度，不使用绝对定位避免重叠
+const BattleLog: React.FC<{ logs: BattleLogEntry[] }> = ({ logs }) => (
+    <motion.div 
+        className="fui-panel p-3 h-full overflow-hidden flex flex-col"
+        initial={{ y: 50, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.4 }}
+    >
+        <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700/50 shrink-0">
             <div className="w-2 h-2 bg-neon-cyan animate-pulse rounded-full" />
             <span className="text-xs font-mono text-neon-cyan">战斗日志</span>
         </div>
-        {logs.slice().reverse().slice(0, 5).map((log) => (
-            <motion.div
-                key={log.id}
-                className="mb-1 text-sm font-mono"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-            >
-                <span className="text-neon-cyan/60 mr-2">
-                    [{new Date(log.timestamp).toLocaleTimeString()}]
-                </span>
-                <span className="text-gray-300">{log.message}</span>
-            </motion.div>
-        ))}
-    </div>
+        <div className="flex-1 overflow-y-auto space-y-1">
+            {logs.slice().reverse().slice(0, 8).map((log) => (
+                <motion.div
+                    key={log.id}
+                    className="text-sm font-mono"
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                >
+                    <span className="text-neon-cyan/60 mr-2 text-xs">
+                        [{new Date(log.timestamp).toLocaleTimeString()}]
+                    </span>
+                    <span className="text-gray-300">{log.message}</span>
+                </motion.div>
+            ))}
+        </div>
+    </motion.div>
 );
 
 export const BattleField: React.FC = () => {
@@ -292,16 +301,16 @@ export const BattleField: React.FC = () => {
                 </div>
             </motion.div>
 
-            {/* 主战斗区域 */}
-            <div className="flex-1 flex gap-4 p-4 overflow-hidden relative">
-                {/* 左侧：构造体 */}
+            {/* 主战斗区域 - 使用 Grid 布局确保各区域不重叠 */}
+            <div className="flex-1 grid grid-cols-[350px_1fr_350px] grid-rows-[1fr_140px] gap-3 p-4 overflow-hidden">
+                {/* 左侧：构造体 - 跨两行 */}
                 <motion.div
-                    className="w-1/4 flex flex-col gap-3 overflow-y-auto pr-2"
+                    className="row-span-2 flex flex-col gap-3 overflow-y-auto pr-2"
                     initial={{ x: -100, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <div className="text-xs font-mono text-neon-cyan mb-2 flex items-center gap-2">
+                    <div className="text-xs font-mono text-neon-cyan mb-2 flex items-center gap-2 shrink-0">
                         <div className="w-2 h-2 bg-neon-cyan rounded-full" />
                         逻辑构造体
                     </div>
@@ -309,14 +318,14 @@ export const BattleField: React.FC = () => {
                         <ConstructCard
                             key={construct.id}
                             construct={construct}
-                            useSkill={useSkill}
+                            onUseSkill={useSkill}
                             isActive={index === 0}
                         />
                     ))}
                 </motion.div>
 
-                {/* 中间：问题 */}
-                <div className="flex-1 flex items-center justify-center relative pb-32">
+                {/* 中间上方：问题卡片区域 */}
+                <div className="flex items-center justify-center overflow-hidden">
                     <AnimatePresence mode="wait">
                         {currentQuestion && battleState === 'PLAYER_TURN' && (
                             <QuestionCard
@@ -328,19 +337,16 @@ export const BattleField: React.FC = () => {
                             />
                         )}
                     </AnimatePresence>
-
-                    {/* 战斗日志 */}
-                    <BattleLog logs={battleLog} />
                 </div>
 
-                {/* 右侧：熵实体 */}
+                {/* 右侧：熵实体 - 跨两行 */}
                 <motion.div
-                    className="w-1/4 flex flex-col gap-3 overflow-y-auto pl-2"
+                    className="row-span-2 flex flex-col gap-3 overflow-y-auto pl-2"
                     initial={{ x: 100, opacity: 0 }}
                     animate={{ x: 0, opacity: 1 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <div className="text-xs font-mono text-glitch-red mb-2 flex items-center gap-2">
+                    <div className="text-xs font-mono text-glitch-red mb-2 flex items-center gap-2 shrink-0">
                         <div className="w-2 h-2 bg-glitch-red rounded-full animate-pulse" />
                         认知熵实体
                     </div>
@@ -350,6 +356,11 @@ export const BattleField: React.FC = () => {
                         ))}
                     </AnimatePresence>
                 </motion.div>
+
+                {/* 中间下方：战斗日志区域 - 独立区域避免重叠 */}
+                <div className="col-start-2">
+                    <BattleLog logs={battleLog} />
+                </div>
             </div>
 
             {/* 角落装饰 */}

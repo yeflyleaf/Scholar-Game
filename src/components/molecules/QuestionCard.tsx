@@ -67,7 +67,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
     return (
         <motion.div
-            className="fui-panel p-8 w-full max-w-3xl relative overflow-hidden"
+            className="fui-panel p-6 w-full max-w-3xl max-h-full overflow-y-auto relative"
             initial={{ scale: 0.9, opacity: 0, y: 30 }}
             animate={{ scale: 1, opacity: 1, y: 0 }}
             transition={{ duration: 0.5, type: 'spring' }}
@@ -99,8 +99,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             />
 
             {/* 头部 */}
-            <div className="flex justify-between items-center mb-6 pb-4 border-b border-gray-700/50">
-                <div className="flex items-center gap-4">
+            <div className="flex justify-between items-center mb-4 pb-3 border-b border-gray-700/50">
+                <div className="flex items-center gap-3">
                     {/* 类型徽章 */}
                     <motion.div
                         className="px-3 py-1 bg-neon-cyan/10 border border-neon-cyan/30 rounded"
@@ -156,7 +156,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
 
             {/* 问题文本 */}
             <motion.div
-                className="mb-10 relative"
+                className="mb-6 relative"
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 transition={{ delay: 0.3 }}
@@ -164,13 +164,13 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                 {/* 题号装饰 */}
                 <div className="absolute -left-4 top-0 w-1 h-full bg-gradient-to-b from-neon-cyan via-neon-cyan/50 to-transparent" />
                 
-                <p className="text-2xl font-display text-white leading-relaxed pl-4">
+                <p className="text-xl font-display text-white leading-relaxed pl-4">
                     {question.text}
                 </p>
             </motion.div>
 
             {/* 选项 */}
-            <div className="grid grid-cols-1 gap-4">
+            <div className="grid grid-cols-1 gap-3">
                 {question.options.map((option, index) => {
                     const isSelected = selectedIndex === index;
                     const optionLetter = String.fromCharCode(65 + index); // A, B, C, D...
@@ -199,7 +199,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             disabled={disabled}
                             className={`
                                 option-card ${stateClass}
-                                relative w-full text-left p-5 rounded
+                                relative w-full text-left p-4 rounded
                                 bg-gradient-to-r ${bgGradient}
                                 border ${borderColor}
                                 transition-all duration-300
@@ -215,9 +215,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             {/* 选项字母 */}
                             <span className={`
                                 inline-flex items-center justify-center
-                                w-10 h-10 mr-4
+                                w-8 h-8 mr-3
                                 border-2 ${isSelected ? borderColor : 'border-neon-cyan/30'}
-                                text-lg font-display font-bold
+                                text-base font-display font-bold
                                 ${isSelected 
                                     ? isCorrect ? 'text-stable bg-stable/10' : 'text-glitch-red bg-glitch-red/10'
                                     : 'text-neon-cyan/70 group-hover:text-neon-cyan group-hover:border-neon-cyan'
@@ -231,7 +231,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             
                             {/* 选项文本 */}
                             <span className={`
-                                font-mono text-lg
+                                font-mono text-base
                                 ${isSelected 
                                     ? isCorrect ? 'text-stable' : 'text-glitch-red'
                                     : 'text-gray-200 group-hover:text-white'
