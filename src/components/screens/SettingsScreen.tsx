@@ -222,7 +222,7 @@ export const SettingsScreen: React.FC = () => {
                             <motion.button
                                 onClick={handleSaveApiKey}
                                 disabled={isLoading || !apiKeyInput.trim()}
-                                className="hex-button px-6"
+                                className="hex-button px-6 disabled:opacity-80 disabled:cursor-not-allowed"
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                             >
@@ -270,7 +270,7 @@ export const SettingsScreen: React.FC = () => {
                                 type="text"
                                 value={chapterTitle}
                                 onChange={(e) => setChapterTitle(e.target.value)}
-                                placeholder="例: 进程调度与死锁"
+                                placeholder="例: 计算机操作系统"
                                 className="fui-input w-full"
                             />
                         </div>
@@ -326,7 +326,7 @@ export const SettingsScreen: React.FC = () => {
                                 placeholder="在此粘贴复习资料、教材内容或笔记...&#10;&#10;AI 将根据输入内容自动生成相关题目。"
                             />
                             <div className="flex justify-between text-xs font-mono text-gray-500">
-                                <span>支持任意文本格式</span>
+                                <span className="text-sm">仅支持.txt和.md文本格式</span>
                                 <span>{textContent.length} 字符</span>
                             </div>
                         </div>
@@ -336,7 +336,7 @@ export const SettingsScreen: React.FC = () => {
                             onClick={handleGenerateChapter}
                             disabled={generationStatus === 'loading' || !isConfigured || !textContent.trim() || !chapterTitle.trim()}
                             className={`hex-button w-full py-4 text-lg font-display relative overflow-hidden ${
-                                !isConfigured ? 'opacity-50' : ''
+                                !isConfigured ? 'opacity-80 cursor-not-allowed' : ''
                             }`}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}

@@ -105,6 +105,9 @@ interface GameState {
     settings: GameSettings;
     updateSettings: (settings: Partial<GameSettings>) => void;
     resetProgress: () => void;
+    
+    // === 动态内容注入 ===
+    setBattleQuestions: (questions: Question[]) => void;
 }
 
 export const useGameStore = create<GameState>((set, get) => ({
@@ -404,5 +407,13 @@ export const useGameStore = create<GameState>((set, get) => ({
         setTimeout(() => {
             set(state => ({ damageIndicators: state.damageIndicators.filter(d => d.id !== id) }));
         }, 1000);
+    },
+
+    setBattleQuestions: (questions) => {
+        if (!questions || questions.length === 0) return;
+        set({
+            currentQuestion: shuffleQuestion(questions[0]),
+            questionQueue: questions.slice(1)
+        });
     }
 }));
