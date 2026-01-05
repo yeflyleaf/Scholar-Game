@@ -4,9 +4,13 @@
   智者计划：学习飞升
 </h1>
 
-> **在期末的终焉凝视下，知识是我们唯一的救赎。**
->
-> **In the gaze of the Final’s End, knowledge is our only redemption.**
+<p align="center">
+  <strong> 在期末的终焉凝视下，知识是我们唯一的救赎。</strong>
+</p>
+
+<p align="center">
+  <strong> In the gaze of the Final’s End, knowledge is our only redemption.</strong>
+</p>
 
 <p align="center">
   <img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react" alt="React" />
