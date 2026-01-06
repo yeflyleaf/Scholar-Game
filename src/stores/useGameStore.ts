@@ -128,6 +128,10 @@ interface GameState {
     // 更新扇区任务简报
     updateSectorBriefing: (sectorId: string, briefing: string) => void;
     
+    // 将AI生成的60道题目分配到六个默认关卡
+    // 第一关10道，第二关20道，以此类推，题目循环分配
+    distributeAIQuestionsToSectors: (questions: Question[], sourceTitle: string) => void;
+    
     // === 主题系统 ===
     currentTheme: GameTheme;
     setTheme: (theme: GameTheme) => void;
@@ -599,6 +603,69 @@ export const useGameStore = create<GameState>()(
                         : state.currentSector
                 }));
                 console.log(`[扇区更新] 扇区 ${sectorId} 简报已更新`);
+            },
+
+            // 将AI生成的60道题目分配到六个默认关卡
+            distributeAIQuestionsToSectors: (questions, sourceTitle) => {
+                if (!questions || questions.length === 0) return;
+                
+                // 默认六个关卡的ID（按顺序对应难度1-6）
+                const defaultSectorIds = [
+                    'sector-1',  // 第一关: 10道题
+                    'sector-2',  // 第二关: 20道题
+                    'sector-3',  // 第三关: 30道题
+                    'sector-4',  // 第四关: 40道题
+                    'sector-5',  // 第五关: 50道题
+                    'sector-boss' // 第六关: 60道题
+                ];
+                
+                // 每个关卡需要的题目数量（与关卡的totalQuestions相同）
+                const questionsPerSector = [10, 20, 30, 40, 50, 60];
+                
+                const state = get();
+                const allQuestions = [...questions];
+                const totalAvailable = allQuestions.length;
+                
+                console.log(`[AI分配] 开始将 ${totalAvailable} 道题目分配到 ${defaultSectorIds.length} 个默认关卡`);
+                
+                // 为每个关卡分配题目
+                const updatedSectors = state.sectors.map(sector => {
+                    const sectorIndex = defaultSectorIds.indexOf(sector.id);
+                    
+                    // 只处理默认的六个关卡
+                    if (sectorIndex === -1) {
+                        return sector;
+                    }
+                    
+                    const neededCount = questionsPerSector[sectorIndex];
+                    const sectorQuestions: Question[] = [];
+                    
+                    // 从题库中选择题目，如果不够则循环使用
+                    for (let i = 0; i < neededCount; i++) {
+                        const questionIndex = i % totalAvailable;
+                        const question = { 
+                            ...allQuestions[questionIndex],
+                            // 为每个关卡的题目生成唯一ID，避免重复
+                            id: `${sector.id}-${allQuestions[questionIndex].id}-${i}`
+                        };
+                        sectorQuestions.push(question);
+                    }
+                    
+                    console.log(`[AI分配] 关卡 "${sector.name}" (${sector.id}): 分配 ${sectorQuestions.length} 道题目`);
+                    
+                    return {
+                        ...sector,
+                        aiQuestions: sectorQuestions,
+                        totalQuestions: neededCount,
+                        aiGenerated: {
+                            generatedAt: Date.now(),
+                            sourceTitle
+                        }
+                    };
+                });
+                
+                set({ sectors: updatedSectors });
+                console.log(`[AI分配] 完成！共分配题目到 ${defaultSectorIds.length} 个关卡`);
             },
 
             // === 主题系统 ===

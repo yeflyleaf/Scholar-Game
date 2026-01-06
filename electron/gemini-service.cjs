@@ -391,6 +391,20 @@ ${content}
           throw new Error('AI核心过载（配额耗尽），请稍后重试或检查API密钥配额。');
         }
         
+        // 处理503服务过载错误 - 自动重试
+        if (response.status === 503) {
+          console.error('Gemini API Overloaded:', errorText);
+          
+          if (retryCount < 3) {
+            const waitTime = 15 * Math.pow(1.5, retryCount); // 15秒, 22.5秒, 33.75秒
+            console.log(`API overloaded (503). Retrying in ${waitTime.toFixed(1)}s... (Attempt ${retryCount + 1}/3)`);
+            await this.sleep(waitTime * 1000);
+            return this.callGeminiWithTokens(prompt, systemInstruction, maxTokens, retryCount + 1);
+          }
+          
+          throw new Error('AI核心暂时过载，请稍后重试。');
+        }
+        
         throw new Error(`Gemini API error: ${errorText}`);
       }
 
@@ -615,14 +629,18 @@ ${content}
 - 使用中文
 - 具有教育意义`;
 
-    const prompt = `主题名称: ${themeName}
+    const prompt = `用户提供的主题关键词: ${themeName}
 
 学习资料内容:
 ${content.substring(0, 6000)}
 
-请生成一个完整的游戏主题配置，返回JSON格式：
+请生成一个完整的游戏主题配置。
+【重要】主题名称（name字段）需要你根据学习资料内容创造一个富有意境的、符合赛博朋克/科幻风格的名称，不要直接使用用户输入的"${themeName}"这个直白的名称。
+例如：如果用户输入"计算机网络"，你可以生成"数据洪流·节点觉醒"或"协议圣殿"这样有意境的名称。
+
+返回JSON格式：
 {
-  "name": "${themeName}",
+  "name": "由AI生成的有意境的主题名称",
   "sourceContent": "基于提供的学习资料",
   "pageLabels": {
     "levelSelect": {

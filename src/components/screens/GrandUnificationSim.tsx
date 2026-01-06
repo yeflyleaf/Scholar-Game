@@ -1,7 +1,6 @@
 // 页面：大统一理论演练 (GrandUnificationSim) - 关卡选择界面，显示星图和扇区信息
 import { AnimatePresence, motion } from 'framer-motion';
 import React from 'react';
-import { useGemini } from '../../hooks/useGemini';
 import { DEFAULT_THEME, STAR_SECTORS } from '../../lib/constants';
 import { useGameStore } from '../../stores/useGameStore';
 import type { StarSector } from '../../types/game';
@@ -383,7 +382,6 @@ const GeometricNode: React.FC<{
                         className="text-sm font-mono font-bold tracking-wider"
                         style={{ color: primaryColor }}
                     >
-                        {sector.aiGenerated && <span className="mr-1">🤖</span>}
                         {sector.name}
                     </span>
                     {isHighEntropy && (
@@ -395,11 +393,6 @@ const GeometricNode: React.FC<{
                             ⚠ 熵警报
                         </motion.span>
                     )}
-                    {sector.aiGenerated && (
-                        <span className="text-[9px] text-holographic-gold font-mono mt-0.5">
-                            AI生成
-                        </span>
-                    )}
                 </div>
             </motion.div>
         </motion.div>
@@ -408,20 +401,10 @@ const GeometricNode: React.FC<{
 
 // 数据面板
 const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = ({ sector, onStart }) => {
-    const { currentTheme, updateSectorBriefing } = useGameStore();
-    const { generateMissionBriefing, isLoading } = useGemini();
+    const { currentTheme } = useGameStore();
     const labels = currentTheme.pageLabels.levelSelect;
     // Fix: Force update label if it's the old default
     const missionBriefingLabel = labels.missionBriefing === '任务简报' ? DEFAULT_THEME.pageLabels.levelSelect.missionBriefing : labels.missionBriefing;
-
-    const handleRegenerateBriefing = async (e: React.MouseEvent) => {
-        e.stopPropagation();
-        if (!sector) return;
-        const briefing = await generateMissionBriefing(sector.name, sector.description);
-        if (briefing) {
-            updateSectorBriefing(sector.id, briefing);
-        }
-    };
 
     if (!sector) {
         return (
@@ -453,24 +436,12 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
         >
             {/* 扇区名称 */}
             <div className="mb-6">
-                <div className="flex items-center gap-2 mb-2">
-                    {sector.aiGenerated && (
-                        <span className="px-2 py-0.5 bg-holographic-gold/20 border border-holographic-gold/50 text-holographic-gold text-xs font-mono rounded">
-                            🤖 AI生成
-                        </span>
-                    )}
-                </div>
                 <h3 className="text-3xl font-display font-bold text-white glitch-text mb-2" data-text={sector.name}>
                     {sector.name}
                 </h3>
                 <p className="text-sm text-gray-400 font-mono leading-relaxed">
                     {sector.description}
                 </p>
-                {sector.aiGenerated && (
-                    <p className="text-xs text-gray-500 font-mono mt-2">
-                        📅 生成时间: {new Date(sector.aiGenerated.generatedAt).toLocaleString()}
-                    </p>
-                )}
             </div>
 
             {/* 统计数据 */}
@@ -532,22 +503,13 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ delay: 0.5 }}
             >
-                <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-2">
-                        <motion.div
-                            className="w-2 h-2 bg-cyan-400 rounded-full"
-                            animate={{ scale: [1, 1.5, 1] }}
-                            transition={{ duration: 1, repeat: Infinity }}
-                        />
-                        <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">{missionBriefingLabel}</span>
-                    </div>
-                    <button 
-                        onClick={handleRegenerateBriefing}
-                        disabled={isLoading}
-                        className="text-[10px] px-2 py-1 rounded border border-cyan-400/30 text-cyan-400 hover:bg-cyan-400/10 disabled:opacity-50 transition-colors"
-                    >
-                        {isLoading ? '计算中...' : '⚡ 重构简报'}
-                    </button>
+                <div className="flex items-center gap-2 mb-3">
+                    <motion.div
+                        className="w-2 h-2 bg-cyan-400 rounded-full"
+                        animate={{ scale: [1, 1.5, 1] }}
+                        transition={{ duration: 1, repeat: Infinity }}
+                    />
+                    <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">{missionBriefingLabel}</span>
                 </div>
                 <p className="text-sm text-gray-300 font-mono leading-relaxed">
                     {sector.missionBriefing || STAR_SECTORS.find(s => s.id === sector.id)?.missionBriefing || "目标：渗透认知熵侵蚀区域，通过知识验证重建逻辑框架。"}
