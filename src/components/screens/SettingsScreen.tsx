@@ -1,8 +1,9 @@
-// 页面：系统配置 (SettingsScreen) - 设置 API Key 和生成题目
+// 页面：系统配置 (SettingsScreen) - 多 AI 提供商支持
 import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
-import { useGemini } from '../../hooks/useGemini';
+import { useAI } from '../../hooks/useAI';
 import { useGameStore } from '../../stores/useGameStore';
+import type { AIProvider } from '../../types/electron';
 import { isElectron } from '../../types/electron';
 
 // 动画状态指示器
@@ -32,7 +33,6 @@ const SectionPanel: React.FC<{
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
     >
-        {/* 头部 */}
         <div className="flex items-center justify-between mb-6 pb-4 border-b border-gray-700/50">
             <div className="flex items-center gap-3">
                 {icon && (
@@ -51,26 +51,85 @@ const SectionPanel: React.FC<{
     </motion.div>
 );
 
+// 提供商卡片组件
+const ProviderCard: React.FC<{
+    provider: AIProvider;
+    isSelected: boolean;
+    onClick: () => void;
+}> = ({ provider, isSelected, onClick }) => (
+    <motion.button
+        onClick={onClick}
+        className={`
+            w-full p-4 text-left rounded-lg border-2 transition-all
+            ${isSelected 
+                ? 'border-neon-cyan bg-neon-cyan/10' 
+                : 'border-gray-700 hover:border-gray-500 bg-gray-800/30'
+            }
+        `}
+        whileHover={{ scale: 1.02 }}
+        whileTap={{ scale: 0.98 }}
+    >
+        <div className="flex items-start justify-between">
+            <div className="flex-1">
+                <h3 className={`font-display font-bold ${isSelected ? 'text-neon-cyan' : 'text-white'}`}>
+                    {provider.name}
+                </h3>
+                <p className="text-xs font-mono text-gray-500 mt-1">
+                    {provider.freeQuota}
+                </p>
+            </div>
+            {isSelected && (
+                <span className="text-neon-cyan text-lg">✓</span>
+            )}
+        </div>
+        <div className="flex items-center gap-2 mt-2">
+            <span className={`text-xs px-2 py-0.5 rounded ${
+                provider.region === 'china' 
+                    ? 'bg-holographic-gold/20 text-holographic-gold' 
+                    : 'bg-blue-500/20 text-blue-400'
+            }`}>
+                {provider.region === 'china' ? '🇨🇳 国内' : '🌍 国际'}
+            </span>
+            {provider.requiresProxy && (
+                <span className="text-xs px-2 py-0.5 rounded bg-gray-700 text-gray-400">
+                    需代理
+                </span>
+            )}
+        </div>
+    </motion.button>
+);
+
 export const SettingsScreen: React.FC = () => {
     const { setScreen, settings, updateSettings, resetProgress, distributeAIQuestionsToSectors, applyAITheme, currentTheme, updateSectorBriefing, updateSectorMetadata } = useGameStore();
     const {
         isConfigured,
         isLoading,
         error,
+        providerId,
+        providerName,
         model,
+        providers,
+        providersGrouped,
+        setProvider,
         setApiKey,
         setModel,
+        setAccountId,
         checkStatus,
         generateQuestions,
         generateTheme,
         generateAllMissionBriefings,
         clearError
-    } = useGemini();
+    } = useAI();
 
+    // UI State
+    const [activeTab, setActiveTab] = useState<'china' | 'international'>('china');
     const [apiKeyInput, setApiKeyInput] = useState('');
-    const [modelInput, setModelInput] = useState(model || '');
-    const [prevModel, setPrevModel] = useState(model);
-    const [modelSaveStatus, setModelSaveStatus] = useState<'idle' | 'success'>('idle');
+    const [accountIdInput, setAccountIdInput] = useState('');
+    const [modelInput, setModelInput] = useState('');
+    const [prevModel, setPrevModel] = useState<string | null>(null);
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+    
+    // Generation State
     const [textContent, setTextContent] = useState('');
     const [chapterTitle, setChapterTitle] = useState('');
     const [difficulty, setDifficulty] = useState(3);
@@ -79,13 +138,25 @@ export const SettingsScreen: React.FC = () => {
 
     const isElectronEnv = isElectron();
 
+    // Get current provider info
+    const currentProvider = providers.find(p => p.id === providerId);
+    const availableModels = currentProvider?.models || [];
+
     useEffect(() => {
         if (isElectronEnv) {
             checkStatus();
         }
     }, [isElectronEnv, checkStatus]);
 
-    // 全屏切换副作用
+    // Sync model input when model changes (outside of useEffect to avoid cascading renders)
+    if (model !== prevModel) {
+        setPrevModel(model);
+        if (model) {
+            setModelInput(model);
+        }
+    }
+
+    // Fullscreen toggle
     useEffect(() => {
         const handleFullscreen = async () => {
             try {
@@ -105,12 +176,12 @@ export const SettingsScreen: React.FC = () => {
         handleFullscreen();
     }, [settings.fullscreen]);
 
-    const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
-
-    if (model !== prevModel) {
-        setPrevModel(model);
-        setModelInput(model);
-    }
+    const handleSelectProvider = async (id: string) => {
+        await setProvider(id);
+        setApiKeyInput('');
+        setAccountIdInput('');
+        setSaveStatus('idle');
+    };
 
     const handleSaveApiKey = async () => {
         if (apiKeyInput.trim()) {
@@ -123,17 +194,20 @@ export const SettingsScreen: React.FC = () => {
         }
     };
 
-    const handleSaveModel = async () => {
-        if (modelInput.trim()) {
-            const success = await setModel(modelInput.trim());
-            if (success) {
-                setModelSaveStatus('success');
-                setTimeout(() => setModelSaveStatus('idle'), 3000);
-            }
+    const handleSaveAccountId = async () => {
+        if (accountIdInput.trim()) {
+            await setAccountId(accountIdInput.trim());
         }
     };
 
-    // 统一生成：同时生成题目和主题
+    const handleSaveModel = async () => {
+        if (modelInput.trim() && modelInput !== model) {
+            await setModel(modelInput.trim());
+            setSaveStatus('success');
+            setTimeout(() => setSaveStatus('idle'), 3000);
+        }
+    };
+
     const handleGenerate = async () => {
         if (!textContent.trim() || !chapterTitle.trim()) return;
         setGenerationStatus('loading');
@@ -143,7 +217,6 @@ export const SettingsScreen: React.FC = () => {
         try {
             let questionsSuccess = false;
             
-            // 1. 生成60道题目并分配到6个关卡
             const questions = await generateQuestions(textContent, {
                 count: 60,
                 difficulty: difficulty as 1 | 2 | 3 | 4 | 5 | 'mixed'
@@ -155,22 +228,17 @@ export const SettingsScreen: React.FC = () => {
                 questionsSuccess = true;
             }
             
-            // 2. 生成游戏主题（不影响主页面标题）
             const theme = await generateTheme(chapterTitle, textContent);
             
             if (theme) {
-                // 应用主题（UI标签等）
                 applyAITheme(theme);
                 
-                // 2.5 更新扇区名称和描述（如果主题包含sectors数据）
                 // eslint-disable-next-line @typescript-eslint/no-explicit-any
                 const themeWithSectors = theme as any;
                 if (themeWithSectors.sectors && Array.isArray(themeWithSectors.sectors)) {
                     updateSectorMetadata(themeWithSectors.sectors);
                 }
                 
-                // 3. 为所有扇区生成任务简报（使用更新后的扇区数据）
-                // 需要重新获取扇区，因为名称可能已更新
                 const currentSectors = useGameStore.getState().sectors;
                 const targetSectors = currentSectors.slice(0, 6).map(s => ({
                     id: s.id,
@@ -188,10 +256,8 @@ export const SettingsScreen: React.FC = () => {
                 }
             }
             
-            // 只要题目生成成功就算成功
             if (questionsSuccess) {
                 setGenerationStatus('success');
-                // 清空输入
                 setTextContent('');
                 setChapterTitle('');
             } else {
@@ -202,19 +268,20 @@ export const SettingsScreen: React.FC = () => {
         }
     };
 
-    // 跳转到关卡选择页面
     const handleGoToLevelSelect = () => {
         setScreen('GRAND_UNIFICATION_SIM');
     };
 
+    const chinaProviders = providersGrouped?.china || [];
+    const internationalProviders = providersGrouped?.international || [];
+
     return (
         <div className="w-full h-screen bg-deep-space relative overflow-y-auto">
-            {/* 背景特效 */}
             <div className="hex-grid-bg opacity-20" />
             <div className="data-stream opacity-10" />
 
             <div className="max-w-5xl mx-auto p-8 space-y-8 relative z-10">
-                {/* 头部 */}
+                {/* Header */}
                 <motion.div
                     className="flex items-center justify-between"
                     initial={{ opacity: 0, y: -20 }}
@@ -224,7 +291,7 @@ export const SettingsScreen: React.FC = () => {
                         <h1 className="text-4xl font-display font-bold text-neon-cyan glitch-text" data-text="系统配置">
                             系统配置
                         </h1>
-                        <p className="text-sm font-mono text-gray-500 mt-1">系统配置 | 灵感中枢</p>
+                        <p className="text-sm font-mono text-gray-500 mt-1">多AI核心 | 灵感中枢</p>
                     </div>
                     <motion.button
                         onClick={() => setScreen('TITLE')}
@@ -236,7 +303,7 @@ export const SettingsScreen: React.FC = () => {
                     </motion.button>
                 </motion.div>
 
-                {/* 状态概览 */}
+                {/* Status Overview */}
                 <motion.div
                     className="fui-panel p-4 flex items-center justify-between"
                     initial={{ opacity: 0 }}
@@ -246,56 +313,135 @@ export const SettingsScreen: React.FC = () => {
                     <div className="flex items-center gap-8">
                         <StatusIndicator isActive={isElectronEnv} label="桌面应用环境" />
                         <StatusIndicator isActive={isConfigured} label="AI 核心连接" />
+                        {providerName && (
+                            <span className="text-sm font-mono text-neon-cyan">
+                                当前: {providerName}
+                            </span>
+                        )}
                     </div>
                     <span className="text-xs font-mono text-gray-500">
-                        智者协议
+                        支持 21+ AI 提供商
                     </span>
                 </motion.div>
 
-                {/* 基础设置区域 */}
+                {/* Basic Settings */}
                 <SectionPanel
                     title="基础设置"
                     subtitle="系统参数调整"
                     icon={<span className="text-neon-cyan">⚙</span>}
                 >
-                    <div className="space-y-6">
-                        {/* 显示设置 */}
-                        <div className="space-y-4">
-                             <h3 className="text-sm font-mono text-gray-400 flex items-center gap-2">
-                                <span className="w-2 h-2 bg-holographic-gold" />
-                                显示设置
-                            </h3>
-                            
-                            <div className="flex items-center justify-between">
-                                <span className="text-sm font-mono text-gray-300">全屏模式</span>
-                                <motion.button
-                                    onClick={() => updateSettings({ fullscreen: !settings.fullscreen })}
-                                    className={`w-12 h-6 rounded-full relative transition-colors ${settings.fullscreen ? 'bg-neon-cyan' : 'bg-gray-700'}`}
-                                >
-                                    <motion.div 
-                                        className="w-4 h-4 bg-white rounded-full absolute top-1"
-                                        animate={{ left: settings.fullscreen ? 'calc(100% - 1.25rem)' : '0.25rem' }}
-                                    />
-                                </motion.button>
-                            </div>
+                    <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                            <span className="text-sm font-mono text-gray-300">全屏模式</span>
+                            <motion.button
+                                onClick={() => updateSettings({ fullscreen: !settings.fullscreen })}
+                                className={`w-12 h-6 rounded-full relative transition-colors ${settings.fullscreen ? 'bg-neon-cyan' : 'bg-gray-700'}`}
+                            >
+                                <motion.div 
+                                    className="w-4 h-4 bg-white rounded-full absolute top-1"
+                                    animate={{ left: settings.fullscreen ? 'calc(100% - 1.25rem)' : '0.25rem' }}
+                                />
+                            </motion.button>
                         </div>
                     </div>
                 </SectionPanel>
 
-                {/* API Key 区域 */}
+                {/* AI Provider Selection */}
                 <SectionPanel
-                    title="AI 核心链接"
-                    subtitle="神经链接配置"
+                    title="AI 核心选择"
+                    subtitle="选择你的 AI 提供商"
                     icon={<span className="text-neon-cyan">◈</span>}
                 >
+                    <div className="space-y-6">
+                        {/* Region Tabs */}
+                        <div className="flex gap-4 border-b border-gray-700">
+                            <button
+                                onClick={() => setActiveTab('china')}
+                                className={`pb-3 px-4 font-mono text-sm transition-colors relative ${
+                                    activeTab === 'china' 
+                                        ? 'text-holographic-gold' 
+                                        : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                            >
+                                🇨🇳 国内提供商
+                                {activeTab === 'china' && (
+                                    <motion.div 
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-holographic-gold"
+                                        layoutId="tab-indicator"
+                                    />
+                                )}
+                            </button>
+                            <button
+                                onClick={() => setActiveTab('international')}
+                                className={`pb-3 px-4 font-mono text-sm transition-colors relative ${
+                                    activeTab === 'international' 
+                                        ? 'text-blue-400' 
+                                        : 'text-gray-500 hover:text-gray-300'
+                                }`}
+                            >
+                                🌍 国际提供商
+                                {activeTab === 'international' && (
+                                    <motion.div 
+                                        className="absolute bottom-0 left-0 right-0 h-0.5 bg-blue-400"
+                                        layoutId="tab-indicator"
+                                    />
+                                )}
+                            </button>
+                        </div>
+
+                        {/* Provider Grid */}
+                        <AnimatePresence mode="wait">
+                            <motion.div
+                                key={activeTab}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: -20 }}
+                                className="grid grid-cols-2 md:grid-cols-3 gap-4"
+                            >
+                                {(activeTab === 'china' ? chinaProviders : internationalProviders).map((provider) => (
+                                    <ProviderCard
+                                        key={provider.id}
+                                        provider={provider}
+                                        isSelected={providerId === provider.id}
+                                        onClick={() => handleSelectProvider(provider.id)}
+                                    />
+                                ))}
+                            </motion.div>
+                        </AnimatePresence>
+
+                        {/* Selected Provider Info */}
+                        {currentProvider && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="bg-neon-cyan/5 border border-neon-cyan/20 p-4 rounded-lg"
+                            >
+                                <h4 className="text-neon-cyan font-display mb-2">
+                                    已选择: {currentProvider.name}
+                                </h4>
+                                <p className="text-xs font-mono text-gray-400">
+                                    免费额度: {currentProvider.freeQuota}
+                                </p>
+                            </motion.div>
+                        )}
+                    </div>
+                </SectionPanel>
+
+                {/* API Key Configuration */}
+                <SectionPanel
+                    title="API 密钥配置"
+                    subtitle="连接你选择的 AI 核心"
+                    icon={<span className="text-neon-cyan">🔑</span>}
+                >
                     <div className="space-y-4">
+                        {/* API Key Input */}
                         <div className="flex gap-4">
                             <div className="flex-1 relative">
                                 <input
                                     type="password"
                                     value={apiKeyInput}
                                     onChange={(e) => setApiKeyInput(e.target.value)}
-                                    placeholder="输入 Gemini 密钥..."
+                                    placeholder={`输入 ${providerName || 'AI'} API 密钥...`}
                                     className="fui-input w-full pr-12"
                                 />
                                 {isConfigured && (
@@ -317,13 +463,38 @@ export const SettingsScreen: React.FC = () => {
                                         连接中
                                     </span>
                                 ) : saveStatus === 'success' ? (
-                                    <span className="text-stable">✓ 已更新</span>
+                                    <span className="text-stable">✓ 已保存</span>
                                 ) : (
-                                    '建立链接'
+                                    '保存密钥'
                                 )}
                             </motion.button>
                         </div>
 
+                        {/* Account ID for Cloudflare */}
+                        {providerId === 'cloudflare' && (
+                            <div className="flex gap-4">
+                                <div className="flex-1">
+                                    <input
+                                        type="text"
+                                        value={accountIdInput}
+                                        onChange={(e) => setAccountIdInput(e.target.value)}
+                                        placeholder="Cloudflare Account ID"
+                                        className="fui-input w-full"
+                                    />
+                                </div>
+                                <motion.button
+                                    onClick={handleSaveAccountId}
+                                    disabled={!accountIdInput.trim()}
+                                    className="hex-button px-6 disabled:opacity-50"
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    保存 ID
+                                </motion.button>
+                            </div>
+                        )}
+
+                        {/* Error Display */}
                         {error && (
                             <motion.div
                                 className="bg-glitch-red/10 border border-glitch-red/30 p-3 rounded"
@@ -335,15 +506,15 @@ export const SettingsScreen: React.FC = () => {
                         )}
 
                         <p className="text-xs font-mono text-gray-500 leading-relaxed">
-                            连接 Google Gemini AI 核心以启用知识生成功能。密钥将安全存储于本地。
+                            密钥将安全存储于本地。不同提供商的密钥获取方式见各自官网文档。
                         </p>
                     </div>
                 </SectionPanel>
 
-                {/* 模型配置区域 */}
+                {/* Model Configuration */}
                 <SectionPanel
                     title="模型配置"
-                    subtitle="选择 AI 核心模型"
+                    subtitle="选择 AI 模型"
                     icon={<span className="text-neon-cyan">🧠</span>}
                 >
                     <div className="space-y-4">
@@ -352,22 +523,17 @@ export const SettingsScreen: React.FC = () => {
                                 <label className="block text-sm font-mono text-gray-400">
                                     模型标识
                                 </label>
-                                <div className="relative">
-                                    <input
-                                        type="text"
-                                        value={modelInput}
-                                        onChange={(e) => setModelInput(e.target.value)}
-                                        placeholder="例如: gemini-2.0-flash"
-                                        className="fui-input w-full"
-                                        list="model-suggestions"
-                                    />
-                                    <datalist id="model-suggestions">
-                                        <option value="gemini-2.0-flash" />
-                                        <option value="gemini-1.5-flash" />
-                                        <option value="gemini-1.5-pro" />
-                                        <option value="gemini-pro" />
-                                    </datalist>
-                                </div>
+                                <select
+                                    value={modelInput}
+                                    onChange={(e) => setModelInput(e.target.value)}
+                                    className="fui-input w-full bg-gray-800"
+                                >
+                                    {availableModels.map((m) => (
+                                        <option key={m.id} value={m.id}>
+                                            {m.name} - {m.description}
+                                        </option>
+                                    ))}
+                                </select>
                             </div>
                             <motion.button
                                 onClick={handleSaveModel}
@@ -376,26 +542,23 @@ export const SettingsScreen: React.FC = () => {
                                 whileHover={{ scale: 1.02 }}
                                 whileTap={{ scale: 0.98 }}
                             >
-                                {modelSaveStatus === 'success' ? (
-                                    <span className="text-stable">✓ 已保存</span>
-                                ) : (
-                                    '应用模型'
-                                )}
+                                应用模型
                             </motion.button>
                         </div>
                         <p className="text-xs font-mono text-gray-500 leading-relaxed">
-                            当前使用模型: <span className="text-neon-cyan">{model}</span>。
-                            推荐使用 <span className="text-white">gemini-2.0-flash</span> 以获得最佳速度和效果。
+                            当前模型: <span className="text-neon-cyan">{model || '未选择'}</span>
                         </p>
                     </div>
                 </SectionPanel>
+
+                {/* Data Synthesis */}
                 <SectionPanel
                     title="数据合成"
                     subtitle="知识合成引擎"
                     icon={<span className="text-holographic-gold">⬡</span>}
                 >
                     <div className="space-y-6">
-                        {/* 章节标题 */}
+                        {/* Chapter Title */}
                         <div className="space-y-2">
                             <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-neon-cyan" />
@@ -410,7 +573,7 @@ export const SettingsScreen: React.FC = () => {
                             />
                         </div>
 
-                        {/* 难度 */}
+                        {/* Difficulty */}
                         <div className="space-y-2">
                             <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-holographic-gold" />
@@ -437,17 +600,9 @@ export const SettingsScreen: React.FC = () => {
                                     </motion.button>
                                 ))}
                             </div>
-                            <p className="text-xs font-mono text-gray-500">
-                                等级 {difficulty}：
-                                {difficulty === 1 && '入门级知识点'}
-                                {difficulty === 2 && '基础概念理解'}
-                                {difficulty === 3 && '标准考试难度'}
-                                {difficulty === 4 && '进阶综合题目'}
-                                {difficulty === 5 && '顶级挑战难度'}
-                            </p>
                         </div>
 
-                        {/* 源内容 */}
+                        {/* Source Content */}
                         <div className="space-y-2">
                             <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-neon-cyan" />
@@ -461,12 +616,12 @@ export const SettingsScreen: React.FC = () => {
                                 placeholder="在此粘贴复习资料、教材内容或笔记...&#10;&#10;AI 将根据输入内容自动生成相关题目。"
                             />
                             <div className="flex justify-between text-xs font-mono text-gray-500">
-                                <span className="text-sm">仅支持.txt和.md文本格式</span>
+                                <span>仅支持.txt和.md文本格式</span>
                                 <span>{textContent.length} 字符</span>
                             </div>
                         </div>
 
-                        {/* 当前主题显示 */}
+                        {/* Current Theme */}
                         <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: 'auto' }}
@@ -480,7 +635,7 @@ export const SettingsScreen: React.FC = () => {
                             </p>
                         </motion.div>
 
-                        {/* 生成按钮 */}
+                        {/* Generate Button */}
                         <motion.button
                             onClick={handleGenerate}
                             disabled={generationStatus === 'loading' || !isConfigured || !textContent.trim() || !chapterTitle.trim()}
@@ -493,7 +648,7 @@ export const SettingsScreen: React.FC = () => {
                             {generationStatus === 'loading' ? (
                                 <span className="flex items-center justify-center gap-3">
                                     <div className="processing-ring w-6 h-6 border-2" style={{ borderWidth: '2px' }} />
-                                    <span>正在合成知识矩阵...</span>
+                                    <span>正在使用 {providerName} 合成...</span>
                                 </span>
                             ) : (
                                 <span className="flex items-center justify-center gap-2">
@@ -501,8 +656,6 @@ export const SettingsScreen: React.FC = () => {
                                     <span className="text-holographic-gold">⬡</span>
                                 </span>
                             )}
-
-                            {/* 加载时的动画背景 */}
                             {generationStatus === 'loading' && (
                                 <motion.div
                                     className="absolute inset-0 bg-gradient-to-r from-neon-cyan/10 via-neon-cyan/30 to-neon-cyan/10"
@@ -512,7 +665,7 @@ export const SettingsScreen: React.FC = () => {
                             )}
                         </motion.button>
 
-                        {/* 状态消息 */}
+                        {/* Status Messages */}
                         <AnimatePresence mode="wait">
                             {generationStatus === 'success' && (
                                 <motion.div
@@ -549,9 +702,6 @@ export const SettingsScreen: React.FC = () => {
                                             继续生成
                                         </motion.button>
                                     </div>
-                                    <p className="text-xs text-gray-500 font-mono mt-2">
-                                        💡 题目已分配到6个关卡：第1关10道、第2关20道、依此类推
-                                    </p>
                                 </motion.div>
                             )}
                             {generationStatus === 'error' && (
@@ -575,7 +725,7 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                 </SectionPanel>
 
-                {/* 危险区域 */}
+                {/* Danger Zone */}
                 <SectionPanel
                     title="危险区域"
                     subtitle="数据重置与调试"
@@ -601,7 +751,7 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                 </SectionPanel>
 
-                {/* 信息区域 */}
+                {/* Footer */}
                 <motion.div
                     className="text-center py-8 space-y-2"
                     initial={{ opacity: 0 }}
@@ -609,18 +759,15 @@ export const SettingsScreen: React.FC = () => {
                     transition={{ delay: 0.5 }}
                 >
                     <p className="text-xs font-mono text-gray-500">
-                        智者计划 | 学习飞升
+                        智者计划 | 学习飞升 | 支持 21+ AI 提供商
                     </p>
                     <p className="text-xs font-mono text-gray-600">
                         为世界上所有的不挂科而战！
                     </p>
-                    <p className="text-xs font-mono text-gray-600">
-                        把这些不完美的成绩，变成我们所期待的样子！
-                    </p>
                 </motion.div>
             </div>
 
-            {/* 角落装饰 */}
+            {/* Corner Decorations */}
             <div className="fixed top-6 left-6 w-16 h-16 border-t-2 border-l-2 border-neon-cyan/20 pointer-events-none" />
             <div className="fixed top-6 right-6 w-16 h-16 border-t-2 border-r-2 border-neon-cyan/20 pointer-events-none" />
             <div className="fixed bottom-6 left-6 w-16 h-16 border-b-2 border-l-2 border-neon-cyan/20 pointer-events-none" />

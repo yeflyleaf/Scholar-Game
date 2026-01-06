@@ -1,14 +1,13 @@
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
-const { GeminiService } = require('./gemini-service.cjs');
+const { AIService } = require('./ai-service.cjs');
 
 // 设置用户数据目录为安装目录下的 data 文件夹
-// 确保所有数据（包括缓存、会话等）都存在安装目录下，而不是 C 盘
 const userDataPath = path.join(__dirname, '..', 'data');
 app.setPath('userData', userDataPath);
 
-// Initialize Gemini service
-const gemini = new GeminiService();
+// Initialize AI service (replaces GeminiService)
+const aiService = new AIService();
 
 let mainWindow;
 
@@ -27,10 +26,9 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: preloadPath,
-      webSecurity: false, // Disable for debugging
+      webSecurity: false,
       devTools: true,
     },
-    // Cyberpunk style window
     frame: true,
     autoHideMenuBar: true,
   });
@@ -42,10 +40,8 @@ function createWindow() {
     mainWindow.loadURL(url).catch(e => {
       console.error('Failed to load URL:', e);
     });
-    // Open DevTools in development
     mainWindow.webContents.openDevTools();
   } else {
-    // In production, load the built files
     mainWindow.loadFile(path.join(__dirname, '../dist/index.html')).catch(e => {
       console.error('Failed to load file:', e);
     });
@@ -80,91 +76,226 @@ app.on('activate', () => {
 });
 
 // ========================================
-// IPC Handlers for Gemini API
+// IPC Handlers for AI Service
 // ========================================
 
-// Set API Key
-ipcMain.handle('gemini:set-api-key', async (event, apiKey) => {
+// Get available providers
+ipcMain.handle('ai:get-providers', async () => {
+  return aiService.getProviders();
+});
+
+// Get providers grouped by region
+ipcMain.handle('ai:get-providers-grouped', async () => {
+  return aiService.getProvidersGrouped();
+});
+
+// Set provider
+ipcMain.handle('ai:set-provider', async (event, providerId) => {
   try {
-    gemini.setApiKey(apiKey);
+    aiService.setProvider(providerId);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Check if API is configured
-ipcMain.handle('gemini:check-status', async () => {
-  return { 
-    configured: gemini.isConfigured(),
-    model: gemini.getModel()
-  };
+// Set API Key
+ipcMain.handle('ai:set-api-key', async (event, apiKey) => {
+  try {
+    aiService.setApiKey(apiKey);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });
 
 // Set Model
-ipcMain.handle('gemini:set-model', async (event, model) => {
+ipcMain.handle('ai:set-model', async (event, model) => {
   try {
-    gemini.setModel(model);
+    aiService.setModel(model);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Generate questions from text content
-ipcMain.handle('gemini:generate-questions', async (event, { content, options }) => {
+// Set Account ID (for Cloudflare)
+ipcMain.handle('ai:set-account-id', async (event, accountId) => {
   try {
-    const questions = await gemini.generateQuestions(content, options);
+    aiService.setAccountId(accountId);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Check status
+ipcMain.handle('ai:check-status', async () => {
+  return aiService.getStatus();
+});
+
+// Generate questions
+ipcMain.handle('ai:generate-questions', async (event, { content, options }) => {
+  try {
+    const questions = await aiService.generateQuestions(content, options);
     return { success: true, data: questions };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Generate knowledge tree structure from content
-ipcMain.handle('gemini:generate-knowledge-tree', async (event, { content }) => {
+// Generate knowledge tree
+ipcMain.handle('ai:generate-knowledge-tree', async (event, { content }) => {
   try {
-    const tree = await gemini.generateKnowledgeTree(content);
+    const tree = await aiService.generateKnowledgeTree(content);
     return { success: true, data: tree };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Generate enemy data based on topic
-ipcMain.handle('gemini:generate-enemies', async (event, { topic, difficulty }) => {
+// Generate enemies
+ipcMain.handle('ai:generate-enemies', async (event, { topic, difficulty }) => {
   try {
-    const enemies = await gemini.generateEnemies(topic, difficulty);
+    const enemies = await aiService.generateEnemies(topic, difficulty);
     return { success: true, data: enemies };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Parse uploaded document (PDF/Text)
-ipcMain.handle('gemini:parse-document', async (event, { filePath }) => {
+// Parse document
+ipcMain.handle('ai:parse-document', async (event, { filePath }) => {
   try {
-    const content = await gemini.parseDocument(filePath);
+    const content = await aiService.parseDocument(filePath);
     return { success: true, data: content };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Generate complete chapter data
-ipcMain.handle('gemini:generate-chapter', async (event, { title, content, difficulty }) => {
+// Generate chapter
+ipcMain.handle('ai:generate-chapter', async (event, { title, content, difficulty }) => {
   try {
-    const chapter = await gemini.generateChapter(title, content, difficulty);
+    const chapter = await aiService.generateChapter(title, content, difficulty);
     return { success: true, data: chapter };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
 
-// Generate complete game theme
+// Generate theme
+ipcMain.handle('ai:generate-theme', async (event, { themeName, content }) => {
+  try {
+    const theme = await aiService.generateTheme(themeName, content);
+    return { success: true, data: theme };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Generate mission briefing
+ipcMain.handle('ai:generate-mission-briefing', async (event, { sectorName, sectorDescription }) => {
+  try {
+    const briefing = await aiService.generateMissionBriefing(sectorName, sectorDescription);
+    return { success: true, data: briefing };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Generate all mission briefings
+ipcMain.handle('ai:generate-all-mission-briefings', async (event, { sectors }) => {
+  try {
+    const briefings = await aiService.generateAllMissionBriefings(sectors);
+    return { success: true, data: briefings };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// ========================================
+// Legacy Gemini IPC Handlers (for backward compatibility)
+// ========================================
+
+ipcMain.handle('gemini:set-api-key', async (event, apiKey) => {
+  try {
+    // For backward compatibility, set provider to gemini if not set
+    if (!aiService.providerId || aiService.providerId === 'gemini') {
+      aiService.setProvider('gemini');
+    }
+    aiService.setApiKey(apiKey);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('gemini:check-status', async () => {
+  const status = aiService.getStatus();
+  return { 
+    configured: status.configured,
+    model: status.model 
+  };
+});
+
+ipcMain.handle('gemini:set-model', async (event, model) => {
+  try {
+    aiService.setModel(model);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('gemini:generate-questions', async (event, { content, options }) => {
+  try {
+    const questions = await aiService.generateQuestions(content, options);
+    return { success: true, data: questions };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('gemini:generate-knowledge-tree', async (event, { content }) => {
+  try {
+    const tree = await aiService.generateKnowledgeTree(content);
+    return { success: true, data: tree };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('gemini:generate-enemies', async (event, { topic, difficulty }) => {
+  try {
+    const enemies = await aiService.generateEnemies(topic, difficulty);
+    return { success: true, data: enemies };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('gemini:parse-document', async (event, { filePath }) => {
+  try {
+    const content = await aiService.parseDocument(filePath);
+    return { success: true, data: content };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('gemini:generate-chapter', async (event, { title, content, difficulty }) => {
+  try {
+    const chapter = await aiService.generateChapter(title, content, difficulty);
+    return { success: true, data: chapter };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
 ipcMain.handle('gemini:generate-theme', async (event, { themeName, content }) => {
   try {
-    const theme = await gemini.generateTheme(themeName, content);
+    const theme = await aiService.generateTheme(themeName, content);
     return { success: true, data: theme };
   } catch (error) {
     return { success: false, error: error.message };
@@ -173,7 +304,7 @@ ipcMain.handle('gemini:generate-theme', async (event, { themeName, content }) =>
 
 ipcMain.handle('gemini:generate-mission-briefing', async (event, { sectorName, sectorDescription }) => {
   try {
-    const briefing = await gemini.generateMissionBriefing(sectorName, sectorDescription);
+    const briefing = await aiService.generateMissionBriefing(sectorName, sectorDescription);
     return { success: true, data: briefing };
   } catch (error) {
     return { success: false, error: error.message };
@@ -182,11 +313,9 @@ ipcMain.handle('gemini:generate-mission-briefing', async (event, { sectorName, s
 
 ipcMain.handle('gemini:generate-all-mission-briefings', async (event, { sectors }) => {
   try {
-    const briefings = await gemini.generateAllMissionBriefings(sectors);
+    const briefings = await aiService.generateAllMissionBriefings(sectors);
     return { success: true, data: briefings };
   } catch (error) {
     return { success: false, error: error.message };
   }
 });
-
-
