@@ -19,6 +19,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('gemini:generate-chapter', { title, content, difficulty }),
     generateTheme: (themeName, content) => 
       ipcRenderer.invoke('gemini:generate-theme', { themeName, content }),
+    generateMissionBriefing: (sectorName, sectorDescription) => 
+      ipcRenderer.invoke('gemini:generate-mission-briefing', { sectorName, sectorDescription }),
+    generateAllMissionBriefings: (sectors) => 
+      ipcRenderer.invoke('gemini:generate-all-mission-briefings', { sectors }),
   },
   
   // File system methods

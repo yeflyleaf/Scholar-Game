@@ -148,6 +148,7 @@ export interface StarSector {
     generatedAt: number; // 生成时间戳
     sourceTitle: string; // 生成来源标题
   };
+  missionBriefing?: string; // AI生成的任务简报
 }
 
 // Player Progress - 观测者档案

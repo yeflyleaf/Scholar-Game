@@ -78,6 +78,13 @@ export interface GeminiAPI {
     themeName: string,
     content: string
   ) => Promise<APIResponse<Partial<GameTheme>>>;
+  generateMissionBriefing: (
+    sectorName: string,
+    sectorDescription: string
+  ) => Promise<APIResponse<string>>;
+  generateAllMissionBriefings: (
+    sectors: Array<{ id: string; name: string; description: string }>
+  ) => Promise<APIResponse<Record<string, string>>>;
 }
 
 // 文件系统 API 接口

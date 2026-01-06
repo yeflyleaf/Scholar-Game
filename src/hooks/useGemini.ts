@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import type {
-  GeneratedChapter,
-  GeneratedKnowledgeTree,
-  QuestionGenerationOptions
+    GeneratedChapter,
+    GeneratedKnowledgeTree,
+    QuestionGenerationOptions
 } from '../types/electron';
 import type {
-  EntropyEntity,
-  GameTheme,
-  Question
+    EntropyEntity,
+    GameTheme,
+    Question
 } from '../types/game';
 
 interface UseGeminiReturn {
@@ -26,6 +26,8 @@ interface UseGeminiReturn {
   generateEnemies: (topic: string, difficulty?: number) => Promise<EntropyEntity[] | null>;
   generateChapter: (title: string, content: string, difficulty?: number) => Promise<GeneratedChapter | null>;
   generateTheme: (themeName: string, content: string) => Promise<Partial<GameTheme> | null>;
+  generateMissionBriefing: (sectorName: string, sectorDescription: string) => Promise<string | null>;
+  generateAllMissionBriefings: (sectors: Array<{ id: string; name: string; description: string }>) => Promise<Record<string, string> | null>;
   
   // 工具
   clearError: () => void;
@@ -250,6 +252,61 @@ export function useGemini(): UseGeminiReturn {
     }
   }, [electronAPI]);
 
+  const generateMissionBriefing = useCallback(async (
+    sectorName: string,
+    sectorDescription: string
+  ): Promise<string | null> => {
+    if (!electronAPI) {
+      setError('Gemini API only available in Electron');
+      return null;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await electronAPI.gemini.generateMissionBriefing(sectorName, sectorDescription);
+      if (result.success && result.data) {
+        return result.data;
+      } else {
+        setError(result.error || 'Failed to generate mission briefing');
+        return null;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [electronAPI]);
+
+  const generateAllMissionBriefings = useCallback(async (
+    sectors: Array<{ id: string; name: string; description: string }>
+  ): Promise<Record<string, string> | null> => {
+    if (!electronAPI) {
+      setError('Gemini API only available in Electron');
+      return null;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await electronAPI.gemini.generateAllMissionBriefings(sectors);
+      if (result.success && result.data) {
+        return result.data;
+      } else {
+        setError(result.error || 'Failed to generate mission briefings');
+        return null;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [electronAPI]);
+
   return {
     isConfigured,
     isLoading,
@@ -263,6 +320,8 @@ export function useGemini(): UseGeminiReturn {
     generateEnemies,
     generateChapter,
     generateTheme,
+    generateMissionBriefing,
+    generateAllMissionBriefings,
     clearError,
   };
 }

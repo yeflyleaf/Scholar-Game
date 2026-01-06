@@ -712,6 +712,60 @@ ${content.substring(0, 6000)}
     
     return theme;
   }
+
+  /**
+   * Generate mission briefing for a sector
+   */
+  async generateMissionBriefing(sectorName, sectorDescription) {
+    const systemInstruction = `你是《智者计划》的战术指挥官，负责向首席智者发布任务简报。
+【风格要求】
+1. 极简主义：不超过50个字。
+2. 科幻/赛博朋克风格：使用"认知熵"、"逻辑框架"、"数据流"、"协议"等术语。
+3. 紧迫感：强调任务的重要性和危险性。
+4. 动态性：每次生成的简报应略有不同，反映战场的实时变化。`;
+
+    const prompt = `【生成任务简报】
+目标扇区：${sectorName}
+扇区情报：${sectorDescription}
+
+请生成一条简短的任务简报（Mission Briefing），指导玩家在该扇区的行动。
+格式参考："目标：[行动目标]，通过[手段]达成[结果]。" 或 "警告：[异常现象]。任务：[具体行动]。"
+
+请只返回简报文本，不要JSON，不要引号。`;
+
+    const response = await this.callGemini(prompt, systemInstruction);
+    return response.trim();
+  }
+
+  /**
+   * Generate mission briefings for multiple sectors in one batch
+   */
+  async generateAllMissionBriefings(sectors) {
+    const systemInstruction = `你是《智者计划》的战术指挥官，负责批量发布任务简报。
+【风格要求】
+1. 极简主义：每条不超过50个字。
+2. 科幻/赛博朋克风格：使用"认知熵"、"逻辑框架"、"数据流"、"协议"等术语。
+3. 紧迫感：强调任务的重要性和危险性。
+
+请为每个扇区生成一条简报。`;
+
+    const sectorsText = sectors.map((s, i) => `扇区${i+1} [ID:${s.id}]: ${s.name} - ${s.description}`).join('\n');
+
+    const prompt = `【批量生成任务简报】
+请为以下扇区生成任务简报：
+
+${sectorsText}
+
+请返回JSON格式，键为扇区ID，值为简报文本：
+{
+  "sector-id-1": "简报内容...",
+  "sector-id-2": "简报内容..."
+}
+请只返回JSON。`;
+
+    const response = await this.callGemini(prompt, systemInstruction);
+    return this.extractJson(response);
+  }
 }
 
 module.exports = { GeminiService };

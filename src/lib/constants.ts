@@ -245,7 +245,8 @@ export const STAR_SECTORS: StarSector[] = [
         position: { x: 10, y: 50 },
         totalQuestions: 10,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[0]],
-        rewards: { exp: 100 }
+        rewards: { exp: 100 },
+        missionBriefing: "目标：渗透认知熵侵蚀区域，通过知识验证重建逻辑框架。"
     },
     {
         id: "sector-2",
@@ -256,7 +257,8 @@ export const STAR_SECTORS: StarSector[] = [
         position: { x: 25, y: 20 },
         totalQuestions: 20,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[1]],
-        rewards: { exp: 200 }
+        rewards: { exp: 200 },
+        missionBriefing: "检测到页面置换逻辑异常。任务：修复缺页中断处理程序，恢复内存映射一致性。"
     },
     {
         id: "sector-3",
@@ -267,7 +269,8 @@ export const STAR_SECTORS: StarSector[] = [
         position: { x: 40, y: 80 },
         totalQuestions: 30,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[1]],
-        rewards: { exp: 300 }
+        rewards: { exp: 300 },
+        missionBriefing: "线程同步锁失效，数据竞争正在破坏核心数据结构。任务：重新建立互斥机制，消除竞态条件。"
     },
     {
         id: "sector-4",
@@ -278,7 +281,8 @@ export const STAR_SECTORS: StarSector[] = [
         position: { x: 55, y: 30 },
         totalQuestions: 40,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[1]],
-        rewards: { exp: 500 }
+        rewards: { exp: 500 },
+        missionBriefing: "传输层协议握手序列被熵噪声干扰。任务：重建连接状态机，确保数据包可靠传输。"
     },
     {
         id: "sector-5",
@@ -289,7 +293,8 @@ export const STAR_SECTORS: StarSector[] = [
         position: { x: 70, y: 70 },
         totalQuestions: 50,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[2]],
-        rewards: { exp: 700 }
+        rewards: { exp: 700 },
+        missionBriefing: "检测到无限递归循环，堆栈空间即将耗尽。任务：优化递归算法，引入尾递归或迭代方案，防止栈溢出。"
     },
     {
         id: "sector-boss",
@@ -300,7 +305,8 @@ export const STAR_SECTORS: StarSector[] = [
         position: { x: 85, y: 50 },
         totalQuestions: 60,
         entropyEntities: [INITIAL_ENTROPY_ENTITIES[2]],
-        rewards: { exp: 1000 }
+        rewards: { exp: 1000 },
+        missionBriefing: "系统核心逻辑正在发生剧烈抖动，资源调度完全失效。任务：直面奇点，重构底层调度算法，恢复系统秩序。"
     }
 ];
 
@@ -344,7 +350,7 @@ export const DEFAULT_THEME: GameTheme = {
             title: '大统一理论演练',
             subtitle: 'GRAND UNIFICATION SIMULATION',
             sectorAnalysis: '扇区分析',
-            missionBriefing: '任务简报',
+            missionBriefing: '协议部署简报',
             startButton: '开始潜渊',
             backButton: '中止链接',
             mindHackButton: '思维骇入',

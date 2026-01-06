@@ -170,3 +170,23 @@ ipcMain.handle('gemini:generate-theme', async (event, { themeName, content }) =>
     return { success: false, error: error.message };
   }
 });
+
+ipcMain.handle('gemini:generate-mission-briefing', async (event, { sectorName, sectorDescription }) => {
+  try {
+    const briefing = await gemini.generateMissionBriefing(sectorName, sectorDescription);
+    return { success: true, data: briefing };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+ipcMain.handle('gemini:generate-all-mission-briefings', async (event, { sectors }) => {
+  try {
+    const briefings = await gemini.generateAllMissionBriefings(sectors);
+    return { success: true, data: briefings };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+

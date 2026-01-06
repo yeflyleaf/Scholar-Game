@@ -52,7 +52,7 @@ const SectionPanel: React.FC<{
 );
 
 export const SettingsScreen: React.FC = () => {
-    const { setScreen, settings, updateSettings, resetProgress, createAISector, sectors, applyAITheme, currentTheme } = useGameStore();
+    const { setScreen, settings, updateSettings, resetProgress, createAISector, sectors, applyAITheme, currentTheme, updateSectorBriefing } = useGameStore();
     const {
         isConfigured,
         isLoading,
@@ -63,6 +63,7 @@ export const SettingsScreen: React.FC = () => {
         checkStatus,
         generateChapter,
         generateTheme,
+        generateAllMissionBriefings,
         clearError
     } = useGemini();
 
@@ -184,10 +185,31 @@ export const SettingsScreen: React.FC = () => {
         clearError();
         
         try {
+            // 1. 生成主题
             const theme = await generateTheme(chapterTitle, textContent);
+            
             if (theme) {
-                // 应用生成的主题
+                // 2. 应用生成的主题
                 applyAITheme(theme);
+
+                // 3. 自动为所有扇区生成任务简报
+                // 过滤出未锁定的扇区，或者全部扇区
+                const targetSectors = sectors.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    description: s.description
+                }));
+
+                if (targetSectors.length > 0) {
+                    const briefings = await generateAllMissionBriefings(targetSectors);
+                    if (briefings) {
+                        // 批量更新简报
+                        Object.entries(briefings).forEach(([sectorId, briefing]) => {
+                            updateSectorBriefing(sectorId, briefing);
+                        });
+                    }
+                }
+
                 setThemeGenerationStatus('success');
                 // 清空输入
                 setTextContent('');
