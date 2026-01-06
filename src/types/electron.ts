@@ -19,7 +19,6 @@ export interface AIProvider {
   id: string;
   name: string;
   type: string;
-  freeQuota: string;
   region: 'china' | 'international';
   requiresProxy: boolean;
   models: AIProviderModel[];

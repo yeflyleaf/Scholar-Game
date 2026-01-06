@@ -74,9 +74,6 @@ const ProviderCard: React.FC<{
                 <h3 className={`font-display font-bold ${isSelected ? 'text-neon-cyan' : 'text-white'}`}>
                     {provider.name}
                 </h3>
-                <p className="text-xs font-mono text-gray-500 mt-1">
-                    {provider.freeQuota}
-                </p>
             </div>
             {isSelected && (
                 <span className="text-neon-cyan text-lg">✓</span>
@@ -419,9 +416,6 @@ export const SettingsScreen: React.FC = () => {
                                 <h4 className="text-neon-cyan font-display mb-2">
                                     已选择: {currentProvider.name}
                                 </h4>
-                                <p className="text-xs font-mono text-gray-400">
-                                    免费额度: {currentProvider.freeQuota}
-                                </p>
                             </motion.div>
                         )}
                     </div>
