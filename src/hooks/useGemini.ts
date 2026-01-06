@@ -1,13 +1,13 @@
 import { useCallback, useState } from 'react';
 import type {
-    GeneratedChapter,
-    GeneratedKnowledgeTree,
-    QuestionGenerationOptions
+  GeneratedChapter,
+  GeneratedKnowledgeTree,
+  QuestionGenerationOptions
 } from '../types/electron';
 import type {
-    EntropyEntity,
-    GameTheme,
-    Question
+  EntropyEntity,
+  GameTheme,
+  Question
 } from '../types/game';
 
 interface UseGeminiReturn {
@@ -235,7 +235,7 @@ export function useGemini(): UseGeminiReturn {
     setError(null);
 
     try {
-      const result = await electronAPI.generateTheme(themeName, content);
+      const result = await electronAPI.gemini.generateTheme(themeName, content);
       if (result.success && result.data) {
         return result.data;
       } else {

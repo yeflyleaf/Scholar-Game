@@ -67,7 +67,8 @@ export const SettingsScreen: React.FC = () => {
     } = useGemini();
 
     const [apiKeyInput, setApiKeyInput] = useState('');
-    const [modelInput, setModelInput] = useState('');
+    const [modelInput, setModelInput] = useState(model || '');
+    const [prevModel, setPrevModel] = useState(model);
     const [modelSaveStatus, setModelSaveStatus] = useState<'idle' | 'success'>('idle');
     const [textContent, setTextContent] = useState('');
     const [chapterTitle, setChapterTitle] = useState('');
@@ -109,11 +110,10 @@ export const SettingsScreen: React.FC = () => {
 
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
 
-    useEffect(() => {
-        if (model) {
-            setModelInput(model);
-        }
-    }, [model]);
+    if (model !== prevModel) {
+        setPrevModel(model);
+        setModelInput(model);
+    }
 
     const handleSaveApiKey = async () => {
         if (apiKeyInput.trim()) {

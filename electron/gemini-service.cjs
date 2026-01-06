@@ -17,6 +17,14 @@ class GeminiService {
     if (!this.model) {
       this.model = 'gemini-2.5-flash';
     }
+
+    // Rate Limiting Initialization
+    this.usageFile = path.join(path.dirname(this.getConfigPath()), 'usage.json');
+    this.minuteWindowStart = Date.now();
+    this.requestsInMinute = 0;
+    this.tokensInMinute = 0;
+    this.requestsToday = 0;
+    this.loadUsage();
   }
 
   setApiKey(key) {
@@ -89,6 +97,65 @@ class GeminiService {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
+  loadUsage() {
+    try {
+      if (fs.existsSync(this.usageFile)) {
+        const data = JSON.parse(fs.readFileSync(this.usageFile, 'utf-8'));
+        const today = new Date().toDateString();
+        if (data.date === today) {
+          this.requestsToday = data.requests || 0;
+        } else {
+          this.requestsToday = 0;
+          this.saveUsage();
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load usage:', e);
+      this.requestsToday = 0;
+    }
+  }
+
+  saveUsage() {
+    try {
+      const data = {
+        date: new Date().toDateString(),
+        requests: this.requestsToday
+      };
+      fs.writeFileSync(this.usageFile, JSON.stringify(data, null, 2));
+    } catch (e) {
+      console.error('Failed to save usage:', e);
+    }
+  }
+
+  checkRateLimits(estimatedTokens) {
+    const now = Date.now();
+    if (now - this.minuteWindowStart > 60000) {
+      this.minuteWindowStart = now;
+      this.requestsInMinute = 0;
+      this.tokensInMinute = 0;
+    }
+
+    if (this.requestsInMinute >= 5) {
+      throw new Error('速率限制：每分钟最多5次请求 (RPM Exceeded)');
+    }
+
+    if (this.tokensInMinute + estimatedTokens > 250000) {
+      throw new Error('速率限制：每分钟最多250k Token (TPM Exceeded)');
+    }
+
+    this.loadUsage(); // Reload to ensure daily limit is up to date
+    if (this.requestsToday >= 20) {
+      throw new Error('每日配额已用完：每天最多20次请求 (RPD Exceeded)');
+    }
+  }
+
+  incrementUsage(estimatedTokens) {
+    this.requestsInMinute++;
+    this.tokensInMinute += estimatedTokens;
+    this.requestsToday++;
+    this.saveUsage();
+  }
+
   async callGemini(prompt, systemInstruction = null, retryCount = 0) {
     return this.callGeminiWithTokens(prompt, systemInstruction, 200000, retryCount);
   }
@@ -114,23 +181,29 @@ class GeminiService {
    * Generate questions from study content
    */
   async generateQuestions(content, options = {}) {
-    const {
-      count = 10,
+    let {
+      count = 60,
       difficulty = 'mixed', // 1-5 or 'mixed'
       types = ['Single', 'Multi', 'TrueFalse'],
       language = 'zh-CN'
     } = options;
 
-    // 分批生成逻辑：每批最多生成30道题，利用500k token限制
-    const BATCH_SIZE = 30;
+    // 强制至少生成60道题
+    if (count < 60) {
+      console.log(`Requested count ${count} is too low. Enforcing minimum of 60.`);
+      count = 60;
+    }
+
+    // 分批生成逻辑：每批最多生成20道题，确保生成质量
+    const BATCH_SIZE = 20;
     const batches = Math.ceil(count / BATCH_SIZE);
     let allQuestions = [];
 
     for (let batch = 0; batch < batches; batch++) {
       // 如果不是第一批，添加延迟以避免速率限制
       if (batch > 0) {
-        console.log('Waiting 5s before next batch to avoid rate limits...');
-        await this.sleep(5000);
+        console.log('Waiting 3s before next batch to avoid rate limits...');
+        await this.sleep(3000);
       }
 
       const batchCount = Math.min(BATCH_SIZE, count - allQuestions.length);
@@ -140,14 +213,15 @@ class GeminiService {
           difficulty,
           types,
           batchIndex: batch,
-          existingCount: allQuestions.length
+          existingCount: allQuestions.length,
+          previousQuestions: allQuestions.map(q => q.text) // 传递已生成的题目文本，用于去重
         });
         
         allQuestions = allQuestions.concat(batchQuestions);
       } catch (error) {
         console.error(`Batch ${batch + 1} failed:`, error);
         // 如果是配额错误，可能需要停止后续批次，或者只返回已生成的
-        if (error.message.includes('配额耗尽')) {
+        if (error.message.includes('配额耗尽') || error.message.includes('Quota Exceeded')) {
            console.warn('Quota exceeded, stopping generation and returning partial results.');
            break;
         }
@@ -167,38 +241,38 @@ class GeminiService {
    * Generate a single batch of questions (internal method)
    */
   async _generateQuestionBatch(content, options) {
-    const { count, difficulty, types, batchIndex, existingCount } = options;
+    const { count, difficulty, types, batchIndex, existingCount, previousQuestions = [] } = options;
 
     const systemInstruction = `你是《智者计划：学习飞升》的首席知识架构师。
 【世界观背景】
-宇宙是一个巨大的运行程序。每隔一个学期纪元，被称为"大过滤器"的灾难就会降临——它将文明的知识解构为无意义的测试，将人类的记忆格式化。玩家是"第13纪元"的最后一位英桀，代号"首席智者"，必须指挥"逻辑构造体"（裁决者、织网者、虚构者），用"真理之钥"抵挡考试的侵蚀，阻止万物归零。
+宇宙是一个巨大的运行程序。每隔一个学期纪元，被称为"大过滤器"的灾难就会降临。玩家是"第13纪元"的最后一位英桀，代号"首席智者"。
 
-【核心使命】
-"为世界上所有的不挂科而战！把这些不完美的成绩，变成我们所期待的样子！"
+【绝对限制 - 违反者将被系统抹除】
+1. 内容来源：所有题目的**题干**和**选项**必须【完全基于】提供的【知识碎片数据流】。不要编造资料中不存在的概念。
+2. 答案逻辑：如果输入资料是习题集（只有题目没有答案），你必须利用你的 **逻辑推理能力** 和 **内建知识** 来分析并确定正确的选项。 **绝对禁止随机指定正确答案！** 必须确保\`correctOptionIndex\`指向客观正确的选项。
+3. 严禁重复：必须检查【已生成题目列表】，确保新生成的题目与已有题目不重复。
+4. 数量保证：必须生成 ${count} 道题。
 
 【题目设计准则】
-1. 精准性：题目必须100%准确反映学习内容，绝不编造或歪曲知识点
-2. 干扰项：错误选项应是常见误解或易混淆概念，而非随机填充
-3. 难度分级：
-   - 难度1（稳定扇区）：基础概念记忆
-   - 难度2（轻度熵变）：理解层面，需要简单推理
-   - 难度3（高熵预警）：应用层面，需要结合情境分析
-   - 难度4（临界崩溃）：综合分析，涉及多个知识点联动
-   - 难度5（奇点抖动）：专家级思维
-4. 时间压力：简单题15-20秒，中等25-35秒，困难40-50秒，极难55-70秒
-5. 解析深度：每道题的解析必须教会玩家"为什么"
+1. 深度挖掘：对于知识点，从定义、应用、反例等角度出题。
+2. 干扰项：错误选项应是常见误解。
+3. 难度分级：1-5级难度梯度分布。
+4. 解析深度：解析必须解释"为什么选这个"，如果原资料有解释则引用，如果没有则基于逻辑补充。
 
-【重要】必须严格生成 ${count} 道题目，不多不少！`;
+【重要】必须严格生成 ${count} 道题目！确保答案准确无误！`;
 
     const prompt = `【逻辑重构请求 - 第${batchIndex + 1}批次】
 
 首席智者，请生成 ${count} 道"真理验证"挑战（这是第${batchIndex + 1}批，之前已生成${existingCount}道）。
 
-【知识碎片数据流】
+【已生成题目列表（禁止重复）】
+${previousQuestions.length > 0 ? previousQuestions.map((q, i) => `${i+1}. ${q}`).join('\n') : '无'}
+
+【知识碎片数据流（仅限使用以下内容，但需自动分析正确答案）】
 ${content}
 
 【输出协议】
-返回纯JSON数组，必须包含恰好 ${count} 道题目：
+返回纯JSON数组，包含 ${count} 道题目：
 
 [
   {
@@ -206,21 +280,20 @@ ${content}
     "text": "题目内容",
     "type": "Single|Multi|TrueFalse",
     "options": ["选项A", "选项B", "选项C", "选项D"],
-    "correctOptionIndex": 0,
+    "correctOptionIndex": 0, // 必须是经过逻辑分析后的正确答案索引
     "difficulty": 1-5,
     "timeLimit": 建议秒数,
-    "explanation": "详细解析",
+    "explanation": "详细解析（解释为什么该选项正确）",
     "tags": ["知识点标签"]
   }
 ]
 
 【生成策略】
-- 必须生成恰好 ${count} 道题目
-- 难度分布：${difficulty === 'mixed' ? '梯度渐进（20%简单 + 40%中等 + 30%困难 + 10%极难）' : `锁定难度等级 ${difficulty}`}
+- 必须生成 ${count} 道题目
+- **核心要求**：如果输入是题目，请务必**做题**，选出正确答案。如果输入是知识点，请据此出题。
+- 绝对不要重复已有的题目
+- 难度分布：${difficulty === 'mixed' ? '梯度渐进' : `锁定难度等级 ${difficulty}`}
 - 题型配比：${types.join(', ')}
-- 每道题考察不同知识点，避免重复
-- Multi类型的correctOptionIndex为数组格式如[0,2]
-- TrueFalse类型仅需两个选项：["正确", "错误"]
 
 立即输出包含 ${count} 道题目的JSON数组：`;
 
@@ -245,6 +318,16 @@ ${content}
     if (!this.apiKey) {
       throw new Error('Gemini API key not configured');
     }
+
+    // Estimate input tokens (rough char count / 4)
+    const inputContent = (prompt || '') + (systemInstruction || '');
+    const estimatedTokens = Math.ceil(inputContent.length / 4);
+
+    // Check limits before making request
+    this.checkRateLimits(estimatedTokens);
+    
+    // Increment usage
+    this.incrementUsage(estimatedTokens);
 
     const url = `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`;
     console.log(`Calling Gemini API with model: ${this.model}`);
