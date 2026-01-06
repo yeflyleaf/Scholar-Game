@@ -313,9 +313,25 @@ const GeometricNode: React.FC<{
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                     {isLocked ? (
                         <span className="text-3xl opacity-50">🔒</span>
+                    ) : sector.difficulty === 6 ? (
+                        // BOSS关卡特殊显示 - 使用骷髅图标
+                        <motion.span 
+                            className="font-display font-black"
+                            style={{ 
+                                fontSize: size / 2,
+                                filter: `drop-shadow(0 0 10px ${primaryColor})`,
+                            }}
+                            animate={{ 
+                                scale: [1, 1.1, 1],
+                                opacity: [0.9, 1, 0.9]
+                            }}
+                            transition={{ duration: 2, repeat: Infinity }}
+                        >
+                            💀
+                        </motion.span>
                     ) : (
                         <>
-                            {/* 难度数字 */}
+                            {/* 难度数字 / BOSS标识 */}
                             <span 
                                 className="font-display font-black"
                                 style={{ 

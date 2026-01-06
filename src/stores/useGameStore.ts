@@ -132,6 +132,9 @@ interface GameState {
     // 第一关10道，第二关20道，以此类推，题目循环分配
     distributeAIQuestionsToSectors: (questions: Question[], sourceTitle: string) => void;
     
+    // 批量更新扇区的名称和描述
+    updateSectorMetadata: (sectors: Array<{ id: string; name: string; description: string }>) => void;
+    
     // === 主题系统 ===
     currentTheme: GameTheme;
     setTheme: (theme: GameTheme) => void;
@@ -666,6 +669,37 @@ export const useGameStore = create<GameState>()(
                 
                 set({ sectors: updatedSectors });
                 console.log(`[AI分配] 完成！共分配题目到 ${defaultSectorIds.length} 个关卡`);
+            },
+
+            // 批量更新扇区的名称和描述
+            updateSectorMetadata: (sectorUpdates) => {
+                if (!sectorUpdates || sectorUpdates.length === 0) return;
+                
+                set(state => ({
+                    sectors: state.sectors.map(sector => {
+                        const update = sectorUpdates.find(u => u.id === sector.id);
+                        if (update) {
+                            console.log(`[扇区更新] ${sector.id}: "${sector.name}" → "${update.name}"`);
+                            return {
+                                ...sector,
+                                name: update.name,
+                                description: update.description
+                            };
+                        }
+                        return sector;
+                    }),
+                    // 如果当前选中的扇区也在更新列表中，同步更新
+                    currentSector: state.currentSector 
+                        ? (() => {
+                            const update = sectorUpdates.find(u => u.id === state.currentSector?.id);
+                            return update 
+                                ? { ...state.currentSector, name: update.name, description: update.description }
+                                : state.currentSector;
+                        })()
+                        : null
+                }));
+                
+                console.log(`[扇区更新] 完成！共更新 ${sectorUpdates.length} 个扇区的名称和描述`);
             },
 
             // === 主题系统 ===

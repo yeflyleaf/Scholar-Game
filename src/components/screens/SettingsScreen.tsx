@@ -52,7 +52,7 @@ const SectionPanel: React.FC<{
 );
 
 export const SettingsScreen: React.FC = () => {
-    const { setScreen, settings, updateSettings, resetProgress, distributeAIQuestionsToSectors, sectors, applyAITheme, currentTheme, updateSectorBriefing } = useGameStore();
+    const { setScreen, settings, updateSettings, resetProgress, distributeAIQuestionsToSectors, applyAITheme, currentTheme, updateSectorBriefing, updateSectorMetadata } = useGameStore();
     const {
         isConfigured,
         isLoading,
@@ -159,11 +159,20 @@ export const SettingsScreen: React.FC = () => {
             const theme = await generateTheme(chapterTitle, textContent);
             
             if (theme) {
-                // 应用主题
+                // 应用主题（UI标签等）
                 applyAITheme(theme);
                 
-                // 3. 为所有扇区生成任务简报
-                const targetSectors = sectors.map(s => ({
+                // 2.5 更新扇区名称和描述（如果主题包含sectors数据）
+                // eslint-disable-next-line @typescript-eslint/no-explicit-any
+                const themeWithSectors = theme as any;
+                if (themeWithSectors.sectors && Array.isArray(themeWithSectors.sectors)) {
+                    updateSectorMetadata(themeWithSectors.sectors);
+                }
+                
+                // 3. 为所有扇区生成任务简报（使用更新后的扇区数据）
+                // 需要重新获取扇区，因为名称可能已更新
+                const currentSectors = useGameStore.getState().sectors;
+                const targetSectors = currentSectors.slice(0, 6).map(s => ({
                     id: s.id,
                     name: s.name,
                     description: s.description

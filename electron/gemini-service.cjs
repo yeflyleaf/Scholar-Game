@@ -712,10 +712,43 @@ ${content.substring(0, 6000)}
     "enemyDefeated": "击败敌人消息，用{enemyName}占位",
     "victory": "胜利消息",
     "defeat": "失败消息"
-  }
+  },
+  "sectors": [
+    {
+      "id": "sector-1",
+      "name": "第1关名称（与学习主题相关，有意境）",
+      "description": "英文副标题 - 简短的中文描述，难度最低"
+    },
+    {
+      "id": "sector-2",
+      "name": "第2关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-3",
+      "name": "第3关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-4",
+      "name": "第4关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-5",
+      "name": "第5关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-boss",
+      "name": "最终关名称（Boss关，最高难度）",
+      "description": "英文副标题 - 简短的中文描述，体现最高挑战"
+    }
+  ]
 }
 
 请生成3个构造体（ARBITER、WEAVER、ARCHITECT各一个）和至少3个铭文。
+【重要】sectors数组中的6个扇区名称和描述必须与"${themeName}"学习主题相关，体现从简单到困难的递进。
 确保所有内容都与"${themeName}"主题相关。
 请只返回JSON，不要其他内容。`;
 
