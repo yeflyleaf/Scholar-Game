@@ -6,6 +6,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { app } = require('electron');
 const { createProvider, getAvailableProviders, getProvidersGroupedByRegion } = require('./providers/index.cjs');
 
 class AIService {
@@ -30,7 +31,7 @@ class AIService {
   // ============================================
 
   getConfigPath() {
-    const appDataFolder = path.join(__dirname, '..', 'data');
+    const appDataFolder = app.getPath('userData');
     if (!fs.existsSync(appDataFolder)) {
       fs.mkdirSync(appDataFolder, { recursive: true });
     }

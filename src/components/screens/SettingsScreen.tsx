@@ -97,7 +97,7 @@ const ProviderCard: React.FC<{
 );
 
 export const SettingsScreen: React.FC = () => {
-    const { setScreen, settings, updateSettings, resetProgress, distributeAIQuestionsToSectors, applyAITheme, currentTheme, updateSectorBriefing, updateSectorMetadata } = useGameStore();
+    const { setScreen, settings, updateSettings, resetProgress, distributeAIQuestionsToSectors, applyAITheme, updateSectorBriefing, updateSectorMetadata } = useGameStore();
     const {
         isConfigured,
         isLoading,
@@ -290,14 +290,26 @@ export const SettingsScreen: React.FC = () => {
                         </h1>
                         <p className="text-sm font-mono text-gray-500 mt-1">多AI核心 | 灵感中枢</p>
                     </div>
-                    <motion.button
-                        onClick={() => setScreen('TITLE')}
-                        className="hex-button text-sm"
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                    >
-                        返回枢纽
-                    </motion.button>
+                    <div className="flex items-center gap-3">
+                        {isElectronEnv && (
+                            <motion.button
+                                onClick={() => window.electronAPI?.app.quit()}
+                                className="px-4 py-2 bg-red-500/20 border border-red-500/50 text-red-400 text-sm font-mono rounded hover:bg-red-500/30 transition-colors"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                退出程序
+                            </motion.button>
+                        )}
+                        <motion.button
+                            onClick={() => setScreen('TITLE')}
+                            className="hex-button text-sm"
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                        >
+                            返回枢纽
+                        </motion.button>
+                    </div>
                 </motion.div>
 
                 {/* Status Overview */}
@@ -340,6 +352,7 @@ export const SettingsScreen: React.FC = () => {
                                 />
                             </motion.button>
                         </div>
+
                     </div>
                 </SectionPanel>
 
@@ -554,7 +567,7 @@ export const SettingsScreen: React.FC = () => {
                     <div className="space-y-6">
                         {/* Chapter Title */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
+                            <label className="block text-lg font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-neon-cyan" />
                                 章节标识
                             </label>
@@ -569,7 +582,7 @@ export const SettingsScreen: React.FC = () => {
 
                         {/* Difficulty */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
+                            <label className="block text-lg font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-holographic-gold" />
                                 挑战等级
                             </label>
@@ -598,7 +611,7 @@ export const SettingsScreen: React.FC = () => {
 
                         {/* Source Content */}
                         <div className="space-y-2">
-                            <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
+                            <label className="block text-lg font-mono text-gray-400 flex items-center gap-2">
                                 <span className="w-2 h-2 bg-neon-cyan" />
                                 源数据输入
                             </label>
@@ -610,24 +623,10 @@ export const SettingsScreen: React.FC = () => {
                                 placeholder="在此粘贴复习资料、教材内容或笔记...&#10;&#10;AI 将根据输入内容自动生成相关题目。"
                             />
                             <div className="flex justify-between text-xs font-mono text-gray-500">
-                                <span>仅支持.txt和.md文本格式</span>
+                                <span className="text-red-400 text-lg">仅支持.txt和.md文本格式</span>
                                 <span>{textContent.length} 字符</span>
                             </div>
                         </div>
-
-                        {/* Current Theme */}
-                        <motion.div
-                            initial={{ opacity: 0, height: 0 }}
-                            animate={{ opacity: 1, height: 'auto' }}
-                            className="bg-holographic-gold/5 border border-holographic-gold/20 p-3 rounded"
-                        >
-                            <p className="text-xs font-mono text-holographic-gold">
-                                📍 当前主题: {currentTheme.name}
-                            </p>
-                            <p className="text-xs font-mono text-gray-500 mt-1">
-                                一键生成：题目(60道) + 主题 + 任务简报
-                            </p>
-                        </motion.div>
 
                         {/* Generate Button */}
                         <motion.button

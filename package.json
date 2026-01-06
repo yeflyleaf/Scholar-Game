@@ -25,14 +25,16 @@
     "files": [
       "dist/**/*",
       "electron/**/*",
-      "package.json"
+      "package.json",
+      "src/assets/icon.ico"
     ],
     "directories": {
       "output": "release"
     },
     "win": {
       "target": "nsis",
-      "legalTrademarks": "yeflyleaf"
+      "legalTrademarks": "yeflyleaf",
+      "icon": "src/assets/icon.ico"
     },
     "mac": {
       "target": "dmg",
@@ -49,7 +51,8 @@
     "copyright": "Copyright © 2026 yeflyleaf",
     "nsis": {
       "oneClick": false,
-      "allowToChangeInstallationDirectory": true
+      "allowToChangeInstallationDirectory": true,
+      "artifactName": "${productName} Setup.${ext}"
     }
   },
   "dependencies": {

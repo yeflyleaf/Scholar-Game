@@ -182,6 +182,7 @@ export interface FileSystemAPI {
 export interface AppAPI {
   getVersion: () => Promise<string>;
   getPlatform: () => string;
+  quit: () => Promise<void>;
 }
 
 // ============================================

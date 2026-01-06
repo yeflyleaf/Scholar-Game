@@ -5,6 +5,7 @@
 
 const fs = require('fs');
 const path = require('path');
+const { app } = require('electron');
 
 class GeminiService {
   constructor() {
@@ -53,9 +54,8 @@ class GeminiService {
   }
 
   getConfigPath() {
-    // 使用应用安装目录下的 data 文件夹，而不是 C 盘的 APPDATA
-    // __dirname 是当前脚本所在目录 (electron/)
-    const appDataFolder = path.join(__dirname, '..', 'data');
+    // 使用应用安装目录下的 data 文件夹 (由 main.cjs 设置)
+    const appDataFolder = app.getPath('userData');
     
     if (!fs.existsSync(appDataFolder)) {
       fs.mkdirSync(appDataFolder, { recursive: true });
