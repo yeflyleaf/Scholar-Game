@@ -95,7 +95,8 @@ const rarityConfig: Record<string, { bg: string; border: string; text: string; g
 };
 
 export const MindHack: React.FC = () => {
-    const { setScreen, performMindHack } = useGameStore();
+    const { setScreen, performMindHack, currentTheme } = useGameStore();
+    const labels = currentTheme.pageLabels.mindHack;
     const [result, setResult] = useState<Inscription | null>(null);
     const [isHacking, setIsHacking] = useState(false);
     const [phase, setPhase] = useState<'idle' | 'hacking' | 'reveal'>('idle');
@@ -141,10 +142,10 @@ export const MindHack: React.FC = () => {
                 initial={{ opacity: 0, y: -30 }}
                 animate={{ opacity: 1, y: 0 }}
             >
-                <h1 className="text-5xl font-display font-bold text-neon-cyan glitch-text mb-2" data-text="思维骇入">
-                    思维骇入
+                <h1 className="text-5xl font-display font-bold text-neon-cyan glitch-text mb-2" data-text={labels.title}>
+                    {labels.title}
                 </h1>
-                <p className="text-sm font-mono text-gray-500 tracking-widest">MIND HACK // QUANTUM RETRIEVAL SYSTEM</p>
+                <p className="text-sm font-mono text-gray-500 tracking-widest">{labels.subtitle}</p>
             </motion.div>
 
             {/* 主内容 */}
@@ -204,7 +205,7 @@ export const MindHack: React.FC = () => {
                                 {/* 文本 */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                                     <span className="text-2xl font-display text-neon-cyan group-hover:text-white transition-colors mt-24">
-                                        启动骇入
+                                        {labels.hackButton}
                                     </span>
                                     <span className="text-xs font-mono text-gray-500 mt-2">
                                         INITIATE HACK
@@ -214,7 +215,7 @@ export const MindHack: React.FC = () => {
 
                             <p className="text-sm font-mono text-gray-500 mt-8 text-center max-w-md">
                                 连接量子之海，打捞前文明的残响...<br/>
-                                <span className="text-neon-cyan/50">警告：每次骇入将消耗 100 能量单位</span>
+                                <span className="text-neon-cyan/50">{labels.warningText}</span>
                             </p>
                         </motion.div>
                     )}
@@ -235,7 +236,7 @@ export const MindHack: React.FC = () => {
                                 animate={{ opacity: [0.5, 1, 0.5] }}
                                 transition={{ duration: 1, repeat: Infinity }}
                             >
-                                正在穿透量子屏障...
+                                {labels.hackingText}
                             </motion.p>
                             
                             <motion.div
@@ -344,7 +345,7 @@ export const MindHack: React.FC = () => {
                                 whileHover={{ scale: 1.05 }}
                                 whileTap={{ scale: 0.95 }}
                             >
-                                确认接收
+                                {labels.confirmButton}
                             </motion.button>
                         </motion.div>
                     )}
@@ -360,7 +361,7 @@ export const MindHack: React.FC = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                 >
-                    返回星图
+                    {labels.backButton}
                 </motion.button>
             </div>
 

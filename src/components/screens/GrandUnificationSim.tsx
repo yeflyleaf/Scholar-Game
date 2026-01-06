@@ -381,6 +381,7 @@ const GeometricNode: React.FC<{
                         className="text-sm font-mono font-bold tracking-wider"
                         style={{ color: primaryColor }}
                     >
+                        {sector.aiGenerated && <span className="mr-1">🤖</span>}
                         {sector.name}
                     </span>
                     {isHighEntropy && (
@@ -392,6 +393,11 @@ const GeometricNode: React.FC<{
                             ⚠ 熵警报
                         </motion.span>
                     )}
+                    {sector.aiGenerated && (
+                        <span className="text-[9px] text-holographic-gold font-mono mt-0.5">
+                            AI生成
+                        </span>
+                    )}
                 </div>
             </motion.div>
         </motion.div>
@@ -400,6 +406,8 @@ const GeometricNode: React.FC<{
 
 // 数据面板
 const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = ({ sector, onStart }) => {
+    const { currentTheme } = useGameStore();
+    const labels = currentTheme.pageLabels.levelSelect;
     if (!sector) {
         return (
             <div className="flex items-center justify-center h-full">
@@ -430,12 +438,24 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
         >
             {/* 扇区名称 */}
             <div className="mb-6">
+                <div className="flex items-center gap-2 mb-2">
+                    {sector.aiGenerated && (
+                        <span className="px-2 py-0.5 bg-holographic-gold/20 border border-holographic-gold/50 text-holographic-gold text-xs font-mono rounded">
+                            🤖 AI生成
+                        </span>
+                    )}
+                </div>
                 <h3 className="text-3xl font-display font-bold text-white glitch-text mb-2" data-text={sector.name}>
                     {sector.name}
                 </h3>
                 <p className="text-sm text-gray-400 font-mono leading-relaxed">
                     {sector.description}
                 </p>
+                {sector.aiGenerated && (
+                    <p className="text-xs text-gray-500 font-mono mt-2">
+                        📅 生成时间: {new Date(sector.aiGenerated.generatedAt).toLocaleString()}
+                    </p>
+                )}
             </div>
 
             {/* 统计数据 */}
@@ -503,7 +523,7 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
                         animate={{ scale: [1, 1.5, 1] }}
                         transition={{ duration: 1, repeat: Infinity }}
                     />
-                    <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">任务简报</span>
+                    <span className="text-xs font-mono text-cyan-400 uppercase tracking-wider">{labels.missionBriefing}</span>
                 </div>
                 <p className="text-sm text-gray-300 font-mono leading-relaxed">
                     目标：渗透认知熵侵蚀区域，通过知识验证重建逻辑框架。
@@ -535,7 +555,7 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
                     transition={{ duration: 2, repeat: Infinity, repeatDelay: 1 }}
                 />
                 <span className="relative z-10 flex items-center justify-center gap-3 text-xl font-display text-cyan-400 group-hover:text-white transition-colors">
-                    <span>开始潜渊</span>
+                    <span>{labels.startButton}</span>
                     <motion.span animate={{ x: [0, 8, 0] }} transition={{ duration: 1, repeat: Infinity }}>
                         →
                     </motion.span>
@@ -547,7 +567,8 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
 
 // 主组件
 export const GrandUnificationSim: React.FC = () => {
-    const { sectors, currentSector, selectSector, startBattle, setScreen } = useGameStore();
+    const { sectors, currentSector, selectSector, startBattle, setScreen, currentTheme } = useGameStore();
+    const labels = currentTheme.pageLabels.levelSelect;
 
     const handleSectorClick = (sector: StarSector) => {
         if (sector.status !== 'LOCKED') {
@@ -583,11 +604,11 @@ export const GrandUnificationSim: React.FC = () => {
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                 >
-                    <h1 className="text-4xl font-display font-bold text-cyan-400 glitch-text" data-text="大统一理论演练">
-                        大统一理论演练
+                    <h1 className="text-4xl font-display font-bold text-cyan-400 glitch-text" data-text={labels.title}>
+                        {labels.title}
                     </h1>
                     <p className="text-sm font-mono text-gray-500 mt-1 tracking-widest">
-                        大统一理论演练
+                        {labels.subtitle}
                     </p>
                 </motion.div>
 
@@ -639,9 +660,9 @@ export const GrandUnificationSim: React.FC = () => {
                                 animate={{ scale: [1, 1.3, 1] }}
                                 transition={{ duration: 1, repeat: Infinity }}
                             />
-                            <h2 className="text-2xl font-display text-cyan-400">扇区分析</h2>
+                            <h2 className="text-2xl font-display text-cyan-400">{labels.sectorAnalysis}</h2>
                         </div>
-                        <p className="text-xs font-mono text-gray-500 mt-1">扇区分析</p>
+                        <p className="text-xs font-mono text-gray-500 mt-1">{labels.missionBriefing}</p>
                     </div>
 
                     <div className="flex-1 overflow-hidden">
@@ -665,7 +686,7 @@ export const GrandUnificationSim: React.FC = () => {
                             whileHover={{ scale: 1.02, borderColor: 'rgba(34, 211, 238, 0.5)' }}
                             whileTap={{ scale: 0.98 }}
                         >
-                            中止链接
+                            {labels.backButton}
                         </motion.button>
                         <motion.button
                             onClick={() => setScreen('MIND_HACK')}
@@ -677,7 +698,7 @@ export const GrandUnificationSim: React.FC = () => {
                             whileHover={{ scale: 1.02, background: 'rgba(255, 215, 0, 0.1)' }}
                             whileTap={{ scale: 0.98 }}
                         >
-                            思维骇入
+                            {labels.mindHackButton}
                         </motion.button>
                     </div>
                 </div>

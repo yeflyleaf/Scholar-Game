@@ -2,6 +2,11 @@ const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { GeminiService } = require('./gemini-service.cjs');
 
+// 设置用户数据目录为安装目录下的 data 文件夹
+// 确保所有数据（包括缓存、会话等）都存在安装目录下，而不是 C 盘
+const userDataPath = path.join(__dirname, '..', 'data');
+app.setPath('userData', userDataPath);
+
 // Initialize Gemini service
 const gemini = new GeminiService();
 
@@ -90,7 +95,20 @@ ipcMain.handle('gemini:set-api-key', async (event, apiKey) => {
 
 // Check if API is configured
 ipcMain.handle('gemini:check-status', async () => {
-  return { configured: gemini.isConfigured() };
+  return { 
+    configured: gemini.isConfigured(),
+    model: gemini.getModel()
+  };
+});
+
+// Set Model
+ipcMain.handle('gemini:set-model', async (event, model) => {
+  try {
+    gemini.setModel(model);
+    return { success: true };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });
 
 // Generate questions from text content
@@ -138,6 +156,16 @@ ipcMain.handle('gemini:generate-chapter', async (event, { title, content, diffic
   try {
     const chapter = await gemini.generateChapter(title, content, difficulty);
     return { success: true, data: chapter };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+
+// Generate complete game theme
+ipcMain.handle('gemini:generate-theme', async (event, { themeName, content }) => {
+  try {
+    const theme = await gemini.generateTheme(themeName, content);
+    return { success: true, data: theme };
   } catch (error) {
     return { success: false, error: error.message };
   }

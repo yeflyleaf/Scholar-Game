@@ -141,6 +141,13 @@ export interface StarSector {
     exp: number;
     inscriptions?: Inscription[];
   };
+  // AI动态生成的题目（可选）- 若存在则优先使用
+  aiQuestions?: Question[];
+  // AI生成的元数据
+  aiGenerated?: {
+    generatedAt: number; // 生成时间戳
+    sourceTitle: string; // 生成来源标题
+  };
 }
 
 // Player Progress - 观测者档案
@@ -180,3 +187,87 @@ export interface GameSettings {
   fullscreen: boolean;
   language: "zh-CN" | "en-US";
 }
+
+// 6. 动态主题配置 - 支持AI生成全部游戏文本
+export interface GameTheme {
+  // 主题元数据
+  id: string;
+  name: string;                    // 主题名称，如 "计算机操作系统"
+  generatedAt: number;             // 生成时间戳
+  sourceContent: string;           // 原始学习资料摘要
+
+  // 页面标题配置
+  pageLabels: {
+    levelSelect: {
+      title: string;               // 原 "大统一理论演练"
+      subtitle: string;            // 副标题
+      sectorAnalysis: string;      // 原 "扇区分析"
+      missionBriefing: string;     // 原 "任务简报"
+      startButton: string;         // 原 "开始潜渊"
+      backButton: string;          // 原 "中止链接"
+      mindHackButton: string;      // 原 "思维骇入"
+    };
+    battle: {
+      constructsLabel: string;     // 原 "逻辑构造体"
+      entropyLabel: string;        // 原 "认知熵实体"
+      battleLogLabel: string;      // 原 "战斗日志"
+      retreatButton: string;       // 原 "撤退"
+      turnLabel: string;           // 原 "回合"
+    };
+    mindHack: {
+      title: string;               // 原 "思维骇入"
+      subtitle: string;            // 副标题
+      hackButton: string;          // 原 "启动骇入"
+      hackingText: string;         // 原 "正在穿透量子屏障..."
+      confirmButton: string;       // 原 "确认接收"
+      backButton: string;          // 原 "返回星图"
+      warningText: string;         // 能量消耗警告
+    };
+  };
+
+  // 构造体配置（玩家角色）
+  constructs: Array<{
+    id: string;
+    model: ConstructModel;
+    name: string;                  // 原 "裁决者"/"织网者"/"虚构者"
+    title: string;                 // 原 "The Arbiter" 等
+    description: string;           // 角色描述
+    skills: Array<{
+      id: string;
+      name: string;                // 技能名称
+      nameEn: string;              // 英文名称
+      description: string;         // 技能描述
+    }>;
+  }>;
+
+  // 铭文配置（抽卡物品）
+  inscriptions: Array<{
+    id: string;
+    name: string;                  // 原 "银行家算法"
+    rarity: "R" | "SR" | "SSR";
+    description: string;           // 铭文效果描述
+  }>;
+
+  // 战斗日志模板
+  battleLogTemplates: {
+    enterSector: string;           // 进入扇区消息模板
+    entropyStatus: {
+      stable: string;              // 稳定状态
+      highEntropy: string;         // 高熵警报
+      locked: string;              // 已锁定
+    };
+    questionSource: {
+      ai: string;                  // AI题目来源
+      builtin: string;             // 内置题库来源
+    };
+    answerCorrect: string;         // 答对消息
+    answerWrong: string;           // 答错消息
+    skillUsed: string;             // 使用技能消息模板
+    enemyDefeated: string;         // 击败敌人消息
+    victory: string;               // 胜利消息
+    defeat: string;                // 失败消息
+  };
+}
+
+// 默认主题ID
+export const DEFAULT_THEME_ID = 'default-cyber-scholar';

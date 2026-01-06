@@ -6,6 +6,7 @@ import type {
 } from '../types/electron';
 import type {
     EntropyEntity,
+    GameTheme,
     Question
 } from '../types/game';
 
@@ -14,14 +15,17 @@ interface UseGeminiReturn {
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
+  model: string;
   
   // 动作
   setApiKey: (key: string) => Promise<boolean>;
+  setModel: (model: string) => Promise<boolean>;
   checkStatus: () => Promise<boolean>;
   generateQuestions: (content: string, options?: QuestionGenerationOptions) => Promise<Question[] | null>;
   generateKnowledgeTree: (content: string) => Promise<GeneratedKnowledgeTree | null>;
   generateEnemies: (topic: string, difficulty?: number) => Promise<EntropyEntity[] | null>;
   generateChapter: (title: string, content: string, difficulty?: number) => Promise<GeneratedChapter | null>;
+  generateTheme: (themeName: string, content: string) => Promise<Partial<GameTheme> | null>;
   
   // 工具
   clearError: () => void;
@@ -31,6 +35,8 @@ export function useGemini(): UseGeminiReturn {
   const [isConfigured, setIsConfigured] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const [model, setModelState] = useState<string>('gemini-2.0-flash');
 
   // 检查是否在 Electron 中运行
   const electronAPI = typeof window !== 'undefined' ? window.electronAPI : undefined;
@@ -65,6 +71,27 @@ export function useGemini(): UseGeminiReturn {
     }
   }, [electronAPI]);
 
+  const setModel = useCallback(async (newModel: string): Promise<boolean> => {
+    if (!electronAPI) {
+      setError('Gemini API only available in Electron');
+      return false;
+    }
+
+    try {
+      const result = await electronAPI.gemini.setModel(newModel);
+      if (result.success) {
+        setModelState(newModel);
+        return true;
+      } else {
+        setError(result.error || 'Failed to set model');
+        return false;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+      return false;
+    }
+  }, [electronAPI]);
+
   const checkStatus = useCallback(async (): Promise<boolean> => {
     if (!electronAPI) {
       return false;
@@ -73,6 +100,9 @@ export function useGemini(): UseGeminiReturn {
     try {
       const result = await electronAPI.gemini.checkStatus();
       setIsConfigured(result.configured);
+      if (result.model) {
+        setModelState(result.model);
+      }
       return result.configured;
     } catch {
       return false;
@@ -191,16 +221,48 @@ export function useGemini(): UseGeminiReturn {
     }
   }, [electronAPI]);
 
+  // 生成完整的游戏主题
+  const generateTheme = useCallback(async (
+    themeName: string,
+    content: string
+  ): Promise<Partial<GameTheme> | null> => {
+    if (!electronAPI) {
+      setError('Gemini API only available in Electron');
+      return null;
+    }
+
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      const result = await electronAPI.generateTheme(themeName, content);
+      if (result.success && result.data) {
+        return result.data;
+      } else {
+        setError(result.error || 'Failed to generate theme');
+        return null;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+      return null;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [electronAPI]);
+
   return {
     isConfigured,
     isLoading,
     error,
+    model,
     setApiKey,
+    setModel,
     checkStatus,
     generateQuestions,
     generateKnowledgeTree,
     generateEnemies,
     generateChapter,
+    generateTheme,
     clearError,
   };
 }

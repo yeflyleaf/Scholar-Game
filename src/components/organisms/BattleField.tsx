@@ -199,7 +199,11 @@ const EntropyCard: React.FC<{ entity: EntropyEntity }> = ({ entity }) => {
 };
 
 // 战斗日志组件 - 使用固定高度，不使用绝对定位避免重叠
-const BattleLog: React.FC<{ logs: BattleLogEntry[] }> = ({ logs }) => (
+const BattleLog: React.FC<{ logs: BattleLogEntry[] }> = ({ logs }) => {
+    const { currentTheme } = useGameStore();
+    const labels = currentTheme.pageLabels.battle;
+    
+    return (
     <motion.div 
         className="fui-panel p-3 h-full overflow-hidden flex flex-col"
         initial={{ y: 50, opacity: 0 }}
@@ -208,7 +212,7 @@ const BattleLog: React.FC<{ logs: BattleLogEntry[] }> = ({ logs }) => (
     >
         <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700/50 shrink-0">
             <div className="w-2 h-2 bg-neon-cyan animate-pulse rounded-full" />
-            <span className="text-xs font-mono text-neon-cyan">战斗日志</span>
+            <span className="text-xs font-mono text-neon-cyan">{labels.battleLogLabel}</span>
         </div>
         <div className="flex-1 overflow-y-auto space-y-1">
             {logs.slice().reverse().slice(0, 8).map((log) => (
@@ -226,7 +230,8 @@ const BattleLog: React.FC<{ logs: BattleLogEntry[] }> = ({ logs }) => (
             ))}
         </div>
     </motion.div>
-);
+    );
+};
 
 export const BattleField: React.FC = () => {
     const {
@@ -237,8 +242,10 @@ export const BattleField: React.FC = () => {
         battleLog,
         useSkill,
         setScreen,
-        battleState
+        battleState,
+        currentTheme
     } = useGameStore();
+    const labels = currentTheme.pageLabels.battle;
 
     const {
         handleAnswerSubmit,
@@ -267,10 +274,10 @@ export const BattleField: React.FC = () => {
                         whileHover={{ scale: 1.05 }}
                         whileTap={{ scale: 0.95 }}
                     >
-                        撤退
+                        {labels.retreatButton}
                     </motion.button>
                     <div className="flex items-center gap-2">
-                        <span className="text-gray-500 font-mono text-sm">回合</span>
+                        <span className="text-gray-500 font-mono text-sm">{labels.turnLabel}</span>
                         <span className="text-2xl font-display text-neon-cyan font-bold">{currentTurn}</span>
                     </div>
                 </div>
@@ -312,7 +319,7 @@ export const BattleField: React.FC = () => {
                 >
                     <div className="text-[25px] font-mono text-neon-cyan mb-2 flex items-center gap-2 shrink-0">
                         <div className="w-2 h-2 bg-neon-cyan rounded-full" />
-                        逻辑构造体
+                        {labels.constructsLabel}
                     </div>
                     {constructs.map((construct, index) => (
                         <ConstructCard
@@ -348,7 +355,7 @@ export const BattleField: React.FC = () => {
                 >
                     <div className="text-xs font-mono text-glitch-red mb-2 flex items-center gap-2 shrink-0">
                         <div className="w-2 h-2 bg-glitch-red rounded-full animate-pulse" />
-                        认知熵实体
+                        {labels.entropyLabel}
                     </div>
                     <AnimatePresence>
                         {entropyEntities.map((entity) => (

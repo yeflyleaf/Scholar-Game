@@ -52,22 +52,32 @@ const SectionPanel: React.FC<{
 );
 
 export const SettingsScreen: React.FC = () => {
-    const { setScreen, settings, updateSettings, resetProgress } = useGameStore();
+    const { setScreen, settings, updateSettings, resetProgress, createAISector, sectors, applyAITheme, currentTheme } = useGameStore();
     const {
         isConfigured,
         isLoading,
         error,
+        model,
         setApiKey,
+        setModel,
         checkStatus,
         generateChapter,
+        generateTheme,
         clearError
     } = useGemini();
 
     const [apiKeyInput, setApiKeyInput] = useState('');
+    const [modelInput, setModelInput] = useState('');
+    const [modelSaveStatus, setModelSaveStatus] = useState<'idle' | 'success'>('idle');
     const [textContent, setTextContent] = useState('');
     const [chapterTitle, setChapterTitle] = useState('');
     const [difficulty, setDifficulty] = useState(3);
     const [generationStatus, setGenerationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [generatedSectorId, setGeneratedSectorId] = useState<string | null>(null);
+    const [generatedQuestionCount, setGeneratedQuestionCount] = useState(0);
+    // 主题生成状态
+    const [themeGenerationStatus, setThemeGenerationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
+    const [generationMode, setGenerationMode] = useState<'chapter' | 'theme'>('chapter');
 
     const isElectronEnv = isElectron();
 
@@ -97,11 +107,31 @@ export const SettingsScreen: React.FC = () => {
         handleFullscreen();
     }, [settings.fullscreen]);
 
+    const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
+
+    useEffect(() => {
+        if (model) {
+            setModelInput(model);
+        }
+    }, [model]);
+
     const handleSaveApiKey = async () => {
         if (apiKeyInput.trim()) {
             const success = await setApiKey(apiKeyInput.trim());
             if (success) {
                 setApiKeyInput('');
+                setSaveStatus('success');
+                setTimeout(() => setSaveStatus('idle'), 3000);
+            }
+        }
+    };
+
+    const handleSaveModel = async () => {
+        if (modelInput.trim()) {
+            const success = await setModel(modelInput.trim());
+            if (success) {
+                setModelSaveStatus('success');
+                setTimeout(() => setModelSaveStatus('idle'), 3000);
             }
         }
     };
@@ -109,16 +139,64 @@ export const SettingsScreen: React.FC = () => {
     const handleGenerateChapter = async () => {
         if (!textContent.trim() || !chapterTitle.trim()) return;
         setGenerationStatus('loading');
+        setGeneratedSectorId(null);
+        setGeneratedQuestionCount(0);
         clearError();
         try {
             const data = await generateChapter(chapterTitle, textContent, difficulty);
-            if (data) {
+            if (data && data.questions && data.questions.length > 0) {
+                // 创建新的AI扇区，将生成的题目和敌人保存到关卡系统
+                const sectorId = createAISector({
+                    name: chapterTitle,
+                    description: `🤖 AI生成扇区 - ${data.chapter?.description || `基于"${chapterTitle}"生成的挑战内容`}`,
+                    difficulty: difficulty as 1 | 2 | 3 | 4 | 5 | 6,
+                    questions: data.questions,
+                    entropyEntities: data.enemies || []
+                });
+                
+                setGeneratedSectorId(sectorId);
+                setGeneratedQuestionCount(data.questions.length);
                 setGenerationStatus('success');
+                
+                // 清空输入框
+                setTextContent('');
+                setChapterTitle('');
             } else {
                 setGenerationStatus('error');
             }
         } catch {
             setGenerationStatus('error');
+        }
+    };
+
+    // 跳转到新创建的扇区
+    const handleGoToNewSector = () => {
+        if (generatedSectorId) {
+            setScreen('GRAND_UNIFICATION_SIM');
+        }
+    };
+
+    // 生成完整的游戏主题
+    const handleGenerateTheme = async () => {
+        if (!chapterTitle.trim() || !textContent.trim()) return;
+        
+        setThemeGenerationStatus('loading');
+        clearError();
+        
+        try {
+            const theme = await generateTheme(chapterTitle, textContent);
+            if (theme) {
+                // 应用生成的主题
+                applyAITheme(theme);
+                setThemeGenerationStatus('success');
+                // 清空输入
+                setTextContent('');
+                setChapterTitle('');
+            } else {
+                setThemeGenerationStatus('error');
+            }
+        } catch {
+            setThemeGenerationStatus('error');
         }
     };
 
@@ -231,6 +309,8 @@ export const SettingsScreen: React.FC = () => {
                                         <div className="w-4 h-4 border-2 border-neon-cyan border-t-transparent rounded-full animate-spin" />
                                         连接中
                                     </span>
+                                ) : saveStatus === 'success' ? (
+                                    <span className="text-stable">✓ 已更新</span>
                                 ) : (
                                     '建立链接'
                                 )}
@@ -253,7 +333,55 @@ export const SettingsScreen: React.FC = () => {
                     </div>
                 </SectionPanel>
 
-                {/* 生成区域 */}
+                {/* 模型配置区域 */}
+                <SectionPanel
+                    title="模型配置"
+                    subtitle="选择 AI 核心模型"
+                    icon={<span className="text-neon-cyan">🧠</span>}
+                >
+                    <div className="space-y-4">
+                        <div className="flex gap-4 items-end">
+                            <div className="flex-1 space-y-2">
+                                <label className="block text-sm font-mono text-gray-400">
+                                    模型标识
+                                </label>
+                                <div className="relative">
+                                    <input
+                                        type="text"
+                                        value={modelInput}
+                                        onChange={(e) => setModelInput(e.target.value)}
+                                        placeholder="例如: gemini-2.0-flash"
+                                        className="fui-input w-full"
+                                        list="model-suggestions"
+                                    />
+                                    <datalist id="model-suggestions">
+                                        <option value="gemini-2.0-flash" />
+                                        <option value="gemini-1.5-flash" />
+                                        <option value="gemini-1.5-pro" />
+                                        <option value="gemini-pro" />
+                                    </datalist>
+                                </div>
+                            </div>
+                            <motion.button
+                                onClick={handleSaveModel}
+                                disabled={modelInput === model}
+                                className="hex-button px-6 h-[46px] disabled:opacity-50 disabled:cursor-not-allowed"
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                {modelSaveStatus === 'success' ? (
+                                    <span className="text-stable">✓ 已保存</span>
+                                ) : (
+                                    '应用模型'
+                                )}
+                            </motion.button>
+                        </div>
+                        <p className="text-xs font-mono text-gray-500 leading-relaxed">
+                            当前使用模型: <span className="text-neon-cyan">{model}</span>。
+                            推荐使用 <span className="text-white">gemini-2.0-flash</span> 以获得最佳速度和效果。
+                        </p>
+                    </div>
+                </SectionPanel>
                 <SectionPanel
                     title="数据合成"
                     subtitle="知识合成引擎"
@@ -331,37 +459,158 @@ export const SettingsScreen: React.FC = () => {
                             </div>
                         </div>
 
+                        {/* 生成模式选择 */}
+                        <div className="space-y-2">
+                            <label className="block text-sm font-mono text-gray-400 flex items-center gap-2">
+                                <span className="w-2 h-2 bg-purple-400" />
+                                生成模式
+                            </label>
+                            <div className="flex gap-3">
+                                <motion.button
+                                    onClick={() => setGenerationMode('chapter')}
+                                    className={`flex-1 py-3 px-4 font-mono text-sm rounded-lg transition-all ${
+                                        generationMode === 'chapter'
+                                            ? 'bg-neon-cyan/20 border border-neon-cyan text-neon-cyan'
+                                            : 'bg-gray-800/50 border border-gray-600/50 text-gray-400'
+                                    }`}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    📚 生成关卡
+                                </motion.button>
+                                <motion.button
+                                    onClick={() => setGenerationMode('theme')}
+                                    className={`flex-1 py-3 px-4 font-mono text-sm rounded-lg transition-all ${
+                                        generationMode === 'theme'
+                                            ? 'bg-holographic-gold/20 border border-holographic-gold text-holographic-gold'
+                                            : 'bg-gray-800/50 border border-gray-600/50 text-gray-400'
+                                    }`}
+                                    whileHover={{ scale: 1.02 }}
+                                    whileTap={{ scale: 0.98 }}
+                                >
+                                    🎨 生成主题
+                                </motion.button>
+                            </div>
+                            <p className="text-xs font-mono text-gray-500">
+                                {generationMode === 'chapter' 
+                                    ? '📚 关卡模式: 生成题目和敌人，创建新的挑战关卡'
+                                    : '🎨 主题模式: 根据内容替换全部游戏文本（标题、按钮、角色名等）'
+                                }
+                            </p>
+                        </div>
+
+                        {/* 当前主题显示 */}
+                        {generationMode === 'theme' && (
+                            <motion.div
+                                initial={{ opacity: 0, height: 0 }}
+                                animate={{ opacity: 1, height: 'auto' }}
+                                className="bg-holographic-gold/5 border border-holographic-gold/20 p-3 rounded"
+                            >
+                                <p className="text-xs font-mono text-holographic-gold">
+                                    📍 当前主题: {currentTheme.name}
+                                </p>
+                                <p className="text-xs font-mono text-gray-500 mt-1">
+                                    生成新主题后，所有界面文本将自动更新
+                                </p>
+                            </motion.div>
+                        )}
+
                         {/* 生成按钮 */}
                         <motion.button
-                            onClick={handleGenerateChapter}
-                            disabled={generationStatus === 'loading' || !isConfigured || !textContent.trim() || !chapterTitle.trim()}
+                            onClick={generationMode === 'chapter' ? handleGenerateChapter : handleGenerateTheme}
+                            disabled={(generationStatus === 'loading' || themeGenerationStatus === 'loading') || !isConfigured || !textContent.trim() || !chapterTitle.trim()}
                             className={`hex-button w-full py-4 text-lg font-display relative overflow-hidden ${
                                 !isConfigured ? 'opacity-80 cursor-not-allowed' : ''
-                            }`}
+                            } ${generationMode === 'theme' ? 'border-holographic-gold/50' : ''}`}
                             whileHover={{ scale: 1.01 }}
                             whileTap={{ scale: 0.99 }}
                         >
-                            {generationStatus === 'loading' ? (
+                            {(generationStatus === 'loading' || themeGenerationStatus === 'loading') ? (
                                 <span className="flex items-center justify-center gap-3">
                                     <div className="processing-ring w-6 h-6 border-2" style={{ borderWidth: '2px' }} />
-                                    <span>正在合成知识矩阵...</span>
+                                    <span>{generationMode === 'chapter' ? '正在合成知识矩阵...' : '正在生成游戏主题...'}</span>
                                 </span>
                             ) : (
                                 <span className="flex items-center justify-center gap-2">
-                                    <span>启动合成</span>
-                                    <span className="text-holographic-gold">⬡</span>
+                                    <span>{generationMode === 'chapter' ? '启动合成' : '生成主题'}</span>
+                                    <span className={generationMode === 'chapter' ? 'text-holographic-gold' : 'text-neon-cyan'}>
+                                        {generationMode === 'chapter' ? '⬡' : '🎨'}
+                                    </span>
                                 </span>
                             )}
 
                             {/* 加载时的动画背景 */}
-                            {generationStatus === 'loading' && (
+                            {(generationStatus === 'loading' || themeGenerationStatus === 'loading') && (
                                 <motion.div
-                                    className="absolute inset-0 bg-gradient-to-r from-neon-cyan/10 via-neon-cyan/30 to-neon-cyan/10"
+                                    className={`absolute inset-0 ${
+                                        generationMode === 'theme' 
+                                            ? 'bg-gradient-to-r from-holographic-gold/10 via-holographic-gold/30 to-holographic-gold/10'
+                                            : 'bg-gradient-to-r from-neon-cyan/10 via-neon-cyan/30 to-neon-cyan/10'
+                                    }`}
                                     animate={{ x: ['-100%', '100%'] }}
                                     transition={{ duration: 1.5, repeat: Infinity, ease: 'linear' }}
                                 />
                             )}
                         </motion.button>
+
+                        {/* 主题生成成功消息 */}
+                        <AnimatePresence>
+                            {themeGenerationStatus === 'success' && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="bg-holographic-gold/10 border border-holographic-gold/30 p-4 rounded"
+                                >
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-holographic-gold text-2xl">🎨</span>
+                                        <div>
+                                            <p className="text-holographic-gold font-display">主题已应用</p>
+                                            <p className="text-sm text-holographic-gold/70 font-mono">
+                                                所有界面文本已根据新主题更新
+                                            </p>
+                                        </div>
+                                    </div>
+                                    <div className="flex gap-3 mt-3">
+                                        <motion.button
+                                            onClick={() => setScreen('GRAND_UNIFICATION_SIM')}
+                                            className="flex-1 py-2 px-4 bg-holographic-gold/20 border border-holographic-gold/50 text-holographic-gold rounded font-mono text-sm"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            🎮 查看效果
+                                        </motion.button>
+                                        <motion.button
+                                            onClick={() => setThemeGenerationStatus('idle')}
+                                            className="flex-1 py-2 px-4 bg-gray-700/50 text-gray-300 rounded font-mono text-sm"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            继续生成
+                                        </motion.button>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                        
+                        <AnimatePresence>
+                            {themeGenerationStatus === 'error' && (
+                                <motion.div
+                                    initial={{ opacity: 0, height: 0 }}
+                                    animate={{ opacity: 1, height: 'auto' }}
+                                    exit={{ opacity: 0, height: 0 }}
+                                    className="bg-glitch-red/10 border border-glitch-red/30 p-4 rounded flex items-center gap-3 mt-4"
+                                >
+                                    <span className="text-glitch-red text-2xl">✕</span>
+                                    <div>
+                                        <p className="text-glitch-red font-display">主题生成失败</p>
+                                        <p className="text-sm text-glitch-red/70 font-mono">
+                                            {error || '检查 AI 核心连接状态'}
+                                        </p>
+                                    </div>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
 
                         {/* 状态消息 */}
                         <AnimatePresence mode="wait">
@@ -371,13 +620,38 @@ export const SettingsScreen: React.FC = () => {
                                     initial={{ opacity: 0, height: 0 }}
                                     animate={{ opacity: 1, height: 'auto' }}
                                     exit={{ opacity: 0, height: 0 }}
-                                    className="bg-stable/10 border border-stable/30 p-4 rounded flex items-center gap-3"
+                                    className="bg-stable/10 border border-stable/30 p-4 rounded"
                                 >
-                                    <span className="text-stable text-2xl">✓</span>
-                                    <div>
-                                        <p className="text-stable font-display">合成完成</p>
-                                        <p className="text-sm text-stable/70 font-mono">知识矩阵已准备注入战术数据库</p>
+                                    <div className="flex items-center gap-3 mb-3">
+                                        <span className="text-stable text-2xl">✓</span>
+                                        <div>
+                                            <p className="text-stable font-display">合成完成</p>
+                                            <p className="text-sm text-stable/70 font-mono">
+                                                已成功生成 <span className="text-holographic-gold font-bold">{generatedQuestionCount}</span> 道AI题目
+                                            </p>
+                                        </div>
                                     </div>
+                                    <div className="flex gap-3 mt-3">
+                                        <motion.button
+                                            onClick={handleGoToNewSector}
+                                            className="flex-1 py-2 px-4 bg-stable/20 border border-stable/50 text-stable font-mono text-sm rounded hover:bg-stable/30 transition-colors"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            🚀 前往新扇区挑战
+                                        </motion.button>
+                                        <motion.button
+                                            onClick={() => setGenerationStatus('idle')}
+                                            className="py-2 px-4 border border-gray-600 text-gray-400 font-mono text-sm rounded hover:border-gray-500 transition-colors"
+                                            whileHover={{ scale: 1.02 }}
+                                            whileTap={{ scale: 0.98 }}
+                                        >
+                                            继续生成
+                                        </motion.button>
+                                    </div>
+                                    <p className="text-xs text-gray-500 font-mono mt-2">
+                                        💡 新扇区已添加到星图中，当前星图共有 {sectors.length} 个扇区
+                                    </p>
                                 </motion.div>
                             )}
                             {generationStatus === 'error' && (
@@ -391,7 +665,9 @@ export const SettingsScreen: React.FC = () => {
                                     <span className="text-glitch-red text-2xl">✕</span>
                                     <div>
                                         <p className="text-glitch-red font-display">合成失败</p>
-                                        <p className="text-sm text-glitch-red/70 font-mono">检查 AI 核心连接状态</p>
+                                        <p className="text-sm text-glitch-red/70 font-mono">
+                                            {error || '检查 AI 核心连接状态'}
+                                        </p>
                                     </div>
                                 </motion.div>
                             )}

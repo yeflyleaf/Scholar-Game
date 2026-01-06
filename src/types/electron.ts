@@ -3,7 +3,7 @@
  * 这些类型与 preload.js 中暴露的 API 相匹配
  */
 
-import type { EntropyEntity, Question } from './game';
+import type { EntropyEntity, GameTheme, Question } from './game';
 
 // 生成的章节数据
 export interface GeneratedChapter {
@@ -60,7 +60,8 @@ export interface APIResponse<T> {
 // Gemini API 接口
 export interface GeminiAPI {
   setApiKey: (apiKey: string) => Promise<APIResponse<void>>;
-  checkStatus: () => Promise<{ configured: boolean }>;
+  checkStatus: () => Promise<{ configured: boolean; model?: string }>;
+  setModel: (model: string) => Promise<APIResponse<void>>;
   generateQuestions: (
     content: string,
     options?: QuestionGenerationOptions
@@ -73,6 +74,10 @@ export interface GeminiAPI {
     content: string,
     difficulty?: number
   ) => Promise<APIResponse<GeneratedChapter>>;
+  generateTheme: (
+    themeName: string,
+    content: string
+  ) => Promise<APIResponse<Partial<GameTheme>>>;
 }
 
 // 文件系统 API 接口

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   gemini: {
     setApiKey: (apiKey) => ipcRenderer.invoke('gemini:set-api-key', apiKey),
     checkStatus: () => ipcRenderer.invoke('gemini:check-status'),
+    setModel: (model) => ipcRenderer.invoke('gemini:set-model', model),
     generateQuestions: (content, options) => 
       ipcRenderer.invoke('gemini:generate-questions', { content, options }),
     generateKnowledgeTree: (content) => 
@@ -16,6 +17,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('gemini:parse-document', { filePath }),
     generateChapter: (title, content, difficulty) => 
       ipcRenderer.invoke('gemini:generate-chapter', { title, content, difficulty }),
+    generateTheme: (themeName, content) => 
+      ipcRenderer.invoke('gemini:generate-theme', { themeName, content }),
   },
   
   // File system methods
