@@ -23,5 +23,13 @@ dist-ssr
 *.sln
 *.sw?
 
+
 # User data (API keys, configs)
 data/
+
+# Build output
+release/
+
+# Environment variables
+.env
+.env.*

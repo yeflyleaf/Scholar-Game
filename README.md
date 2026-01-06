@@ -13,7 +13,7 @@
 </p>
 
 <p align="center">
-  <img src="https://img.shields.io/badge/React-18+-61DAFB?style=flat-square&logo=react" alt="React" />
+  <img src="https://img.shields.io/badge/React-19-61DAFB?style=flat-square&logo=react" alt="React" />
   <img src="https://img.shields.io/badge/TypeScript-Strict-3178C6?style=flat-square&logo=typescript" alt="TypeScript" />
   <img src="https://img.shields.io/badge/Tailwind_CSS-v4-06B6D4?style=flat-square&logo=tailwindcss" alt="Tailwind CSS" />
   <img src="https://img.shields.io/badge/Framer_Motion-FUI动画-FF0055?style=flat-square" alt="Framer Motion" />
@@ -42,13 +42,13 @@
 
 | 模块 | 技术栈 | 说明 |
 |------|--------|------|
-| **核心框架** | React 18 + TypeScript | 严格类型安全 |
+| **核心框架** | React 19 + TypeScript | 严格类型安全 |
 | **构建工具** | Vite | 极速热更新 |
 | **样式引擎** | Tailwind CSS v4 | 原子化 FUI 设计 |
 | **动画引擎** | Framer Motion | 故障特效与转场 |
 | **状态管理** | Zustand | 全局游戏状态 |
 | **桌面封装** | Electron | 跨平台运行 |
-| **AI 驱动** | Google Gemini API | 动态生成题目与敌人 |
+| **AI 驱动** | 多模型支持 (Gemini/OpenAI等) | 动态生成题目与敌人 |
 
 ---
 
@@ -57,9 +57,12 @@
 ```plaintext
 ScholarGame/
 ├── electron/               # Electron 主进程相关代码
+│   ├── providers/          # AI 模型提供商适配器集合
+│   ├── ai-service.cjs      # 统一 AI 服务层，管理多模型适配器
+│   ├── gemini-service.cjs  # (Legacy) Google Gemini 专用服务
 │   ├── main.cjs            # Electron 主入口，负责窗口创建与系统交互
-│   ├── preload.cjs         # 预加载脚本，实现主进程与渲染进程的安全通信
-│   └── gemini-service.cjs  # Google Gemini AI 服务集成，处理题目生成逻辑
+│   └── preload.cjs         # 预加载脚本，实现主进程与渲染进程的安全通信
+├── public/                 # 公共静态文件
 ├── src/                    # React 渲染进程源代码
 │   ├── assets/             # 静态资源文件（图片、字体等）
 │   ├── components/         # UI 组件库（遵循原子化设计原则）
@@ -67,19 +70,18 @@ ScholarGame/
 │   │   ├── molecules/      # 分子组件（由原子组成的简单功能模块）
 │   │   ├── organisms/      # 组织组件（复杂的区块级组件）
 │   │   └── screens/        # 页面级组件（对应游戏的主要场景）
-│   │       ├── TitleScreen.tsx         # 游戏标题界面
+│   │       ├── CausalityRecord.tsx     # 历史记录/战绩回顾界面
 │   │       ├── GrandUnificationSim.tsx # 关卡选择/星图导航界面
 │   │       ├── MindHack.tsx            # 核心战斗/答题界面
-│   │       ├── CausalityRecord.tsx     # 历史记录/战绩回顾界面
-│   │       └── SettingsScreen.tsx      # 系统设置界面
+│   │       ├── SettingsScreen.tsx      # 系统设置界面
+│   │       └── TitleScreen.tsx         # 游戏标题界面
 │   ├── hooks/              # 自定义 React Hooks（逻辑复用）
 │   ├── lib/                # 工具函数与通用库
 │   ├── stores/             # Zustand 全局状态管理
 │   ├── types/              # TypeScript 类型定义文件
 │   ├── App.tsx             # 应用根组件，处理路由与布局
-│   ├── main.tsx            # React 入口文件
-│   └── index.css           # 全局样式与 Tailwind 配置
-├── public/                 # 公共静态文件
+│   ├── index.css           # 全局样式与 Tailwind 配置
+│   └── main.tsx            # React 入口文件
 ├── .gitignore              # Git 忽略配置
 ├── package.json            # 项目依赖与脚本配置
 ├── tsconfig.json           # TypeScript 编译配置
@@ -88,7 +90,7 @@ ScholarGame/
 
 ---
 
-## �🚀 启动指南
+## ⚡ 启动指南
 
 ### 1. 安装依赖
 ```bash
@@ -111,6 +113,8 @@ npm run electron:dev
 ## 📄 许可证
 
 本项目采用 **AGPL-3.0** 许可证。
+
+Copyright © 2026 [yeflyleaf](https://github.com/yeflyleaf). All Rights Reserved.
 
 ---
 

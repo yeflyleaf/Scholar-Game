@@ -1,3 +1,8 @@
+/**
+ * Scholar Game - Electron Main Process
+ * Author: yeflyleaf
+ * Description: Main entry point for the application
+ */
 const { app, BrowserWindow, ipcMain } = require('electron');
 const path = require('path');
 const { AIService } = require('./ai-service.cjs');
@@ -14,13 +19,14 @@ let mainWindow;
 function createWindow() {
   const preloadPath = path.join(__dirname, 'preload.cjs');
   console.log('Preload path:', preloadPath);
+  console.log('Starting Scholar Game by yeflyleaf...');
 
   mainWindow = new BrowserWindow({
     width: 1400,
     height: 900,
     minWidth: 1200,
     minHeight: 850,
-    title: '赛博学神：神经潜渊',
+    title: '智者计划: 学习飞升',
     backgroundColor: '#0a0a0a',
     webPreferences: {
       nodeIntegration: false,

@@ -1,9 +1,10 @@
 {
-  "name": "cyber-scholar-neural-dive",
+  "name": "scholar-game",
   "private": true,
   "version": "1.0.0",
   "description": "智者计划 - 为世界上所有的不挂科而战！",
   "license": "AGPL-3.0",
+  "author": "yeflyleaf",
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {
@@ -12,7 +13,44 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "electron:dev": "concurrently -k \"cross-env BROWSER=none npm run dev\" \"wait-on http://localhost:5173 && cross-env NODE_ENV=development electron .\"",
-    "electron:build": "npm run build && electron-builder"
+    "electron:build": "npm run build && electron-builder",
+    "electron:build:win": "npm run build && electron-builder --win",
+    "electron:build:mac": "npm run build && electron-builder --mac",
+    "electron:build:linux": "npm run build && electron-builder --linux",
+    "electron:build:all": "npm run build && electron-builder -mwl"
+  },
+  "build": {
+    "appId": "com.flyleaf.scholargame",
+    "productName": "智者计划",
+    "files": [
+      "dist/**/*",
+      "electron/**/*",
+      "package.json"
+    ],
+    "directories": {
+      "output": "release"
+    },
+    "win": {
+      "target": "nsis",
+      "legalTrademarks": "yeflyleaf"
+    },
+    "mac": {
+      "target": "dmg",
+      "category": "public.app-category.education"
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "category": "Education",
+      "maintainer": "yeflyleaf"
+    },
+    "copyright": "Copyright © 2026 yeflyleaf",
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
