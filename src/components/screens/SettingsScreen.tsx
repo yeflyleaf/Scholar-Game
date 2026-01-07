@@ -339,7 +339,36 @@ export const SettingsScreen: React.FC = () => {
                     subtitle="系统参数调整"
                     icon={<span className="text-neon-cyan">⚙</span>}
                 >
-                    <div className="space-y-4">
+                    <div className="space-y-6">
+                        {/* 难度等级 - 用于游戏机制调节 */}
+                        <div className="space-y-5">
+                            <span className="text-lg font-display font-bold text-holographic-gold block mb-3">
+                                难度等级
+                            </span>
+                            <div className="flex gap-3">
+                                {[1, 2, 3, 4, 5].map((lvl) => (
+                                    <motion.button
+                                        key={lvl}
+                                        onClick={() => setDifficulty(lvl)}
+                                        className={`
+                                            w-12 h-12 font-display font-bold text-lg
+                                            border-2 transition-all duration-300
+                                            ${difficulty === lvl
+                                                ? 'border-holographic-gold bg-holographic-gold/20 text-holographic-gold shadow-[0_0_10px_rgba(255,215,0,0.3)]'
+                                                : 'border-gray-600 text-gray-500 hover:border-gray-500'
+                                            }
+                                        `}
+                                        style={{ clipPath: 'polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%)' }}
+                                        whileHover={{ scale: 1.1 }}
+                                        whileTap={{ scale: 0.95 }}
+                                    >
+                                        {lvl}
+                                    </motion.button>
+                                ))}
+                            </div>
+                        </div>
+
+                        {/* 全屏模式 */}
                         <div className="flex items-center justify-between">
                             <span className="text-sm font-mono text-gray-300">全屏模式</span>
                             <motion.button
@@ -352,7 +381,6 @@ export const SettingsScreen: React.FC = () => {
                                 />
                             </motion.button>
                         </div>
-
                     </div>
                 </SectionPanel>
 
@@ -580,34 +608,7 @@ export const SettingsScreen: React.FC = () => {
                             />
                         </div>
 
-                        {/* Difficulty */}
-                        <div className="space-y-2">
-                            <label className="block text-lg font-mono text-gray-400 flex items-center gap-2">
-                                <span className="w-2 h-2 bg-holographic-gold" />
-                                挑战等级
-                            </label>
-                            <div className="flex gap-3">
-                                {[1, 2, 3, 4, 5].map((lvl) => (
-                                    <motion.button
-                                        key={lvl}
-                                        onClick={() => setDifficulty(lvl)}
-                                        className={`
-                                            w-14 h-14 font-display font-bold text-xl
-                                            border-2 transition-all duration-300
-                                            ${difficulty === lvl
-                                                ? 'border-holographic-gold bg-holographic-gold/20 text-holographic-gold'
-                                                : 'border-gray-600 text-gray-500 hover:border-gray-500'
-                                            }
-                                        `}
-                                        style={{ clipPath: 'polygon(20% 0, 100% 0, 100% 80%, 80% 100%, 0 100%, 0 20%)' }}
-                                        whileHover={{ scale: 1.05 }}
-                                        whileTap={{ scale: 0.95 }}
-                                    >
-                                        {lvl}
-                                    </motion.button>
-                                ))}
-                            </div>
-                        </div>
+
 
                         {/* Source Content */}
                         <div className="space-y-2">

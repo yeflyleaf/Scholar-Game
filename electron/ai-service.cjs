@@ -16,6 +16,10 @@ class AIService {
     this.model = null;
     this.accountId = null; // 用于 Cloudflare
     
+    // 配额耗尽标志 - 一旦设置，拒绝所有后续AI请求
+    this.quotaExhausted = false;
+    this.quotaExhaustedTime = null;
+    
     // 加载保存的配置
     this.loadConfig();
     
@@ -23,6 +27,42 @@ class AIService {
     if (this.providerId && this.apiKey) {
       this.initProvider();
     }
+  }
+  
+  /**
+   * 检查配额是否耗尽
+   * 如果配额已耗尽超过5分钟，自动重置标志
+   */
+  isQuotaExhausted() {
+    if (!this.quotaExhausted) return false;
+    
+    // 如果配额耗尽超过5分钟，自动重置（允许用户再次尝试）
+    const QUOTA_RESET_TIME = 5 * 60 * 1000; // 5分钟
+    if (this.quotaExhaustedTime && (Date.now() - this.quotaExhaustedTime) > QUOTA_RESET_TIME) {
+      console.log('[AIService] 配额耗尽标志已自动重置（超过5分钟）');
+      this.resetQuotaFlag();
+      return false;
+    }
+    
+    return true;
+  }
+  
+  /**
+   * 设置配额耗尽标志
+   */
+  setQuotaExhausted() {
+    this.quotaExhausted = true;
+    this.quotaExhaustedTime = Date.now();
+    console.error('[AIService] ⛔ 配额耗尽标志已设置，后续请求将被阻止');
+  }
+  
+  /**
+   * 重置配额耗尽标志
+   */
+  resetQuotaFlag() {
+    this.quotaExhausted = false;
+    this.quotaExhaustedTime = null;
+    console.log('[AIService] ✓ 配额耗尽标志已重置');
   }
 
   // ============================================
@@ -178,68 +218,141 @@ class AIService {
   // ============================================
 
   async complete(prompt, systemInstruction = null, options = {}) {
+    // 检查配额是否耗尽
+    if (this.isQuotaExhausted()) {
+      throw new Error('AI配额已耗尽，请等待5分钟后重试或检查API密钥配额。');
+    }
+    
     if (!this.provider) {
       if (!this.initProvider()) {
         throw new Error('AI provider not configured');
       }
     }
-    return this.provider.complete(prompt, systemInstruction, options);
+    
+    try {
+      return await this.provider.complete(prompt, systemInstruction, options);
+    } catch (error) {
+      // 在 complete 层面也检测配额错误，设置标志
+      if (error.message && (error.message.includes('配额') || error.message.includes('Quota') || error.message.includes('quota'))) {
+        this.setQuotaExhausted();
+      }
+      throw error;
+    }
   }
 
   /**
    * 根据学习内容生成题目
+   * 
+   * 生成策略：
+   * - 每批次生成30道题目（BATCH_SIZE = 30）
+   * - 总共最多4个批次（MAX_BATCHES = 4），最多生成120道题目
+   * - 每批次失败时，间隔15秒后重试，最多重试3次（MAX_RETRIES = 3）
+   * - 3次重试都失败后，强制停止当前批次，继续下一批次或结束
+   * - 避免程序因AI超时而卡死
    */
   async generateQuestions(content, options = {}) {
     let {
-      count = 60,
-      difficulty = 'mixed',
+      count = 120,
       types = ['Single', 'Multi', 'TrueFalse'],
     } = options;
 
-    if (count < 60) {
-      count = 60;
+    // 注意：difficulty参数已移除，1-5难度现在用于游戏机制（怪物血量、伤害），不影响题目生成
+
+    // 确保最少生成120道题目
+    if (count < 120) {
+      count = 120;
     }
 
-    const BATCH_SIZE = 20;
-    const batches = Math.ceil(count / BATCH_SIZE);
+    // 配置参数
+    const BATCH_SIZE = 30;           // 每批次生成30道题目
+    const MAX_BATCHES = 4;           // 最多4个批次（30 x 4 = 120题）
+    const MAX_RETRIES = 3;           // 每批次最多重试3次
+    const RETRY_DELAY_MS = 15000;    // 失败后等待15秒再重试
+    const BATCH_DELAY_MS = 3000;     // 批次之间等待3秒
+
     let allQuestions = [];
 
-    for (let batch = 0; batch < batches; batch++) {
+    for (let batch = 0; batch < MAX_BATCHES; batch++) {
+      // 批次之间等待
       if (batch > 0) {
-        console.log('[AIService] Waiting 3s before next batch...');
-        await this.sleep(3000);
+        console.log(`[AIService] 等待 ${BATCH_DELAY_MS / 1000}s 后开始第 ${batch + 1} 批次...`);
+        await this.sleep(BATCH_DELAY_MS);
       }
 
       const batchCount = Math.min(BATCH_SIZE, count - allQuestions.length);
       
-      try {
-        const batchQuestions = await this._generateQuestionBatch(content, {
-          count: batchCount,
-          difficulty,
-          types,
-          batchIndex: batch,
-          existingCount: allQuestions.length,
-          previousQuestions: allQuestions.map(q => q.text),
-        });
-        
-        allQuestions = allQuestions.concat(batchQuestions);
-      } catch (error) {
-        console.error(`[AIService] Batch ${batch + 1} failed:`, error);
-        if (error.message.includes('配额') || error.message.includes('Quota')) {
+      // 如果已经生成够了，直接停止
+      if (batchCount <= 0) {
+        console.log('[AIService] 已达到目标数量，停止生成');
+        break;
+      }
+
+      let batchSuccess = false;
+      let retryCount = 0;
+
+      // 重试循环：最多重试3次
+      while (!batchSuccess && retryCount < MAX_RETRIES) {
+        try {
+          console.log(`[AIService] 批次 ${batch + 1}/${MAX_BATCHES}，尝试 ${retryCount + 1}/${MAX_RETRIES}，生成 ${batchCount} 道题目...`);
+          
+          const batchQuestions = await this._generateQuestionBatch(content, {
+            count: batchCount,
+            types,
+            batchIndex: batch,
+            existingCount: allQuestions.length,
+            previousQuestions: allQuestions.map(q => q.text),
+          });
+          
+          if (batchQuestions && batchQuestions.length > 0) {
+            allQuestions = allQuestions.concat(batchQuestions);
+            console.log(`[AIService] 批次 ${batch + 1} 成功，生成了 ${batchQuestions.length} 道题目，总计 ${allQuestions.length} 道`);
+            batchSuccess = true;
+          } else {
+            throw new Error('AI返回的题目数组为空');
+          }
+        } catch (error) {
+          retryCount++;
+          console.error(`[AIService] 批次 ${batch + 1} 第 ${retryCount} 次尝试失败:`, error.message);
+          
+          // 检查是否是配额错误，配额错误直接停止所有生成并设置全局标志
+          if (error.message && (error.message.includes('配额') || error.message.includes('Quota') || error.message.includes('quota'))) {
+            console.error('[AIService] ⛔ 检测到配额限制，强制停止所有生成并阻止后续请求');
+            this.setQuotaExhausted();  // 设置全局配额耗尽标志
+            return allQuestions.slice(0, count);
+          }
+          
+          // 如果还有重试机会，等待15秒后重试
+          if (retryCount < MAX_RETRIES) {
+            console.log(`[AIService] 等待 ${RETRY_DELAY_MS / 1000}s 后进行第 ${retryCount + 1} 次重试...`);
+            await this.sleep(RETRY_DELAY_MS);
+          }
+        }
+      }
+
+      // 如果该批次重试3次都失败了
+      if (!batchSuccess) {
+        console.error(`[AIService] 批次 ${batch + 1} 重试 ${MAX_RETRIES} 次均失败，强制停止该批次`);
+        // 继续尝试下一个批次，而不是完全停止
+        // 但如果连续两个批次都失败，则完全停止
+        if (batch > 0 && allQuestions.length === 0) {
+          console.error('[AIService] 连续多批次失败且无题目生成，强制停止所有生成');
           break;
         }
       }
       
+      // 如果已经生成够了，直接停止
       if (allQuestions.length >= count) {
+        console.log(`[AIService] 已生成 ${allQuestions.length} 道题目，达到目标，停止生成`);
         break;
       }
     }
 
+    console.log(`[AIService] 题目生成完成，最终生成 ${allQuestions.length} 道题目`);
     return allQuestions.slice(0, count);
   }
 
   async _generateQuestionBatch(content, options) {
-    const { count, difficulty, types, batchIndex, existingCount, previousQuestions = [] } = options;
+    const { count, types, batchIndex, existingCount, previousQuestions = [] } = options;
 
     const systemInstruction = `你是《智者计划：学习飞升》的首席知识架构师。
 【世界观背景】
@@ -254,8 +367,9 @@ class AIService {
 【题目设计准则】
 1. 深度挖掘：对于知识点，从定义、应用、反例等角度出题。
 2. 干扰项：错误选项应是常见误解。
-3. 难度分级：1-5级难度梯度分布。
-4. 解析深度：解析必须解释"为什么选这个"，如果原资料有解释则引用，如果没有则基于逻辑补充。
+3. 解析深度：解析必须解释"为什么选这个"，如果原资料有解释则引用，如果没有则基于逻辑补充。
+
+【注意】difficulty字段统一设为3，该字段将由用户手动调整用于游戏机制。
 
 【重要】必须严格生成 ${count} 道题目！确保答案准确无误！`;
 
@@ -279,7 +393,7 @@ ${content}
     "type": "Single|Multi|TrueFalse",
     "options": ["选项A", "选项B", "选项C", "选项D"],
     "correctOptionIndex": 0, // 必须是经过逻辑分析后的正确答案索引
-    "difficulty": 1-5,
+    "difficulty": 1, // 固定为1，用户会手动调整用于游戏机制
     "timeLimit": 建议秒数,
     "explanation": "详细解析（解释为什么该选项正确）",
     "tags": ["知识点标签"]
@@ -290,7 +404,7 @@ ${content}
 - 必须生成 ${count} 道题目
 - **核心要求**：如果输入是题目，请务必**做题**，选出正确答案。如果输入是知识点，请据此出题。
 - 绝对不要重复已有的题目
-- 难度分布：${difficulty === 'mixed' ? '梯度渐进' : `锁定难度等级 ${difficulty}`}
+- difficulty字段统一设为1
 - 题型配比：${types.join(', ')}
 
 立即输出包含 ${count} 道题目的JSON数组：`;

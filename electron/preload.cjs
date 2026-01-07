@@ -14,6 +14,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setModel: (model) => ipcRenderer.invoke('ai:set-model', model),
     setAccountId: (accountId) => ipcRenderer.invoke('ai:set-account-id', accountId),
     checkStatus: () => ipcRenderer.invoke('ai:check-status'),
+    checkQuotaStatus: () => ipcRenderer.invoke('ai:check-quota-status'),
+    resetQuota: () => ipcRenderer.invoke('ai:reset-quota'),
     
     // Content generation
     generateQuestions: (content, options) => 
@@ -70,5 +72,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getVersion: () => ipcRenderer.invoke('app:get-version'),
     getPlatform: () => process.platform,
     quit: () => ipcRenderer.invoke('app:quit'),
+  },
+  
+  // 窗口控制
+  window: {
+    minimize: () => ipcRenderer.invoke('window:minimize'),
+    maximize: () => ipcRenderer.invoke('window:maximize'),
+    isMaximized: () => ipcRenderer.invoke('window:is-maximized'),
   },
 });

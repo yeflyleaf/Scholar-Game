@@ -154,6 +154,20 @@ ipcMain.handle("ai:check-status", async () => {
   return aiService.getStatus();
 });
 
+// Check quota status
+ipcMain.handle("ai:check-quota-status", async () => {
+  return {
+    quotaExhausted: aiService.isQuotaExhausted(),
+    quotaExhaustedTime: aiService.quotaExhaustedTime
+  };
+});
+
+// Reset quota flag
+ipcMain.handle("ai:reset-quota", async () => {
+  aiService.resetQuotaFlag();
+  return { success: true };
+});
+
 // Generate questions
 ipcMain.handle("ai:generate-questions", async (event, { content, options }) => {
   try {
@@ -380,6 +394,27 @@ ipcMain.handle(
     }
   }
 );
+
+// 窗口控制
+ipcMain.handle("window:minimize", () => {
+  if (mainWindow) {
+    mainWindow.minimize();
+  }
+});
+
+ipcMain.handle("window:maximize", () => {
+  if (mainWindow) {
+    if (mainWindow.isMaximized()) {
+      mainWindow.restore();
+    } else {
+      mainWindow.maximize();
+    }
+  }
+});
+
+ipcMain.handle("window:is-maximized", () => {
+  return mainWindow ? mainWindow.isMaximized() : false;
+});
 
 // Quit app
 ipcMain.handle("app:quit", () => {

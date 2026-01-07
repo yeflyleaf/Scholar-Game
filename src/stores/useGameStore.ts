@@ -608,22 +608,23 @@ export const useGameStore = create<GameState>()(
                 console.log(`[扇区更新] 扇区 ${sectorId} 简报已更新`);
             },
 
-            // 将AI生成的60道题目分配到六个默认关卡
+            // 将AI生成的120道题目分配到六个默认关卡
+            // 第一关20道，第二关40道，以此类推，题目循环分配
             distributeAIQuestionsToSectors: (questions, sourceTitle) => {
                 if (!questions || questions.length === 0) return;
                 
                 // 默认六个关卡的ID（按顺序对应难度1-6）
                 const defaultSectorIds = [
-                    'sector-1',  // 第一关: 10道题
-                    'sector-2',  // 第二关: 20道题
-                    'sector-3',  // 第三关: 30道题
-                    'sector-4',  // 第四关: 40道题
-                    'sector-5',  // 第五关: 50道题
-                    'sector-boss' // 第六关: 60道题
+                    'sector-1',  // 第一关: 20道题
+                    'sector-2',  // 第二关: 40道题
+                    'sector-3',  // 第三关: 60道题
+                    'sector-4',  // 第四关: 80道题
+                    'sector-5',  // 第五关: 100道题
+                    'sector-boss' // 第六关: 120道题
                 ];
                 
                 // 每个关卡需要的题目数量（与关卡的totalQuestions相同）
-                const questionsPerSector = [10, 20, 30, 40, 50, 60];
+                const questionsPerSector = [20, 40, 60, 80, 100, 120];
                 
                 const state = get();
                 const allQuestions = [...questions];

@@ -37,6 +37,11 @@ export interface AIStatus {
   providerName: string | null;
 }
 
+export interface QuotaStatus {
+  quotaExhausted: boolean;
+  quotaExhaustedTime: number | null;
+}
+
 // ============================================
 // Generated Data Types
 // ============================================
@@ -106,6 +111,8 @@ export interface AIAPI {
   setModel: (model: string) => Promise<APIResponse<void>>;
   setAccountId: (accountId: string) => Promise<APIResponse<void>>;
   checkStatus: () => Promise<AIStatus>;
+  checkQuotaStatus: () => Promise<QuotaStatus>;
+  resetQuota: () => Promise<APIResponse<void>>;
   
   // Content generation
   generateQuestions: (
@@ -186,6 +193,16 @@ export interface AppAPI {
 }
 
 // ============================================
+// Window API Interface
+// ============================================
+
+export interface WindowAPI {
+  minimize: () => Promise<void>;
+  maximize: () => Promise<void>;
+  isMaximized: () => Promise<boolean>;
+}
+
+// ============================================
 // Complete Electron API Interface
 // ============================================
 
@@ -194,6 +211,7 @@ export interface ElectronAPI {
   gemini: GeminiAPI;
   fs: FileSystemAPI;
   app: AppAPI;
+  window: WindowAPI;
 }
 
 // Extend Window interface
