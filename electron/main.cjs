@@ -168,6 +168,16 @@ ipcMain.handle("ai:reset-quota", async () => {
   return { success: true };
 });
 
+// Test API connection
+ipcMain.handle("ai:test-connection", async () => {
+  try {
+    const result = await aiService.testConnection();
+    return result;
+  } catch (error) {
+    return { success: false, message: error.message };
+  }
+});
+
 // Generate questions
 ipcMain.handle("ai:generate-questions", async (event, { content, options }) => {
   try {

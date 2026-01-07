@@ -14,12 +14,6 @@ class GeminiProvider extends BaseProvider {
     this.baseUrl = config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/models';
     this.model = config.model || 'gemini-2.5-flash';
     
-    // Gemini 速率限制（免费层）
-    this.requestsPerMinute = 5;
-    this.tokensPerMinute = 250000;
-    this.requestsPerDay = 20;
-    this.requestsToday = 0;
-    
     // 从注册表加载模型配置
     this.providerConfig = getProviderById('gemini');
   }

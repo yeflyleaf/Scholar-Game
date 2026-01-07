@@ -3,6 +3,7 @@ import type {
     AIProvider,
     AIProvidersGrouped,
     AIStatus,
+    ConnectionTestResult,
     GeneratedChapter,
     GeneratedKnowledgeTree,
     QuestionGenerationOptions
@@ -35,6 +36,7 @@ interface UseAIReturn {
   setModel: (model: string) => Promise<boolean>;
   setAccountId: (accountId: string) => Promise<boolean>;
   checkStatus: () => Promise<AIStatus | null>;
+  testConnection: () => Promise<ConnectionTestResult>;
   
   // Actions - Generation
   generateQuestions: (content: string, options?: QuestionGenerationOptions) => Promise<Question[] | null>;
@@ -405,6 +407,23 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
+  // Test connection
+  const testConnection = useCallback(async (): Promise<ConnectionTestResult> => {
+    if (!electronAPI?.ai) {
+      return { success: false, message: 'AI API 仅在桌面应用中可用' };
+    }
+
+    try {
+      const result = await electronAPI.ai.testConnection();
+      return result;
+    } catch (e) {
+      return {
+        success: false,
+        message: e instanceof Error ? e.message : '未知错误'
+      };
+    }
+  }, [electronAPI]);
+
   // Load providers and check status on mount
   useEffect(() => {
     if (electronAPI?.ai) {
@@ -435,6 +454,7 @@ export function useAI(): UseAIReturn {
     generateTheme,
     generateMissionBriefing,
     generateAllMissionBriefings,
+    testConnection,
     clearError,
   };
 }

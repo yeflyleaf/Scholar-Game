@@ -98,6 +98,12 @@ export interface APIResponse<T> {
   error?: string;
 }
 
+export interface ConnectionTestResult {
+  success: boolean;
+  message: string;
+  responseTime?: number;
+}
+
 // ============================================
 // AI Service API Interface (new unified API)
 // ============================================
@@ -113,6 +119,7 @@ export interface AIAPI {
   checkStatus: () => Promise<AIStatus>;
   checkQuotaStatus: () => Promise<QuotaStatus>;
   resetQuota: () => Promise<APIResponse<void>>;
+  testConnection: () => Promise<ConnectionTestResult>;
   
   // Content generation
   generateQuestions: (

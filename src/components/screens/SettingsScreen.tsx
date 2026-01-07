@@ -115,6 +115,7 @@ export const SettingsScreen: React.FC = () => {
         generateQuestions,
         generateTheme,
         generateAllMissionBriefings,
+        testConnection,
         clearError
     } = useAI();
 
@@ -132,6 +133,10 @@ export const SettingsScreen: React.FC = () => {
     const [difficulty, setDifficulty] = useState(3);
     const [generationStatus, setGenerationStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
     const [generatedQuestionCount, setGeneratedQuestionCount] = useState(0);
+    
+    // Connection Test State
+    const [connectionTestStatus, setConnectionTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
+    const [connectionTestResult, setConnectionTestResult] = useState<{ message: string; responseTime?: number } | null>(null);
 
     const isElectronEnv = isElectron();
 
@@ -565,7 +570,7 @@ export const SettingsScreen: React.FC = () => {
                                 >
                                     {availableModels.map((m) => (
                                         <option key={m.id} value={m.id}>
-                                            {m.name} - {m.description}
+                                            {m.name} {m.description}
                                         </option>
                                     ))}
                                 </select>
@@ -580,8 +585,69 @@ export const SettingsScreen: React.FC = () => {
                                 应用模型
                             </motion.button>
                         </div>
+                        
+                        {/* Connection Test */}
+                        <div className="flex items-center gap-4 pt-2">
+                            <motion.button
+                                onClick={async () => {
+                                    setConnectionTestStatus('testing');
+                                    setConnectionTestResult(null);
+                                    const result = await testConnection();
+                                    setConnectionTestStatus(result.success ? 'success' : 'error');
+                                    setConnectionTestResult({ message: result.message, responseTime: result.responseTime });
+                                    // 5秒后重置状态
+                                    setTimeout(() => {
+                                        setConnectionTestStatus('idle');
+                                    }, 5000);
+                                }}
+                                disabled={!isConfigured || connectionTestStatus === 'testing'}
+                                className={`px-4 py-2 font-mono text-sm border-2 transition-all duration-300 ${
+                                    connectionTestStatus === 'success'
+                                        ? 'border-stable bg-stable/20 text-stable'
+                                        : connectionTestStatus === 'error'
+                                        ? 'border-glitch-red bg-glitch-red/20 text-glitch-red'
+                                        : connectionTestStatus === 'testing'
+                                        ? 'border-holographic-gold bg-holographic-gold/20 text-holographic-gold'
+                                        : 'border-gray-600 text-gray-400 hover:border-neon-cyan hover:text-neon-cyan'
+                                } disabled:opacity-50 disabled:cursor-not-allowed`}
+                                style={{ clipPath: 'polygon(10% 0, 100% 0, 100% 70%, 90% 100%, 0 100%, 0 30%)' }}
+                                whileHover={{ scale: isConfigured && connectionTestStatus !== 'testing' ? 1.02 : 1 }}
+                                whileTap={{ scale: 0.98 }}
+                            >
+                                {connectionTestStatus === 'testing' ? (
+                                    <span className="flex items-center gap-2">
+                                        <div className="w-3 h-3 border-2 border-holographic-gold border-t-transparent rounded-full animate-spin" />
+                                        测试中...
+                                    </span>
+                                ) : connectionTestStatus === 'success' ? (
+                                    '✓ 连接成功'
+                                ) : connectionTestStatus === 'error' ? (
+                                    '✗ 连接失败'
+                                ) : (
+                                    '🔗 测试连接'
+                                )}
+                            </motion.button>
+                            
+                            {connectionTestResult && (
+                                <motion.span
+                                    initial={{ opacity: 0, x: -10 }}
+                                    animate={{ opacity: 1, x: 0 }}
+                                    className={`text-xs font-mono ${
+                                        connectionTestStatus === 'success' ? 'text-stable' : 'text-glitch-red'
+                                    }`}
+                                >
+                                    {connectionTestResult.responseTime && (
+                                        <span className="text-holographic-gold mr-2">
+                                            {connectionTestResult.responseTime}ms
+                                        </span>
+                                    )}
+                                    {connectionTestResult.message}
+                                </motion.span>
+                            )}
+                        </div>
+                        
                         <p className="text-xs font-mono text-gray-500 leading-relaxed">
-                            当前模型: <span className="text-neon-cyan">{model || '未选择'}</span>
+                            当前模型: <span className="text-neon-cyan">{availableModels.find(m => m.id === model)?.name || model || '未选择'}</span>
                         </p>
                     </div>
                 </SectionPanel>

@@ -11,20 +11,44 @@ class BaseProvider {
     this.providerName = 'base';
     this.displayName = 'Base Provider';
     
-    // 速率限制
+    // 速率限制 (按模型独立追踪)
     this.requestsPerMinute = config.requestsPerMinute || 60;
     this.tokensPerMinute = config.tokensPerMinute || 100000;
+    this.requestsPerDay = config.requestsPerDay || 0; // 0 表示无限制
+    
     this.minuteWindowStart = Date.now();
-    this.requestsInMinute = 0;
-    this.tokensInMinute = 0;
+    this.dayWindowStart = new Date().setHours(0, 0, 0, 0); // 今天 0 点
+    
+    // 使用 Map 存储每个模型的用量: modelName -> { requests: 0, tokens: 0, requestsToday: 0 }
+    this.usageByModel = new Map();
+  }
+
+  /**
+   * 获取指定模型的用量统计
+   */
+  _getModelUsage(model) {
+    if (!this.usageByModel.has(model)) {
+      this.usageByModel.set(model, { requests: 0, tokens: 0, requestsToday: 0 });
+    }
+    return this.usageByModel.get(model);
+  }
+
+  /**
+   * 获取模型配置（如果存在）
+   */
+  _getModelConfig(modelId) {
+    if (this.providerConfig && this.providerConfig.models) {
+      return this.providerConfig.models.find(m => m.id === modelId);
+    }
+    return null;
   }
 
   /**
    * 设置 API 密钥
-   * @param {string} key - API 密钥
+   * @param {string} apiKey - API 密钥
    */
-  setApiKey(key) {
-    this.apiKey = key;
+  setApiKey(apiKey) {
+    this.apiKey = apiKey;
   }
 
   /**
@@ -37,7 +61,7 @@ class BaseProvider {
 
   /**
    * 设置模型
-   * @param {string} model - 模型名称
+   * @param {string} model - 模型 ID
    */
   setModel(model) {
     this.model = model;
@@ -66,18 +90,49 @@ class BaseProvider {
    */
   checkRateLimits(estimatedTokens = 0) {
     const now = Date.now();
+    
+    // 检查分钟窗口
     if (now - this.minuteWindowStart > 60000) {
       this.minuteWindowStart = now;
-      this.requestsInMinute = 0;
-      this.tokensInMinute = 0;
+      // 重置所有模型的分钟计数器
+      for (const usage of this.usageByModel.values()) {
+        usage.requests = 0;
+        usage.tokens = 0;
+      }
+    }
+    
+    // 检查天窗口
+    const todayStart = new Date().setHours(0, 0, 0, 0);
+    if (todayStart > this.dayWindowStart) {
+      this.dayWindowStart = todayStart;
+      // 重置所有模型的天计数器
+      for (const usage of this.usageByModel.values()) {
+        usage.requestsToday = 0;
+      }
     }
 
-    if (this.requestsInMinute >= this.requestsPerMinute) {
-      throw new Error(`速率限制：每分钟最多${this.requestsPerMinute}次请求`);
+    const currentModel = this.model || 'default';
+    const usage = this._getModelUsage(currentModel);
+    const modelConfig = this._getModelConfig(currentModel);
+    
+    // 获取限制：优先使用模型特定配置，否则使用默认值
+    const rpmLimit = modelConfig?.rateLimits?.rpm || this.requestsPerMinute;
+    const tpmLimit = modelConfig?.rateLimits?.tpm || this.tokensPerMinute;
+    const rpdLimit = modelConfig?.rateLimits?.rpd || this.requestsPerDay;
+
+    // 检查 RPM
+    if (usage.requests >= rpmLimit) {
+      throw new Error(`速率限制：模型 ${currentModel} 每分钟最多 ${rpmLimit} 次请求`);
     }
 
-    if (this.tokensInMinute + estimatedTokens > this.tokensPerMinute) {
-      throw new Error(`速率限制：每分钟最多${this.tokensPerMinute} Token`);
+    // 检查 TPM
+    if (usage.tokens + estimatedTokens > tpmLimit) {
+      throw new Error(`速率限制：模型 ${currentModel} 每分钟最多 ${tpmLimit} Token`);
+    }
+    
+    // 检查 RPD (如果有设置)
+    if (rpdLimit > 0 && usage.requestsToday >= rpdLimit) {
+      throw new Error(`速率限制：模型 ${currentModel} 每天最多 ${rpdLimit} 次请求`);
     }
   }
 
@@ -86,8 +141,12 @@ class BaseProvider {
    * @param {number} tokens - 使用的 Token 数
    */
   incrementUsage(tokens = 0) {
-    this.requestsInMinute++;
-    this.tokensInMinute += tokens;
+    const currentModel = this.model || 'default';
+    const usage = this._getModelUsage(currentModel);
+    
+    usage.requests++;
+    usage.tokens += tokens;
+    usage.requestsToday++;
   }
 
   /**

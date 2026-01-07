@@ -176,15 +176,44 @@ class OpenAICompatibleProvider extends BaseProvider {
       const data = await response.json();
       
       // 处理不同的响应格式
+      // 1. 标准 OpenAI 格式
       if (data.choices && data.choices[0]?.message?.content) {
         return data.choices[0].message.content;
-      } else if (data.result) {
-        // 部分中文提供商使用 'result' 字段
+      }
+      // 2. 百度千帆/文心一言格式
+      if (data.result) {
         return data.result;
-      } else if (data.response) {
+      }
+      // 3. 百度千帆 body 包装格式
+      if (data.body?.result) {
+        return data.body.result;
+      }
+      // 4. 部分提供商使用 response 字段
+      if (data.response) {
         return data.response;
       }
+      // 5. 腾讯云混元格式
+      if (data.Response?.Choices?.[0]?.Message?.Content) {
+        return data.Response.Choices[0].Message.Content;
+      }
+      // 6. 通用 content 字段
+      if (data.content) {
+        return data.content;
+      }
+      // 7. 通用 text 字段
+      if (data.text) {
+        return data.text;
+      }
+      // 8. 通用 output 字段（阿里云等）
+      if (data.output?.text) {
+        return data.output.text;
+      }
+      if (data.output?.choices?.[0]?.message?.content) {
+        return data.output.choices[0].message.content;
+      }
       
+      // 如果都没有匹配，打印响应以便调试
+      console.error(`[${this.providerName}] Unknown response format:`, JSON.stringify(data).substring(0, 500));
       throw new Error(`Invalid response from ${this.displayName}`);
     } catch (error) {
       // 网络错误重试
