@@ -38,6 +38,12 @@
 
 ---
 
+<p align="center">
+  <img src="public/主页.png" alt="游戏主页截图" width="800" />
+</p>
+
+---
+
 ## 🛠️ 技术架构
 
 | 模块 | 技术栈 | 说明 |
