@@ -1,9 +1,10 @@
 /**
- * Gemini Provider - Google Gemini API implementation
- * Handles the specific API format used by Google's Gemini models
+ * Gemini 提供商 - Google Gemini API 实现
+ * 处理 Google Gemini 模型使用的特定 API 格式
  */
 
 const { BaseProvider } = require('./base-provider.cjs');
+const { getProviderById } = require('./provider-registry.cjs');
 
 class GeminiProvider extends BaseProvider {
   constructor(config = {}) {
@@ -13,25 +14,29 @@ class GeminiProvider extends BaseProvider {
     this.baseUrl = config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/models';
     this.model = config.model || 'gemini-2.5-flash';
     
-    // Gemini rate limits (free tier)
+    // Gemini 速率限制（免费层）
     this.requestsPerMinute = 5;
     this.tokensPerMinute = 250000;
     this.requestsPerDay = 20;
     this.requestsToday = 0;
+    
+    // 从注册表加载模型配置
+    this.providerConfig = getProviderById('gemini');
   }
 
   getAvailableModels() {
+    // 从注册表读取模型，确保前后端一致
+    if (this.providerConfig && this.providerConfig.models) {
+      return this.providerConfig.models;
+    }
+    // 后备默认值
     return [
       { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: '最新最快的模型' },
-      { id: 'gemini-2.5-pro', name: 'Gemini 2.5 Pro', description: '最强推理能力' },
-      { id: 'gemini-2.0-flash', name: 'Gemini 2.0 Flash', description: '快速响应' },
-      { id: 'gemini-1.5-flash', name: 'Gemini 1.5 Flash', description: '经典版本' },
-      { id: 'gemini-1.5-pro', name: 'Gemini 1.5 Pro', description: '高质量输出' },
     ];
   }
 
   /**
-   * Make a completion request to Gemini API
+   * 向 Gemini API 发起补全请求
    */
   async complete(prompt, systemInstruction = null, options = {}) {
     const maxTokens = options.maxTokens || 8192;
@@ -41,7 +46,7 @@ class GeminiProvider extends BaseProvider {
       throw new Error('Gemini API key not configured');
     }
 
-    // Estimate tokens and check rate limits
+    // 估算 Token 并检查速率限制
     const inputContent = (prompt || '') + (systemInstruction || '');
     const estimatedTokens = Math.ceil(inputContent.length / 4);
     
@@ -83,7 +88,7 @@ class GeminiProvider extends BaseProvider {
       if (!response.ok) {
         const errorText = await response.text();
         
-        // Handle 429 Rate Limit
+        // 处理 429 速率限制
         if (response.status === 429) {
           console.error('[GeminiProvider] Quota Exceeded:', errorText);
           
@@ -107,7 +112,7 @@ class GeminiProvider extends BaseProvider {
           throw new Error('AI核心过载（配额耗尽），请稍后重试或检查API密钥配额。');
         }
         
-        // Handle 503 Service Overload
+        // 处理 503 服务过载
         if (response.status === 503) {
           console.error('[GeminiProvider] API Overloaded:', errorText);
           
@@ -132,7 +137,7 @@ class GeminiProvider extends BaseProvider {
 
       return data.candidates[0].content.parts[0].text;
     } catch (error) {
-      // Network error retry
+      // 网络错误重试
       if (retryCount < 3 && error.message.includes('fetch failed')) {
         console.log(`[GeminiProvider] Network error. Retrying... (Attempt ${retryCount + 1}/3)`);
         await this.sleep(5000);

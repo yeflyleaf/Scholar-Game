@@ -1,8 +1,8 @@
 /**
- * OpenAI-Compatible Provider
- * Handles all providers that use OpenAI-compatible API format
- * Supports: DeepSeek, Groq, SiliconFlow, Kimi, OpenRouter, Together, Fireworks, 
- *           Cerebras, Mistral, AIML, Aliyun, Huawei, Volcengine, Tencent, Baidu
+ * OpenAI 兼容提供商
+ * 处理所有使用 OpenAI 兼容 API 格式的提供商
+ * 支持：DeepSeek、Groq、硅基流动、Kimi、OpenRouter、Together、Fireworks、
+ *       Cerebras、Mistral、AIML、阿里云、华为、火山引擎、腾讯、百度
  */
 
 const { BaseProvider } = require('./base-provider.cjs');
@@ -12,7 +12,7 @@ class OpenAICompatibleProvider extends BaseProvider {
   constructor(config = {}) {
     super(config);
     
-    // Load provider config from registry if providerId is specified
+    // 如果指定了 providerId，从注册表加载提供商配置
     if (config.providerId) {
       const providerConfig = getProviderById(config.providerId);
       if (providerConfig) {
@@ -30,9 +30,9 @@ class OpenAICompatibleProvider extends BaseProvider {
       this.providerConfig = null;
     }
 
-    // Additional config
+    // 额外配置
     this.extraHeaders = config.extraHeaders || {};
-    this.accountId = config.accountId || null; // For Cloudflare
+    this.accountId = config.accountId || null; // 用于 Cloudflare
   }
 
   getAvailableModels() {
@@ -45,10 +45,10 @@ class OpenAICompatibleProvider extends BaseProvider {
   }
 
   /**
-   * Build the request URL
+   * 构建请求 URL
    */
   getRequestUrl() {
-    // Handle Cloudflare's special URL format
+    // 处理 Cloudflare 的特殊 URL 格式
     if (this.providerName === 'cloudflare' && this.accountId) {
       return this.baseUrl.replace('{account_id}', this.accountId) + `/${this.model}`;
     }
@@ -56,7 +56,7 @@ class OpenAICompatibleProvider extends BaseProvider {
   }
 
   /**
-   * Build request headers
+   * 构建请求头
    */
   getHeaders() {
     const headers = {
@@ -65,7 +65,7 @@ class OpenAICompatibleProvider extends BaseProvider {
       ...this.extraHeaders,
     };
 
-    // OpenRouter requires additional headers
+    // OpenRouter 需要额外的头
     if (this.providerName === 'openrouter') {
       headers['HTTP-Referer'] = 'https://scholar-game.app';
       headers['X-Title'] = 'Scholar Game';
@@ -75,7 +75,7 @@ class OpenAICompatibleProvider extends BaseProvider {
   }
 
   /**
-   * Make a completion request using OpenAI-compatible format
+   * 使用 OpenAI 兼容格式发起补全请求
    */
   async complete(prompt, systemInstruction = null, options = {}) {
     const maxTokens = options.maxTokens || 4096;
@@ -85,7 +85,7 @@ class OpenAICompatibleProvider extends BaseProvider {
       throw new Error(`${this.displayName} API key not configured`);
     }
 
-    // Estimate tokens and check rate limits
+    // 估算 Token 并检查速率限制
     const inputContent = (prompt || '') + (systemInstruction || '');
     const estimatedTokens = Math.ceil(inputContent.length / 4);
     
@@ -95,7 +95,7 @@ class OpenAICompatibleProvider extends BaseProvider {
     const url = this.getRequestUrl();
     console.log(`[${this.providerName}] Calling API with model: ${this.model}`);
 
-    // Build messages array
+    // 构建消息数组
     const messages = [];
     if (systemInstruction) {
       messages.push({ role: 'system', content: systemInstruction });
@@ -110,7 +110,7 @@ class OpenAICompatibleProvider extends BaseProvider {
       top_p: options.topP || 0.95,
     };
 
-    // Some providers support response_format
+    // 部分提供商支持 response_format
     if (options.responseFormat === 'json') {
       requestBody.response_format = { type: 'json_object' };
     }
@@ -125,7 +125,7 @@ class OpenAICompatibleProvider extends BaseProvider {
       if (!response.ok) {
         const errorText = await response.text();
         
-        // Handle rate limiting (429)
+        // 处理速率限制 (429)
         if (response.status === 429) {
           console.error(`[${this.providerName}] Rate Limited:`, errorText);
           
@@ -133,7 +133,7 @@ class OpenAICompatibleProvider extends BaseProvider {
             let waitTime = 10;
             try {
               const errorJson = JSON.parse(errorText);
-              // Try to extract retry-after from various formats
+              // 尝试从各种格式中提取 retry-after
               if (errorJson.error?.retry_after) {
                 waitTime = errorJson.error.retry_after;
               } else if (errorJson.retry_after) {
@@ -151,7 +151,7 @@ class OpenAICompatibleProvider extends BaseProvider {
           throw new Error(`${this.displayName} 配额已用尽，请稍后重试。`);
         }
         
-        // Handle server errors (5xx)
+        // 处理服务器错误 (5xx)
         if (response.status >= 500 && response.status < 600) {
           console.error(`[${this.providerName}] Server Error:`, errorText);
           
@@ -165,7 +165,7 @@ class OpenAICompatibleProvider extends BaseProvider {
           throw new Error(`${this.displayName} 服务暂时不可用。`);
         }
 
-        // Handle authentication errors
+        // 处理认证错误
         if (response.status === 401 || response.status === 403) {
           throw new Error(`${this.displayName} API 密钥无效或权限不足。`);
         }
@@ -175,11 +175,11 @@ class OpenAICompatibleProvider extends BaseProvider {
 
       const data = await response.json();
       
-      // Handle different response formats
+      // 处理不同的响应格式
       if (data.choices && data.choices[0]?.message?.content) {
         return data.choices[0].message.content;
       } else if (data.result) {
-        // Some Chinese providers use 'result' field
+        // 部分中文提供商使用 'result' 字段
         return data.result;
       } else if (data.response) {
         return data.response;
@@ -187,7 +187,7 @@ class OpenAICompatibleProvider extends BaseProvider {
       
       throw new Error(`Invalid response from ${this.displayName}`);
     } catch (error) {
-      // Network error retry
+      // 网络错误重试
       if (retryCount < 3 && (error.message.includes('fetch failed') || error.message.includes('network'))) {
         console.log(`[${this.providerName}] Network error. Retrying...`);
         await this.sleep(5000);
@@ -198,7 +198,7 @@ class OpenAICompatibleProvider extends BaseProvider {
   }
 
   /**
-   * Set additional configuration
+   * 设置额外配置
    */
   setAccountId(accountId) {
     this.accountId = accountId;

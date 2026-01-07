@@ -38,7 +38,7 @@ export function useGemini(): UseGeminiReturn {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const [model, setModelState] = useState<string>('gemini-2.0-flash');
+  const [model, setModelState] = useState<string>('gemini-2.5-flash');
 
   // 检查是否在 Electron 中运行
   const electronAPI = typeof window !== 'undefined' ? window.electronAPI : undefined;

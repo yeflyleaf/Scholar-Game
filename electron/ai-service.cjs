@@ -1,7 +1,6 @@
 /**
- * Unified AI Service
- * Main service that manages AI providers and handles content generation
- * Replaces the old gemini-service.cjs with multi-provider support
+ * 统一 AI 服务
+ * 管理 AI 提供商并处理内容生成的主要服务
  */
 
 const fs = require('fs');
@@ -15,19 +14,19 @@ class AIService {
     this.providerId = null;
     this.apiKey = null;
     this.model = null;
-    this.accountId = null; // For Cloudflare
+    this.accountId = null; // 用于 Cloudflare
     
-    // Load saved config
+    // 加载保存的配置
     this.loadConfig();
     
-    // Initialize provider if config exists
+    // 如果存在配置，初始化提供商
     if (this.providerId && this.apiKey) {
       this.initProvider();
     }
   }
 
   // ============================================
-  // Configuration Management
+  // 配置管理
   // ============================================
 
   getConfigPath() {
@@ -89,12 +88,12 @@ class AIService {
   }
 
   // ============================================
-  // Provider Management
+  // 提供商管理
   // ============================================
 
   setProvider(providerId) {
     this.providerId = providerId;
-    // Reset model when switching providers
+    // 切换提供商时重置模型
     const providers = getAvailableProviders();
     const providerInfo = providers.find(p => p.id === providerId);
     if (providerInfo) {
@@ -152,7 +151,7 @@ class AIService {
   }
 
   // ============================================
-  // Utility Methods
+  // 工具方法
   // ============================================
 
   async sleep(ms) {
@@ -175,7 +174,7 @@ class AIService {
   }
 
   // ============================================
-  // Content Generation Methods
+  // 内容生成方法
   // ============================================
 
   async complete(prompt, systemInstruction = null, options = {}) {
@@ -188,7 +187,7 @@ class AIService {
   }
 
   /**
-   * Generate questions from study content
+   * 根据学习内容生成题目
    */
   async generateQuestions(content, options = {}) {
     let {
@@ -256,7 +255,7 @@ class AIService {
 1. 深度挖掘：对于知识点，从定义、应用、反例等角度出题。
 2. 干扰项：错误选项应是常见误解。
 3. 难度分级：1-5级难度梯度分布。
-4. 解析深度：解析必须解释"为什么选这个"。
+4. 解析深度：解析必须解释"为什么选这个"，如果原资料有解释则引用，如果没有则基于逻辑补充。
 
 【重要】必须严格生成 ${count} 道题目！确保答案准确无误！`;
 
@@ -267,7 +266,7 @@ class AIService {
 【已生成题目列表（禁止重复）】
 ${previousQuestions.length > 0 ? previousQuestions.map((q, i) => `${i+1}. ${q}`).join('\n') : '无'}
 
-【知识碎片数据流】
+【知识碎片数据流（仅限使用以下内容，但需自动分析正确答案）】
 ${content}
 
 【输出协议】
@@ -279,16 +278,18 @@ ${content}
     "text": "题目内容",
     "type": "Single|Multi|TrueFalse",
     "options": ["选项A", "选项B", "选项C", "选项D"],
-    "correctOptionIndex": 0,
+    "correctOptionIndex": 0, // 必须是经过逻辑分析后的正确答案索引
     "difficulty": 1-5,
     "timeLimit": 建议秒数,
-    "explanation": "详细解析",
+    "explanation": "详细解析（解释为什么该选项正确）",
     "tags": ["知识点标签"]
   }
 ]
 
 【生成策略】
 - 必须生成 ${count} 道题目
+- **核心要求**：如果输入是题目，请务必**做题**，选出正确答案。如果输入是知识点，请据此出题。
+- 绝对不要重复已有的题目
 - 难度分布：${difficulty === 'mixed' ? '梯度渐进' : `锁定难度等级 ${difficulty}`}
 - 题型配比：${types.join(', ')}
 
@@ -307,16 +308,19 @@ ${content}
   }
 
   /**
-   * Generate knowledge tree structure from content
+   * 根据内容生成知识树结构
    */
   async generateKnowledgeTree(content) {
     const systemInstruction = `你是《智者计划》的星图测绘师，负责将学习资料转化为可探索的"知识星域"。
+
+【世界观】
+在智者计划的宇宙中，知识以"星图扇区"的形式存在。每个扇区都可能被"认知熵"侵蚀，玩家需要逐个攻克这些扇区来重建逻辑框架。
 
 【扇区设计原则】
 1. 层级递进：从"初始引导扇区"到"奇点抖动"，难度逐步提升
 2. 前置依赖：高级扇区需要先攻克基础扇区
 3. 熵状态：STABLE(稳定)、HIGH_ENTROPY(高熵警告)、LOCKED(锁定)
-4. 命名风格：使用计算机/科幻术语`;
+4. 命名风格：使用计算机/科幻术语，如"虚存的迷宫"、"并发的洪流"、"协议的废墟"`;
 
     const prompt = `【星图测绘请求】
 
@@ -329,12 +333,12 @@ ${content}
   "nodes": [
     {
       "id": "sector-xxx",
-      "name": "扇区名称",
-      "description": "扇区描述",
+      "name": "扇区名称（如：初始引导扇区、虚存的迷宫）",
+      "description": "扇区描述，包含熵状态和危险等级",
       "difficulty": 1-6,
       "prerequisites": ["前置扇区ID数组"],
       "position": { "x": 0-100, "y": 0-100 },
-      "questionCount": 题目数量,
+      "questionCount": 题目数量(难度x10),
       "isBoss": 是否为Boss扇区,
       "status": "STABLE|HIGH_ENTROPY|LOCKED",
       "topics": ["涵盖的具体知识点"]
@@ -354,18 +358,21 @@ ${content}
   }
 
   /**
-   * Generate enemy data based on topic
+   * 根据主题生成敌人数据
    */
   async generateEnemies(topic, difficulty = 3) {
     const systemInstruction = `你是《智者计划》的认知熵实体设计师。
 
+【敌人背景】
+认知熵实体是由未掌握的知识点异化而成的数据幽灵。它们窃取人类的知识碎片，将其扭曲为攻击武器。玩家必须通过正确答题来击败它们，夺回被窃取的知识。
+
 【实体类型】
-- WHITE_NOISE（白噪干扰者）：低级实体，HP约50，攻击力10
-- IMAGINARY_COLLAPSE（虚数崩坏体）：中级实体，HP约120，攻击力25
-- SINGULARITY（奇点抖动）：Boss级实体，HP约300，攻击力40
+- WHITE_NOISE（白噪干扰者）：低级实体，HP约50，攻击力10，造成选项干扰
+- IMAGINARY_COLLAPSE（虚数崩坏体）：中级实体，HP约120，攻击力25，可能导致时间压缩
+- SINGULARITY（奇点抖动）：Boss级实体，HP约300，攻击力40，拥有"熵值暴涨"等强力技能
 
 【命名风格】
-使用"形容词·名词"格式，如"白噪·干扰者"`;
+使用"形容词·名词"格式，如"白噪·干扰者"、"虚数·崩坏体"、"递归·死循环"`;
 
     const prompt = `【认知熵实体生成请求】
 
@@ -375,12 +382,12 @@ ${content}
 [
   {
     "id": "entropy-xxx",
-    "name": "实体名称",
+    "name": "实体名称（如：白噪·干扰者）",
     "form": "WHITE_NOISE|IMAGINARY_COLLAPSE|SINGULARITY",
     "hp": 血量,
     "maxHp": 最大血量,
     "damage": 攻击力,
-    "visualGlitchIntensity": 0-1,
+    "visualGlitchIntensity": 0-1的故障特效强度,
     "specialAbility": {
       "name": "技能名称",
       "description": "技能描述",
@@ -389,23 +396,27 @@ ${content}
   }
 ]
 
-请只返回JSON数组。`;
+根据难度${difficulty}，生成合适数量和强度的敌人。
+请只返回JSON数组，不要其他内容。`;
 
     const response = await this.complete(prompt, systemInstruction);
     return this.extractJson(response);
   }
 
   /**
-   * Generate complete chapter data
+   * 生成完整的章节数据
    */
   async generateChapter(title, content, difficulty = 3) {
     const systemInstruction = `你是《智者计划：学习飞升》的星域扇区设计师。
 
+【任务】
+为首席智者设计一个完整可玩的知识扇区，包含认知熵实体（敌人）和真理验证挑战（题目）。
+
 【设计原则】
-1. 扇区描述要有科幻感
+1. 扇区描述要有科幻感，使用计算机术语
 2. 认知熵实体命名使用"形容词·名词"格式
 3. 题目数量 = 难度等级 x 10
-4. 难度3及以上标记为HIGH_ENTROPY
+4. 难度3及以上标记为HIGH_ENTROPY（高熵警告）
 5. 奖励经验值 = 难度等级 x 100`;
 
     const prompt = `【扇区构建请求】
@@ -421,68 +432,188 @@ ${content}
   "sector": {
     "id": "sector-xxx",
     "name": "${title}",
-    "description": "扇区描述",
+    "description": "扇区描述（科幻风格）",
     "difficulty": ${difficulty},
     "status": "${difficulty >= 3 ? 'HIGH_ENTROPY' : 'STABLE'}",
     "totalQuestions": ${difficulty * 10}
   },
-  "entropyEntities": [],
-  "questions": [],
+  "entropyEntities": [
+    {
+      "id": "entropy-xxx",
+      "name": "实体名称（如：白噪·干扰者）",
+      "form": "WHITE_NOISE|IMAGINARY_COLLAPSE|SINGULARITY",
+      "hp": 数值,
+      "maxHp": 数值,
+      "damage": 数值,
+      "visualGlitchIntensity": 0-1
+    }
+  ],
+  "questions": [
+    {
+      "id": "q-xxx",
+      "text": "题目",
+      "type": "Single|Multi|TrueFalse",
+      "options": ["选项数组"],
+      "correctOptionIndex": 正确答案索引,
+      "difficulty": 1-${difficulty},
+      "timeLimit": 秒数,
+      "explanation": "解析",
+      "tags": ["标签"]
+    }
+  ],
   "rewards": {
     "exp": ${difficulty * 100}
   }
 }
 
 生成${Math.max(3, difficulty)}个敌人和${difficulty * 10}道题目。
-请只返回JSON。`;
+请只返回JSON，不要其他内容。`;
 
     const response = await this.complete(prompt, systemInstruction, { maxTokens: 200000 });
     return this.extractJson(response);
   }
 
   /**
-   * Generate complete game theme
+   * 生成完整的游戏主题
    */
   async generateTheme(themeName, content) {
-    const systemInstruction = `你是一个游戏内容生成专家，为教育类RPG游戏生成主题配置。
+    const systemInstruction = `你是一个游戏内容生成专家，正在为一款教育类RPG游戏生成完整的主题配置。
 游戏名为"智者计划：飞升学习"，采用赛博朋克+科幻美学风格。
 
-根据学习资料生成：
-1. 页面标签
+根据用户提供的学习资料，你需要生成以下内容：
+1. 页面标签（levelSelect, battle, mindHack）
 2. 构造体（玩家角色，3个）
 3. 铭文（抽卡物品，3个以上）
 4. 战斗日志模板
-5. 扇区列表（6个关卡）
 
-所有内容必须与学习资料主题相关，保持赛博朋克风格，使用中文。`;
+所有内容必须：
+- 与学习资料的主题相关
+- 保持赛博朋克/科幻的语言风格
+- 使用中文
+- 具有教育意义`;
 
-    const prompt = `主题关键词: ${themeName}
+    const prompt = `用户提供的主题关键词: ${themeName}
 
 学习资料内容:
 ${content.substring(0, 6000)}
 
-请生成完整游戏主题配置。
-【重要】主题名称需要创造富有意境的科幻风格名称，不要直接使用"${themeName}"。
+请生成一个完整的游戏主题配置。
+【重要】主题名称（name字段）需要你根据学习资料内容创造一个富有意境的、符合赛博朋克/科幻风格的名称，不要直接使用用户输入的"${themeName}"这个直白的名称。
+例如：如果用户输入"计算机网络"，你可以生成"数据洪流·节点觉醒"或"协议圣殿"这样有意境的名称。
 
 返回JSON格式：
 {
-  "name": "AI生成的意境名称",
+  "name": "由AI生成的有意境的主题名称",
   "sourceContent": "基于提供的学习资料",
-  "pageLabels": { ... },
-  "constructs": [ ... ],
-  "inscriptions": [ ... ],
-  "battleLogTemplates": { ... },
+  "pageLabels": {
+    "levelSelect": {
+      "title": "根据内容起一个符合主题的标题",
+      "subtitle": "英文副标题",
+      "sectorAnalysis": "扇区分析的别名",
+      "missionBriefing": "任务简报的别名",
+      "startButton": "开始按钮文本",
+      "backButton": "返回按钮文本",
+      "mindHackButton": "抽卡按钮文本"
+    },
+    "battle": {
+      "constructsLabel": "玩家角色区域标签",
+      "entropyLabel": "敌人区域标签",
+      "battleLogLabel": "战斗日志标签",
+      "retreatButton": "撤退按钮文本",
+      "turnLabel": "回合标签"
+    },
+    "mindHack": {
+      "title": "抽卡界面标题",
+      "subtitle": "英文副标题",
+      "hackButton": "抽卡按钮文本",
+      "hackingText": "抽卡进行中的提示文本",
+      "confirmButton": "确认按钮文本",
+      "backButton": "返回按钮文本",
+      "warningText": "消耗警告文本"
+    }
+  },
+  "constructs": [
+    {
+      "id": "construct-01",
+      "model": "ARBITER",
+      "name": "根据主题起名",
+      "title": "英文称号",
+      "description": "角色描述",
+      "skills": [
+        {
+          "id": "skill-1",
+          "name": "技能名",
+          "nameEn": "英文名",
+          "description": "技能效果描述"
+        }
+      ]
+    },
+    // WEAVER 和 ARCHITECT 类似
+  ],
+  "inscriptions": [
+    {
+      "id": "inscription-1",
+      "name": "铭文名称（与学习内容相关的概念）",
+      "rarity": "SSR|SR|R",
+      "description": "铭文效果描述"
+    }
+  ],
+  "battleLogTemplates": {
+    "enterSector": "进入扇区消息模板，用{sectorName}表示扇区名",
+    "entropyStatus": {
+      "stable": "稳定状态文本",
+      "highEntropy": "危险状态文本",
+      "locked": "锁定状态文本"
+    },
+    "questionSource": {
+      "ai": "AI题目来源标签",
+      "builtin": "内置题库来源标签"
+    },
+    "answerCorrect": "答对消息",
+    "answerWrong": "答错消息",
+    "skillUsed": "使用技能消息模板，用{constructName}和{skillName}占位",
+    "enemyDefeated": "击败敌人消息，用{enemyName}占位",
+    "victory": "胜利消息",
+    "defeat": "失败消息"
+  },
   "sectors": [
     {
       "id": "sector-1",
-      "name": "第1关名称",
-      "description": "英文副标题 - 简短中文描述"
+      "name": "第1关名称（与学习主题相关，有意境）",
+      "description": "英文副标题 - 简短的中文描述，难度最低"
     },
-    ...
+    {
+      "id": "sector-2",
+      "name": "第2关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-3",
+      "name": "第3关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-4",
+      "name": "第4关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-5",
+      "name": "第5关名称",
+      "description": "英文副标题 - 简短的中文描述"
+    },
+    {
+      "id": "sector-boss",
+      "name": "最终关名称（Boss关，最高难度）",
+      "description": "英文副标题 - 简短的中文描述，体现最高挑战"
+    }
   ]
 }
 
-请只返回JSON。`;
+请生成3个构造体（ARBITER、WEAVER、ARCHITECT各一个）和至少3个铭文。
+【重要】sectors数组中的6个扇区名称和描述必须与"${themeName}"学习主题相关，体现从简单到困难的递进。
+确保所有内容都与"${themeName}"主题相关。
+请只返回JSON，不要其他内容。`;
 
     const response = await this.complete(prompt, systemInstruction, { maxTokens: 200000 });
     const theme = this.extractJson(response);
@@ -496,20 +627,23 @@ ${content.substring(0, 6000)}
   }
 
   /**
-   * Generate mission briefing for a sector
+   * 为扇区生成任务简报
    */
   async generateMissionBriefing(sectorName, sectorDescription) {
-    const systemInstruction = `你是《智者计划》的战术指挥官，负责发布任务简报。
+    const systemInstruction = `你是《智者计划》的战术指挥官，负责向首席智者发布任务简报。
 【风格要求】
-1. 极简主义：不超过50个字
-2. 科幻/赛博朋克风格
-3. 紧迫感`;
+1. 极简主义：不超过50个字。
+2. 科幻/赛博朋克风格：使用"认知熵"、"逻辑框架"、"数据流"、"协议"等术语。
+3. 紧迫感：强调任务的重要性和危险性。
+4. 动态性：每次生成的简报应略有不同，反映战场的实时变化。`;
 
     const prompt = `【生成任务简报】
 目标扇区：${sectorName}
 扇区情报：${sectorDescription}
 
-请生成一条简短的任务简报。
+请生成一条简短的任务简报（Mission Briefing），指导玩家在该扇区的行动。
+格式参考："目标：[行动目标]，通过[手段]达成[结果]。" 或 "警告：[异常现象]。任务：[具体行动]。"
+
 请只返回简报文本，不要JSON，不要引号。`;
 
     const response = await this.complete(prompt, systemInstruction);
@@ -517,29 +651,29 @@ ${content.substring(0, 6000)}
   }
 
   /**
-   * Generate mission briefings for multiple sectors
+   * 为多个扇区生成任务简报
    */
   async generateAllMissionBriefings(sectors) {
     const systemInstruction = `你是《智者计划》的战术指挥官，负责批量发布任务简报。
 【风格要求】
-1. 每条不超过50个字
-2. 科幻/赛博朋克风格
-3. 紧迫感`;
+1. 极简主义：每条不超过50个字。
+2. 科幻/赛博朋克风格：使用"认知熵"、"逻辑框架"、"数据流"、"协议"等术语。
+3. 紧迫感：强调任务的重要性和危险性。
 
-    const sectorList = sectors.map(s => `- ${s.id}: "${s.name}" (${s.description})`).join('\n');
+请为每个扇区生成一条简报。`;
 
-    const prompt = `【批量任务简报生成】
+    const sectorsText = sectors.map((s, i) => `扇区${i+1} [ID:${s.id}]: ${s.name} - ${s.description}`).join('\n');
 
-目标扇区列表：
-${sectorList}
+    const prompt = `【批量生成任务简报】
+请为以下扇区生成任务简报：
 
-为每个扇区生成一条任务简报，返回JSON格式：
+${sectorsText}
+
+请返回JSON格式，键为扇区ID，值为简报文本：
 {
-  "sector-1": "简报内容",
-  "sector-2": "简报内容",
-  ...
+  "sector-id-1": "简报内容...",
+  "sector-id-2": "简报内容..."
 }
-
 请只返回JSON。`;
 
     const response = await this.complete(prompt, systemInstruction);
@@ -547,7 +681,7 @@ ${sectorList}
   }
 
   /**
-   * Parse document content (for text files)
+   * 解析文档内容（用于文本文件）
    */
   async parseDocument(filePath) {
     const ext = path.extname(filePath).toLowerCase();

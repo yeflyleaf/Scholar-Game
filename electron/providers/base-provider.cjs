@@ -1,6 +1,6 @@
 /**
- * Base AI Provider - Abstract class for all AI providers
- * All providers must implement these methods
+ * 基础 AI 提供商 - 所有 AI 提供商的抽象基类
+ * 所有提供商必须实现这些方法
  */
 
 class BaseProvider {
@@ -11,7 +11,7 @@ class BaseProvider {
     this.providerName = 'base';
     this.displayName = 'Base Provider';
     
-    // Rate limiting
+    // 速率限制
     this.requestsPerMinute = config.requestsPerMinute || 60;
     this.tokensPerMinute = config.tokensPerMinute || 100000;
     this.minuteWindowStart = Date.now();
@@ -20,15 +20,15 @@ class BaseProvider {
   }
 
   /**
-   * Set the API key
-   * @param {string} key - API key
+   * 设置 API 密钥
+   * @param {string} key - API 密钥
    */
   setApiKey(key) {
     this.apiKey = key;
   }
 
   /**
-   * Get current API key
+   * 获取当前 API 密钥
    * @returns {string|null}
    */
   getApiKey() {
@@ -36,15 +36,15 @@ class BaseProvider {
   }
 
   /**
-   * Set the model
-   * @param {string} model - Model name
+   * 设置模型
+   * @param {string} model - 模型名称
    */
   setModel(model) {
     this.model = model;
   }
 
   /**
-   * Get current model
+   * 获取当前模型
    * @returns {string|null}
    */
   getModel() {
@@ -52,7 +52,7 @@ class BaseProvider {
   }
 
   /**
-   * Check if the provider is configured
+   * 检查提供商是否已配置
    * @returns {boolean}
    */
   isConfigured() {
@@ -60,9 +60,9 @@ class BaseProvider {
   }
 
   /**
-   * Check rate limits before making a request
-   * @param {number} estimatedTokens - Estimated tokens for this request
-   * @throws {Error} If rate limits exceeded
+   * 在发起请求前检查速率限制
+   * @param {number} estimatedTokens - 此请求的预估 Token 数
+   * @throws {Error} 如果超出速率限制
    */
   checkRateLimits(estimatedTokens = 0) {
     const now = Date.now();
@@ -82,8 +82,8 @@ class BaseProvider {
   }
 
   /**
-   * Increment usage counters
-   * @param {number} tokens - Tokens used
+   * 增加使用计数器
+   * @param {number} tokens - 使用的 Token 数
    */
   incrementUsage(tokens = 0) {
     this.requestsInMinute++;
@@ -91,20 +91,20 @@ class BaseProvider {
   }
 
   /**
-   * Sleep helper
-   * @param {number} ms - Milliseconds to sleep
+   * 睡眠辅助函数
+   * @param {number} ms - 睡眠毫秒数
    */
   async sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
   }
 
   /**
-   * Extract JSON from response text
-   * @param {string} text - Response text
-   * @returns {object} Parsed JSON
+   * 从响应文本中提取 JSON
+   * @param {string} text - 响应文本
+   * @returns {object} 解析后的 JSON
    */
   extractJson(text) {
-    // Try to extract JSON from markdown code blocks or raw JSON
+    // 尝试从 markdown 代码块或原始 JSON 中提取 JSON
     const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || 
                       text.match(/(\[[\s\S]*\])/) || 
                       text.match(/(\{[\s\S]*\})/);
@@ -121,18 +121,18 @@ class BaseProvider {
   }
 
   /**
-   * Make a completion request - MUST BE IMPLEMENTED BY SUBCLASS
-   * @param {string} prompt - User prompt
-   * @param {string} systemInstruction - System instruction
-   * @param {object} options - Additional options
-   * @returns {Promise<string>} Response text
+   * 发起补全请求 - 必须由子类实现
+   * @param {string} prompt - 用户提示词
+   * @param {string} systemInstruction - 系统指令
+   * @param {object} options - 额外选项
+   * @returns {Promise<string>} 响应文本
    */
   async complete(prompt, systemInstruction = null, options = {}) {
     throw new Error('complete() must be implemented by subclass');
   }
 
   /**
-   * Get available models for this provider
+   * 获取此提供商的可用模型
    * @returns {Array<{id: string, name: string, description: string}>}
    */
   getAvailableModels() {
@@ -140,7 +140,7 @@ class BaseProvider {
   }
 
   /**
-   * Get provider info
+   * 获取提供商信息
    * @returns {object}
    */
   getInfo() {

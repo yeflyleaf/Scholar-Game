@@ -1,9 +1,10 @@
 /**
- * Cloudflare Workers AI Provider
- * Handles Cloudflare's Workers AI API format
+ * Cloudflare Workers AI 提供商
+ * 处理 Cloudflare Workers AI API 格式
  */
 
 const { BaseProvider } = require('./base-provider.cjs');
+const { getProviderById } = require('./provider-registry.cjs');
 
 class CloudflareProvider extends BaseProvider {
   constructor(config = {}) {
@@ -14,18 +15,22 @@ class CloudflareProvider extends BaseProvider {
     this.model = config.model || '@cf/meta/llama-3.1-8b-instruct';
     this.accountId = config.accountId || null;
     
-    // Cloudflare free tier: 10,000 requests/day
+    // Cloudflare 免费层：每天 10,000 次请求
     this.requestsPerMinute = 20;
     this.tokensPerMinute = 100000;
+    
+    // 从注册表加载模型配置
+    this.providerConfig = getProviderById('cloudflare');
   }
 
   getAvailableModels() {
+    // 从注册表读取模型，确保前后端一致
+    if (this.providerConfig && this.providerConfig.models) {
+      return this.providerConfig.models;
+    }
+    // 后备默认值
     return [
       { id: '@cf/meta/llama-3.1-8b-instruct', name: 'Llama 3.1 8B', description: 'Meta' },
-      { id: '@cf/meta/llama-3.1-70b-instruct', name: 'Llama 3.1 70B', description: 'Meta 大型' },
-      { id: '@cf/mistral/mistral-7b-instruct-v0.2', name: 'Mistral 7B', description: 'Mistral' },
-      { id: '@cf/qwen/qwen1.5-14b-chat-awq', name: 'Qwen 1.5 14B', description: '通义千问' },
-      { id: '@cf/google/gemma-7b-it', name: 'Gemma 7B', description: 'Google' },
     ];
   }
 
@@ -53,7 +58,7 @@ class CloudflareProvider extends BaseProvider {
     const url = `${this.baseUrl}/${this.accountId}/ai/run/${this.model}`;
     console.log(`[CloudflareProvider] Calling API with model: ${this.model}`);
 
-    // Cloudflare format
+    // Cloudflare 格式
     const messages = [];
     if (systemInstruction) {
       messages.push({ role: 'system', content: systemInstruction });

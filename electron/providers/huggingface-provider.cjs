@@ -1,9 +1,10 @@
 /**
- * Hugging Face Provider
- * Handles Hugging Face Inference API
+ * Hugging Face 提供商
+ * 处理 Hugging Face 推理 API
  */
 
 const { BaseProvider } = require('./base-provider.cjs');
+const { getProviderById } = require('./provider-registry.cjs');
 
 class HuggingFaceProvider extends BaseProvider {
   constructor(config = {}) {
@@ -13,18 +14,22 @@ class HuggingFaceProvider extends BaseProvider {
     this.baseUrl = config.baseUrl || 'https://api-inference.huggingface.co/models';
     this.model = config.model || 'meta-llama/Meta-Llama-3-8B-Instruct';
     
-    // Hugging Face free tier limits
+    // Hugging Face 免费层限制
     this.requestsPerMinute = 5; // 300/hour = 5/minute
     this.tokensPerMinute = 100000;
+    
+    // 从注册表加载模型配置
+    this.providerConfig = getProviderById('huggingface');
   }
 
   getAvailableModels() {
+    // 从注册表读取模型，确保前后端一致
+    if (this.providerConfig && this.providerConfig.models) {
+      return this.providerConfig.models;
+    }
+    // 后备默认值
     return [
       { id: 'meta-llama/Meta-Llama-3-8B-Instruct', name: 'Llama 3 8B', description: 'Meta 开源' },
-      { id: 'mistralai/Mistral-7B-Instruct-v0.3', name: 'Mistral 7B', description: 'Mistral 开源' },
-      { id: 'google/gemma-7b-it', name: 'Gemma 7B', description: 'Google 开源' },
-      { id: 'microsoft/Phi-3-mini-4k-instruct', name: 'Phi-3 Mini', description: 'Microsoft' },
-      { id: 'Qwen/Qwen2-7B-Instruct', name: 'Qwen2 7B', description: '通义千问' },
     ];
   }
 
@@ -44,7 +49,7 @@ class HuggingFaceProvider extends BaseProvider {
     const url = `${this.baseUrl}/${this.model}`;
     console.log(`[HuggingFaceProvider] Calling API with model: ${this.model}`);
 
-    // Build the prompt for instruction-tuned models
+    // 为指令微调模型构建提示词
     let fullPrompt = prompt;
     if (systemInstruction) {
       fullPrompt = `[INST] ${systemInstruction}\n\n${prompt} [/INST]`;
@@ -85,7 +90,7 @@ class HuggingFaceProvider extends BaseProvider {
         }
 
         if (response.status === 503 && retryCount < 3) {
-          // Model is loading
+          // 模型正在加载
           console.log('[HuggingFaceProvider] Model loading, waiting...');
           await this.sleep(30000);
           return this.complete(prompt, systemInstruction, { ...options, retryCount: retryCount + 1 });

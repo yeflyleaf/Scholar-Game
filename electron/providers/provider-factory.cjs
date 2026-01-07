@@ -1,22 +1,19 @@
 /**
- * AI Provider Factory
- * Creates the appropriate provider instance based on provider ID
+ * AI 提供商工厂
+ * 根据提供商 ID 创建适当的提供商实例
  */
 
 const { GeminiProvider } = require('./gemini-provider.cjs');
 const { OpenAICompatibleProvider } = require('./openai-compatible-provider.cjs');
 const { HuggingFaceProvider } = require('./huggingface-provider.cjs');
-const { CohereProvider } = require('./cohere-provider.cjs');
 const { CloudflareProvider } = require('./cloudflare-provider.cjs');
-const { AI21Provider } = require('./ai21-provider.cjs');
-const { ClarifaiProvider } = require('./clarifai-provider.cjs');
 const { getProviderById, getAllProviders } = require('./provider-registry.cjs');
 
 /**
- * Create a provider instance
- * @param {string} providerId - Provider ID from registry
- * @param {object} config - Additional configuration
- * @returns {BaseProvider} Provider instance
+ * 创建提供商实例
+ * @param {string} providerId - 来自注册表的提供商 ID
+ * @param {object} config - 额外配置
+ * @returns {BaseProvider} 提供商实例
  */
 function createProvider(providerId, config = {}) {
   const providerConfig = getProviderById(providerId);
@@ -42,27 +39,18 @@ function createProvider(providerId, config = {}) {
     case 'huggingface':
       return new HuggingFaceProvider(mergedConfig);
     
-    case 'cohere':
-      return new CohereProvider(mergedConfig);
-    
     case 'cloudflare':
       return new CloudflareProvider(mergedConfig);
     
-    case 'ai21':
-      return new AI21Provider(mergedConfig);
-    
-    case 'clarifai':
-      return new ClarifaiProvider(mergedConfig);
-    
     default:
-      // Default to OpenAI-compatible for unknown types
+      // 未知类型默认为 OpenAI 兼容
       console.warn(`Unknown provider type "${providerConfig.type}", using OpenAI-compatible`);
       return new OpenAICompatibleProvider(mergedConfig);
   }
 }
 
 /**
- * Get list of all available providers with metadata
+ * 获取所有可用提供商及其元数据
  */
 function getAvailableProviders() {
   return getAllProviders().map(p => ({
@@ -78,7 +66,7 @@ function getAvailableProviders() {
 }
 
 /**
- * Get providers grouped by region
+ * 按区域分组获取提供商
  */
 function getProvidersGroupedByRegion() {
   const providers = getAllProviders();

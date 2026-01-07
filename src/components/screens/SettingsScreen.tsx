@@ -329,7 +329,7 @@ export const SettingsScreen: React.FC = () => {
                         )}
                     </div>
                     <span className="text-xs font-mono text-gray-500">
-                        支持 21+ AI 提供商
+                        支持 9+ AI 提供商
                     </span>
                 </motion.div>
 
@@ -752,7 +752,7 @@ export const SettingsScreen: React.FC = () => {
                     transition={{ delay: 0.5 }}
                 >
                     <p className="text-xs font-mono text-gray-500">
-                        智者计划 | 学习飞升 | 支持 21+ AI 提供商
+                        智者计划 | 学习飞升 | 支持 9+ AI 提供商
                     </p>
                     <p className="text-xs font-mono text-gray-600">
                         为世界上所有的不挂科而战！
