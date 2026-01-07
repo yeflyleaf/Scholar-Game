@@ -31,93 +31,167 @@ export const COLORS = {
 } as const;
 
 // 2. 逻辑构造体定义
+// 初始可用的逻辑构造体（玩家角色）列表
 export const INITIAL_CONSTRUCTS: Construct[] = [
     {
+        // 构造体唯一标识符，用于系统内部引用
         id: "construct-01",
+        // 构造体型号，对应不同的角色职业或定位
         model: "ARBITER",
+        // 构造体中文名称，显示在UI界面上
         name: "裁决者",
+        // 构造体英文称号，用于装饰性显示
         title: "The Arbiter",
+        // 当前生命值 (Health Points)，降为0时角色无法战斗
         hp: 150,
+        // 最大生命值上限
         maxHp: 150,
+        // 当前能量值，用于释放终极技能
         energy: 100,
+        // 最大能量值上限
         maxEnergy: 100,
+        // 存活状态标识，true表示已阵亡
         isDead: false,
+        // 当前受到的状态效果列表（如中毒、眩晕等）
         statusEffects: [],
+        // 拥有的技能列表
         skills: [
             {
+                // 技能唯一标识符
                 id: "skill-arbiter-1",
+                // 技能中文名称
                 name: "强制中断",
+                // 技能英文名称
                 nameEn: "Force Interrupt",
+                // 技能详细描述，解释技能效果
                 description: "对单体造成高额逻辑伤害，并清除目标所有增益状态。",
+                // 技能冷却时间（回合数）
                 cooldown: 3,
+                // 当前剩余冷却时间，0表示可以使用
                 currentCooldown: 0,
+                // 技能类型：active(主动技能) / ultimate(终极技能) / passive(被动技能)
                 type: "active",
+                // 技能目标类型：single_enemy(单体敌人) / all_enemies(全体敌人) / self(自身) / ally(队友)
                 targetType: "single_enemy",
+                // 技能消耗的资源数值（通常指能量或行动点）
                 cost: 30,
+                // 技能释放时的视觉特效ID
                 visualEffect: "data_deletion"
             },
             {
+                // 技能唯一标识符
                 id: "skill-arbiter-ult",
+                // 技能中文名称
                 name: "最终裁定",
+                // 技能英文名称
                 nameEn: "Final Verdict",
+                // 技能详细描述
                 description: "消耗所有能量，对全体敌人造成毁灭性打击。若敌人处于逻辑死锁状态，伤害翻倍。",
+                // 技能冷却时间
                 cooldown: 5,
+                // 当前剩余冷却时间
                 currentCooldown: 0,
+                // 技能类型：终极技能
                 type: "ultimate",
+                // 技能目标类型：全体敌人
                 targetType: "all_enemies",
+                // 技能消耗能量值
                 cost: 100,
+                // 视觉特效ID
                 visualEffect: "binary_stream"
             }
         ]
     },
     {
+        // 构造体唯一标识符
         id: "construct-02",
+        // 构造体型号
         model: "WEAVER",
+        // 构造体中文名称
         name: "织网者",
+        // 构造体英文称号
         title: "The Weaver",
+        // 当前生命值
         hp: 120,
+        // 最大生命值
         maxHp: 120,
+        // 当前能量值
         energy: 100,
+        // 最大能量值
         maxEnergy: 100,
+        // 存活状态标识
         isDead: false,
+        // 状态效果列表
         statusEffects: [],
+        // 技能列表
         skills: [
             {
+                // 技能唯一标识符
                 id: "skill-weaver-1",
+                // 技能中文名称
                 name: "链路封锁",
+                // 技能英文名称
                 nameEn: "Link Blockade",
+                // 技能描述
                 description: "对全体敌人造成中等伤害，并施加'逻辑死锁'（无法行动1回合）。",
+                // 技能冷却时间
                 cooldown: 4,
+                // 当前剩余冷却时间
                 currentCooldown: 0,
+                // 技能类型
                 type: "active",
+                // 技能目标类型
                 targetType: "all_enemies",
+                // 技能消耗
                 cost: 40,
+                // 视觉特效ID
                 visualEffect: "hex_shield"
             }
         ]
     },
     {
+        // 构造体唯一标识符
         id: "construct-03",
+        // 构造体型号
         model: "ARCHITECT",
+        // 构造体中文名称
         name: "虚构者",
+        // 构造体英文称号
         title: "The Architect",
+        // 当前生命值
         hp: 200,
+        // 最大生命值
         maxHp: 200,
+        // 当前能量值
         energy: 100,
+        // 最大能量值
         maxEnergy: 100,
+        // 存活状态标识
         isDead: false,
+        // 状态效果列表
         statusEffects: [],
+        // 技能列表
         skills: [
             {
+                // 技能唯一标识符
                 id: "skill-architect-1",
+                // 技能中文名称
                 name: "哈希重构",
+                // 技能英文名称
                 nameEn: "Hash Rebuild",
+                // 技能描述
                 description: "为我方全体施加护盾，并修复受损的逻辑扇区（回血）。",
+                // 技能冷却时间
                 cooldown: 3,
+                // 当前剩余冷却时间
                 currentCooldown: 0,
+                // 技能类型
                 type: "active",
+                // 技能目标类型：自身（实际效果可能影响全体）
                 targetType: "self",
+                // 技能消耗
                 cost: 35,
+                // 视觉特效ID
                 visualEffect: "hex_shield"
             }
         ]
@@ -195,41 +269,72 @@ export const SAMPLE_QUESTIONS: Question[] = [
 ];
 
 // 4. 认知熵实体 (敌人)
+// 游戏中出现的敌对单位列表
 export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     {
+        // 实体唯一标识符
         id: "entropy-1",
+        // 实体显示名称
         name: "白噪·干扰者",
+        // 实体形态/类型，决定其外观和行为模式
         form: "WHITE_NOISE",
+        // 当前生命值
         hp: 50,
+        // 最大生命值
         maxHp: 50,
+        // 基础攻击力，对玩家造成的伤害数值
         damage: 10,
+        // 该实体携带的题库，玩家攻击时需要回答这些问题
         questionBank: SAMPLE_QUESTIONS.slice(0, 2),
+        // 当前受到的状态效果列表
         statusEffects: [],
+        // 存活状态标识
         isDead: false,
+        // 视觉故障强度 (0.0 - 1.0)，影响UI的扭曲程度
         visualGlitchIntensity: 0.2
     },
     {
+        // 实体唯一标识符
         id: "entropy-2",
+        // 实体显示名称
         name: "虚数·崩坏体",
+        // 实体形态/类型
         form: "IMAGINARY_COLLAPSE",
+        // 当前生命值
         hp: 120,
+        // 最大生命值
         maxHp: 120,
+        // 基础攻击力
         damage: 25,
+        // 携带题库
         questionBank: SAMPLE_QUESTIONS.slice(2, 4),
+        // 状态效果列表
         statusEffects: [],
+        // 存活状态标识
         isDead: false,
+        // 视觉故障强度
         visualGlitchIntensity: 0.5
     },
     {
+        // 实体唯一标识符
         id: "entropy-boss",
+        // 实体显示名称
         name: "奇点·抖动",
+        // 实体形态/类型
         form: "SINGULARITY",
+        // 当前生命值
         hp: 300,
+        // 最大生命值
         maxHp: 300,
+        // 基础攻击力
         damage: 40,
+        // 携带题库
         questionBank: SAMPLE_QUESTIONS.slice(4),
+        // 状态效果列表
         statusEffects: [],
+        // 存活状态标识
         isDead: false,
+        // 视觉故障强度
         visualGlitchIntensity: 0.8
     }
 ];
@@ -311,21 +416,34 @@ export const STAR_SECTORS: StarSector[] = [
 ];
 
 // 6. 铭文 (抽卡物品)
+// 玩家可以通过抽卡获得的增益道具列表
 export const INSCRIPTIONS: Inscription[] = [
     {
+        // 铭文唯一标识符
         id: "inscription-banker",
+        // 铭文显示名称
         name: "银行家算法",
+        // 稀有度等级：SSR / SR / R / N
         rarity: "SSR",
+        // 铭文功能描述
         description: "前文明用来规避资源死锁的神圣逻辑。装备后，对'死锁级'崩坏兽伤害提升 50%。",
+        // 铭文的具体逻辑效果函数（目前为空实现）
         effect: () => {},
+        // 铭文图标资源ID
         icon: "banker_algo_icon"
     },
     {
+        // 铭文唯一标识符
         id: "inscription-dijkstra",
+        // 铭文显示名称
         name: "最短路径",
+        // 稀有度等级
         rarity: "SR",
+        // 铭文功能描述
         description: "在星图中移动时，不消耗行动力。",
+        // 铭文效果函数
         effect: () => {},
+        // 铭文图标资源ID
         icon: "dijkstra_icon"
     }
 ];
