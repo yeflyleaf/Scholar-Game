@@ -1,8 +1,8 @@
 /**
- * Scholar Game - Electron Main Process
+ * Scholar Game - Electron 主进程
  * @author yeflyleaf
  * @link https://github.com/yeflyleaf
- * @description Main entry point for the application
+ * @description 应用程序的主入口点
  */
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
@@ -17,7 +17,7 @@ const userDataPath = app.isPackaged
   : path.join(__dirname, "..", "data");
 app.setPath("userData", userDataPath);
 
-// Initialize AI service (replaces GeminiService)
+// 初始化 AI 服务 (替代 GeminiService)
 const aiService = new AIService();
 
 let mainWindow;
@@ -46,7 +46,7 @@ function createWindow() {
     autoHideMenuBar: true,
   });
 
-  // In development, load from Vite dev server
+  // 在开发环境中，从 Vite 开发服务器加载
   if (
     process.env.NODE_ENV === "development" ||
     process.argv.includes("--dev")
@@ -81,7 +81,7 @@ function createWindow() {
   });
 }
 
-// App lifecycle
+// 应用生命周期
 app.whenReady().then(createWindow);
 
 app.on("window-all-closed", () => {
@@ -97,20 +97,20 @@ app.on("activate", () => {
 });
 
 // ========================================
-// IPC Handlers for AI Service
+// AI 服务的 IPC 处理程序
 // ========================================
 
-// Get available providers
+// 获取可用提供商
 ipcMain.handle("ai:get-providers", async () => {
   return aiService.getProviders();
 });
 
-// Get providers grouped by region
+// 获取按区域分组的提供商
 ipcMain.handle("ai:get-providers-grouped", async () => {
   return aiService.getProvidersGrouped();
 });
 
-// Set provider
+// 设置提供商
 ipcMain.handle("ai:set-provider", async (event, providerId) => {
   try {
     aiService.setProvider(providerId);
@@ -120,7 +120,7 @@ ipcMain.handle("ai:set-provider", async (event, providerId) => {
   }
 });
 
-// Set API Key
+// 设置 API 密钥
 ipcMain.handle("ai:set-api-key", async (event, apiKey) => {
   try {
     aiService.setApiKey(apiKey);
@@ -130,7 +130,7 @@ ipcMain.handle("ai:set-api-key", async (event, apiKey) => {
   }
 });
 
-// Set Model
+// 设置模型
 ipcMain.handle("ai:set-model", async (event, model) => {
   try {
     aiService.setModel(model);
@@ -140,12 +140,12 @@ ipcMain.handle("ai:set-model", async (event, model) => {
   }
 });
 
-// Check status
+// 检查状态
 ipcMain.handle("ai:check-status", async () => {
   return aiService.getStatus();
 });
 
-// Check quota status
+// 检查配额状态
 ipcMain.handle("ai:check-quota-status", async () => {
   return {
     quotaExhausted: aiService.isQuotaExhausted(),
@@ -153,13 +153,13 @@ ipcMain.handle("ai:check-quota-status", async () => {
   };
 });
 
-// Reset quota flag
+// 重置配额标志
 ipcMain.handle("ai:reset-quota", async () => {
   aiService.resetQuotaFlag();
   return { success: true };
 });
 
-// Test API connection
+// 测试 API 连接
 ipcMain.handle("ai:test-connection", async () => {
   try {
     const result = await aiService.testConnection();
@@ -169,7 +169,7 @@ ipcMain.handle("ai:test-connection", async () => {
   }
 });
 
-// Generate questions
+// 生成题目
 ipcMain.handle("ai:generate-questions", async (event, { content, options }) => {
   try {
     const questions = await aiService.generateQuestions(content, options);
@@ -179,7 +179,7 @@ ipcMain.handle("ai:generate-questions", async (event, { content, options }) => {
   }
 });
 
-// Generate knowledge tree
+// 生成知识树
 ipcMain.handle("ai:generate-knowledge-tree", async (event, { content }) => {
   try {
     const tree = await aiService.generateKnowledgeTree(content);
@@ -189,7 +189,7 @@ ipcMain.handle("ai:generate-knowledge-tree", async (event, { content }) => {
   }
 });
 
-// Generate enemies
+// 生成敌人
 ipcMain.handle("ai:generate-enemies", async (event, { topic, difficulty }) => {
   try {
     const enemies = await aiService.generateEnemies(topic, difficulty);
@@ -199,7 +199,7 @@ ipcMain.handle("ai:generate-enemies", async (event, { topic, difficulty }) => {
   }
 });
 
-// Parse document
+// 解析文档
 ipcMain.handle("ai:parse-document", async (event, { filePath }) => {
   try {
     const content = await aiService.parseDocument(filePath);
@@ -209,7 +209,7 @@ ipcMain.handle("ai:parse-document", async (event, { filePath }) => {
   }
 });
 
-// Generate chapter
+// 生成章节
 ipcMain.handle(
   "ai:generate-chapter",
   async (event, { title, content, difficulty }) => {
@@ -226,7 +226,7 @@ ipcMain.handle(
   }
 );
 
-// Generate theme
+// 生成主题
 ipcMain.handle("ai:generate-theme", async (event, { themeName, content }) => {
   try {
     const theme = await aiService.generateTheme(themeName, content);
@@ -236,7 +236,7 @@ ipcMain.handle("ai:generate-theme", async (event, { themeName, content }) => {
   }
 });
 
-// Generate mission briefing
+// 生成任务简报
 ipcMain.handle(
   "ai:generate-mission-briefing",
   async (event, { sectorName, sectorDescription }) => {
@@ -252,7 +252,7 @@ ipcMain.handle(
   }
 );
 
-// Generate all mission briefings
+// 生成所有任务简报
 ipcMain.handle(
   "ai:generate-all-mission-briefings",
   async (event, { sectors }) => {
@@ -266,7 +266,7 @@ ipcMain.handle(
 );
 
 // ========================================
-// Legacy Gemini IPC Handlers (for backward compatibility)
+// 旧版 Gemini IPC 处理程序 (用于向后兼容)
 // ========================================
 
 ipcMain.handle("gemini:set-api-key", async (event, apiKey) => {
@@ -417,7 +417,7 @@ ipcMain.handle("window:is-maximized", () => {
   return mainWindow ? mainWindow.isMaximized() : false;
 });
 
-// Quit app
+// 退出应用
 ipcMain.handle("app:quit", () => {
   app.quit();
 });

@@ -1,17 +1,17 @@
 /**
- * Scholar Game - Electron Preload Script
+ * Scholar Game - Electron 预加载脚本
  * @author yeflyleaf
  * @link https://github.com/yeflyleaf
  */
 const { contextBridge, ipcRenderer } = require('electron');
 
-// Expose protected methods to the renderer process
+// 向渲染进程暴露受保护的方法
 contextBridge.exposeInMainWorld('electronAPI', {
   // ========================================
-  // AI Service API (new unified API)
+  // AI 服务 API (新的统一 API)
   // ========================================
   ai: {
-    // Provider management
+    // 提供商管理
     getProviders: () => ipcRenderer.invoke('ai:get-providers'),
     getProvidersGrouped: () => ipcRenderer.invoke('ai:get-providers-grouped'),
     setProvider: (providerId) => ipcRenderer.invoke('ai:set-provider', providerId),
@@ -22,7 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     resetQuota: () => ipcRenderer.invoke('ai:reset-quota'),
     testConnection: () => ipcRenderer.invoke('ai:test-connection'),
     
-    // Content generation
+    // 内容生成
     generateQuestions: (content, options) => 
       ipcRenderer.invoke('ai:generate-questions', { content, options }),
     generateKnowledgeTree: (content) => 
@@ -42,7 +42,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   
   // ========================================
-  // Gemini API (legacy, for backward compatibility)
+  // Gemini API (旧版，用于向后兼容)
   // ========================================
   gemini: {
     setApiKey: (apiKey) => ipcRenderer.invoke('gemini:set-api-key', apiKey),
@@ -66,13 +66,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
       ipcRenderer.invoke('gemini:generate-all-mission-briefings', { sectors }),
   },
   
-  // File system methods
+  // 文件系统方法
   fs: {
     readFile: (filePath) => ipcRenderer.invoke('fs:read-file', filePath),
     selectFile: (options) => ipcRenderer.invoke('fs:select-file', options),
   },
   
-  // App info
+  // 应用信息
   app: {
     getVersion: () => ipcRenderer.invoke('app:get-version'),
     getPlatform: () => process.platform,

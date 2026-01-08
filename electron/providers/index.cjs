@@ -22,21 +22,21 @@ const {
 } = require('./provider-factory.cjs');
 
 module.exports = {
-  // Base
+  // 基础类
   BaseProvider,
   
-  // Providers
+  // 提供商
   GeminiProvider,
   OpenAICompatibleProvider,
   
-  // Registry
+  // 注册表
   PROVIDER_REGISTRY,
   getAllProviders,
   getProviderById,
   getProvidersByRegion,
   getProvidersByType,
   
-  // Factory
+  // 工厂
   createProvider,
   getAvailableProviders,
   getProvidersGroupedByRegion,

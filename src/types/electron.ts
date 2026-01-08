@@ -6,7 +6,7 @@
 import type { EntropyEntity, GameTheme, Question } from './game';
 
 // ============================================
-// AI Provider Types
+// AI 提供商类型
 // ============================================
 
 export interface AIProviderModel {
@@ -43,7 +43,7 @@ export interface QuotaStatus {
 }
 
 // ============================================
-// Generated Data Types
+// 生成数据类型
 // ============================================
 
 export interface GeneratedChapter {
@@ -89,7 +89,7 @@ export interface QuestionGenerationOptions {
 }
 
 // ============================================
-// API Response Types
+// API 响应类型
 // ============================================
 
 export interface APIResponse<T> {
@@ -105,11 +105,11 @@ export interface ConnectionTestResult {
 }
 
 // ============================================
-// AI Service API Interface (new unified API)
+// AI 服务 API 接口 (新统一 API)
 // ============================================
 
 export interface AIAPI {
-  // Provider management
+  // 提供商管理
   getProviders: () => Promise<AIProvider[]>;
   getProvidersGrouped: () => Promise<AIProvidersGrouped>;
   setProvider: (providerId: string) => Promise<APIResponse<void>>;
@@ -120,7 +120,7 @@ export interface AIAPI {
   resetQuota: () => Promise<APIResponse<void>>;
   testConnection: () => Promise<ConnectionTestResult>;
   
-  // Content generation
+  // 内容生成
   generateQuestions: (
     content: string,
     options?: QuestionGenerationOptions
@@ -147,7 +147,7 @@ export interface AIAPI {
 }
 
 // ============================================
-// Gemini API Interface (legacy, for backward compatibility)
+// Gemini API 接口 (旧版，用于向后兼容)
 // ============================================
 
 export interface GeminiAPI {
@@ -180,7 +180,7 @@ export interface GeminiAPI {
 }
 
 // ============================================
-// File System API Interface
+// 文件系统 API 接口
 // ============================================
 
 export interface FileSystemAPI {
@@ -189,7 +189,7 @@ export interface FileSystemAPI {
 }
 
 // ============================================
-// App API Interface
+// 应用 API 接口
 // ============================================
 
 export interface AppAPI {
@@ -199,7 +199,7 @@ export interface AppAPI {
 }
 
 // ============================================
-// Window API Interface
+// 窗口 API 接口
 // ============================================
 
 export interface WindowAPI {
@@ -209,7 +209,7 @@ export interface WindowAPI {
 }
 
 // ============================================
-// Complete Electron API Interface
+// 完整 Electron API 接口
 // ============================================
 
 export interface ElectronAPI {
@@ -220,14 +220,14 @@ export interface ElectronAPI {
   window: WindowAPI;
 }
 
-// Extend Window interface
+// 扩展 Window 接口
 declare global {
   interface Window {
     electronAPI?: ElectronAPI;
   }
 }
 
-// Check if running in Electron
+// 检查是否在 Electron 中运行
 export function isElectron(): boolean {
   return typeof window !== 'undefined' && !!window.electronAPI;
 }

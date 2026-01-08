@@ -374,7 +374,7 @@ class AIService {
         }
       }
       
-      // Groq/X.AI Custom Codes
+      // Groq/X.AI 自定义代码
       else if (has('498', 'capacity exceeded')) {
          errorMessage = 'Groq/X.AI：Flex Tier 容量已满，请稍后重试';
       }

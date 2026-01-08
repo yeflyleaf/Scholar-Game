@@ -15,21 +15,21 @@ import type {
 } from '../types/game';
 
 interface UseAIReturn {
-  // Status
+  // 状态
   isConfigured: boolean;
   isLoading: boolean;
   error: string | null;
   
-  // Current config
+  // 当前配置
   providerId: string | null;
   providerName: string | null;
   model: string | null;
   
-  // Providers
+  // 提供商
   providers: AIProvider[];
   providersGrouped: AIProvidersGrouped | null;
   
-  // Actions - Config
+  // 动作 - 配置
   loadProviders: () => Promise<void>;
   setProvider: (providerId: string) => Promise<boolean>;
   setApiKey: (key: string) => Promise<boolean>;
@@ -37,7 +37,7 @@ interface UseAIReturn {
   checkStatus: () => Promise<AIStatus | null>;
   testConnection: () => Promise<ConnectionTestResult>;
   
-  // Actions - Generation
+  // 动作 - 生成
   generateQuestions: (content: string, options?: QuestionGenerationOptions) => Promise<Question[] | null>;
   generateKnowledgeTree: (content: string) => Promise<GeneratedKnowledgeTree | null>;
   generateEnemies: (topic: string, difficulty?: number) => Promise<EntropyEntity[] | null>;
@@ -46,7 +46,7 @@ interface UseAIReturn {
   generateMissionBriefing: (sectorName: string, sectorDescription: string) => Promise<string | null>;
   generateAllMissionBriefings: (sectors: Array<{ id: string; name: string; description: string }>) => Promise<Record<string, string> | null>;
   
-  // Utilities
+  // 工具
   clearError: () => void;
 }
 
@@ -62,14 +62,14 @@ export function useAI(): UseAIReturn {
   const [providers, setProviders] = useState<AIProvider[]>([]);
   const [providersGrouped, setProvidersGrouped] = useState<AIProvidersGrouped | null>(null);
 
-  // Check if running in Electron
+  // 检查是否在 Electron 中运行
   const electronAPI = typeof window !== 'undefined' ? window.electronAPI : undefined;
 
   const clearError = useCallback(() => {
     setError(null);
   }, []);
 
-  // Load providers list
+  // 加载提供商列表
   const loadProviders = useCallback(async (): Promise<void> => {
     if (!electronAPI?.ai) {
       setError('AI API only available in Electron');
@@ -88,7 +88,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Check status
+  // 检查状态
   const checkStatus = useCallback(async (): Promise<AIStatus | null> => {
     if (!electronAPI?.ai) {
       return null;
@@ -106,7 +106,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Set provider
+  // 设置提供商
   const setProvider = useCallback(async (newProviderId: string): Promise<boolean> => {
     if (!electronAPI?.ai) {
       setError('AI API only available in Electron');
@@ -120,7 +120,7 @@ export function useAI(): UseAIReturn {
       const result = await electronAPI.ai.setProvider(newProviderId);
       if (result.success) {
         setProviderId(newProviderId);
-        // Update provider name from list
+        // 从列表更新提供商名称
         const provider = providers.find(p => p.id === newProviderId);
         if (provider) {
           setProviderName(provider.name);
@@ -139,7 +139,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI, providers]);
 
-  // Set API key
+  // 设置 API 密钥
   const setApiKey = useCallback(async (key: string): Promise<boolean> => {
     if (!electronAPI?.ai) {
       setError('AI API only available in Electron');
@@ -166,7 +166,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Set model
+  // 设置模型
   const setModel = useCallback(async (newModel: string): Promise<boolean> => {
     if (!electronAPI?.ai) {
       setError('AI API only available in Electron');
@@ -188,7 +188,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Generate questions
+  // 生成题目
   const generateQuestions = useCallback(async (
     content: string,
     options?: QuestionGenerationOptions
@@ -217,7 +217,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Generate knowledge tree
+  // 生成知识树
   const generateKnowledgeTree = useCallback(async (
     content: string
   ): Promise<GeneratedKnowledgeTree | null> => {
@@ -245,7 +245,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Generate enemies
+  // 生成敌人
   const generateEnemies = useCallback(async (
     topic: string,
     difficulty = 3
@@ -274,7 +274,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Generate chapter
+  // 生成章节
   const generateChapter = useCallback(async (
     title: string,
     content: string,
@@ -304,7 +304,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Generate theme
+  // 生成主题
   const generateTheme = useCallback(async (
     themeName: string,
     content: string
@@ -333,7 +333,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Generate mission briefing
+  // 生成任务简报
   const generateMissionBriefing = useCallback(async (
     sectorName: string,
     sectorDescription: string
@@ -362,7 +362,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Generate all mission briefings
+  // 生成所有任务简报
   const generateAllMissionBriefings = useCallback(async (
     sectors: Array<{ id: string; name: string; description: string }>
   ): Promise<Record<string, string> | null> => {
@@ -390,7 +390,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Test connection
+  // 测试连接
   const testConnection = useCallback(async (): Promise<ConnectionTestResult> => {
     if (!electronAPI?.ai) {
       return { success: false, message: 'AI API 仅在桌面应用中可用' };
@@ -407,7 +407,7 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
-  // Load providers and check status on mount
+  // 挂载时加载提供商并检查状态
   useEffect(() => {
     if (electronAPI?.ai) {
       loadProviders();

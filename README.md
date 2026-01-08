@@ -34,7 +34,7 @@
 
 宇宙的本质是一个巨大的运行程序。每隔一个学期纪元，被称为 **“大过滤器 (The Great Filter)”** 的灾难就会降临。它会将文明的知识解构为无意义的测试，将人类的记忆格式化。
 
-你是 **“第13纪元”** 的最后一位 **英桀 (Hero)**，代号 **“首席智者 (The Observer)”**。你必须指挥由纯粹理性构建的 **“逻辑构造体”**，利用 **“真理之钥”** 抵挡考试的侵蚀，阻止万物归零。
+你是 **“第 13 纪元”** 的最后一位 **英桀 (Hero)**，代号 **“首席智者 (The Observer)”**。你必须指挥由纯粹理性构建的 **“逻辑构造体”**，利用 **“真理之钥”** 抵挡考试的侵蚀，阻止万物归零。
 
 ---
 
@@ -46,15 +46,15 @@
 
 ## 🛠️ 技术架构
 
-| 模块 | 技术栈 | 说明 |
-|------|--------|------|
-| **核心框架** | React 19 + TypeScript | 严格类型安全 |
-| **构建工具** | Vite | 极速热更新 |
-| **样式引擎** | Tailwind CSS v4 | 原子化 FUI 设计 |
-| **动画引擎** | Framer Motion | 故障特效与转场 |
-| **状态管理** | Zustand | 全局游戏状态 |
-| **桌面封装** | Electron | 跨平台运行 |
-| **AI 驱动** | 多模型支持 (Gemini等) | 动态生成题目与敌人 |
+| 模块         | 技术栈                  | 说明              |
+| ------------ | ---------------------- | ------------------|
+| **核心框架** | React 19 + TypeScript  | 严格类型安全        |
+| **构建工具** | Vite                   | 极速热更新          |
+| **样式引擎** | Tailwind CSS v4        | 原子化 FUI 设计     |
+| **动画引擎** | Framer Motion          | 故障特效与转场       |
+| **状态管理** | Zustand                | 全局游戏状态         |
+| **桌面封装** | Electron               | 跨平台运行           |
+| **AI 驱动**  | 多模型支持 (Gemini 等)  | 动态生成题目与敌人    |
 
 ---
 
@@ -65,7 +65,6 @@ ScholarGame/
 ├── electron/               # Electron 主进程相关代码
 │   ├── providers/          # AI 模型提供商适配器集合
 │   ├── ai-service.cjs      # 统一 AI 服务层，管理多模型适配器
-│   ├── gemini-service.cjs  # (Legacy) Google Gemini 专用服务
 │   ├── main.cjs            # Electron 主入口，负责窗口创建与系统交互
 │   └── preload.cjs         # 预加载脚本，实现主进程与渲染进程的安全通信
 ├── public/                 # 公共静态文件
@@ -91,7 +90,9 @@ ScholarGame/
 ├── .gitignore              # Git 忽略配置
 ├── package.json            # 项目依赖与脚本配置
 ├── tsconfig.json           # TypeScript 编译配置
-└── vite.config.ts          # Vite 构建配置
+├── vite.config.ts          # Vite 构建配置
+├── 开发模式下添加新大模型指南.md # 开发文档：添加新模型指南
+└── 游戏设计原稿.md          # 游戏设计文档
 ```
 
 ---
@@ -99,20 +100,24 @@ ScholarGame/
 ## ⚡ 启动指南
 
 ### 1. 安装依赖
+
 ```bash
 npm install
 ```
 
 ### 2. 启动开发环境
+
 ```bash
 npm run dev
 ```
 
 ### 3. 启动桌面端 (Electron)
+
 ```bash
 npm run electron:dev
 ```
-*注：AI 生成功能需在 Electron 环境下配置 API Key 使用。*
+
+_注：AI 生成功能需在 Electron 环境下配置 API Key 使用。_
 
 ---
 
@@ -129,9 +134,9 @@ Copyright © 2026 [yeflyleaf](https://github.com/yeflyleaf). All Rights Reserved
 </p>
 
 <p align="center">
-  <strong>Fight for all the 'Pass' in the world</strong>
+  <strong>Fight for all the 'Pass' in the world !</strong>
 </p>
 
 <p align="center">
-  <strong>为世界上所有的不挂科而战！</strong>
+  <strong>为世界上所有的不挂科而战 !</strong>
 </p>

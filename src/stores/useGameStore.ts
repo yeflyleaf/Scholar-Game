@@ -208,7 +208,7 @@ export const useGameStore = create<GameState>()(
                     hackPoints: 1 // 重置时也是1个点数
                 },
                 sectors: STAR_SECTORS,
-                currentTheme: DEFAULT_THEME, // Reset theme as well
+                currentTheme: DEFAULT_THEME, // 同时也重置主题
                 currentSector: null,
                 battleState: 'PLAYER_TURN',
                 currentTurn: 1,
@@ -288,7 +288,7 @@ export const useGameStore = create<GameState>()(
                     }
                 }
                 
-                // Fallback
+                // 兜底
                 if (!selectedItem) selectedItem = INSCRIPTIONS[INSCRIPTIONS.length - 1];
 
                 // 消耗1个点数并添加物品到背包
