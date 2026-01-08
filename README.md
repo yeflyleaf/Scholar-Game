@@ -108,12 +108,6 @@ npm install
 ### 2. 启动开发环境
 
 ```bash
-npm run dev
-```
-
-### 3. 启动桌面端 (Electron)
-
-```bash
 npm run electron:dev
 ```
 
