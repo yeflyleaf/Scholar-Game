@@ -1,6 +1,6 @@
 // 页面：因果录入 (CausalityRecord) - 战斗结算界面，显示胜利或失败结果
 import { motion } from 'framer-motion';
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useGameStore } from '../../stores/useGameStore';
 
 // 胜利时的粒子爆炸特效
@@ -106,15 +106,17 @@ const ReconstructionEffect: React.FC = () => {
 export const CausalityRecord: React.FC = () => {
     const { setScreen, battleState, currentSector, resetBattle, addHackPoint } = useGameStore();
     // 使用本地状态锁定结果，防止在点击继续（重置战斗状态）时闪烁错误页面
-    // 同时在初始化时处理胜利奖励，避免使用 useEffect 导致级联渲染
-    const [isVictory] = useState(() => {
-        const victory = battleState === 'VICTORY';
-        if (victory) {
-            // 胜利时增加抽卡点数（在初始化期间执行，只运行一次）
+    const [isVictory] = useState(() => battleState === 'VICTORY');
+    // 使用ref追踪是否已处理胜利奖励
+    const rewardProcessedRef = useRef(false);
+    
+    // 使用useEffect处理胜利奖励，避免在渲染期间调用setState
+    useEffect(() => {
+        if (isVictory && !rewardProcessedRef.current) {
+            rewardProcessedRef.current = true;
             addHackPoint();
         }
-        return victory;
-    });
+    }, [isVictory, addHackPoint]);
 
     const handleContinue = () => {
         resetBattle();

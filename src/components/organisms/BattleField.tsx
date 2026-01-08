@@ -120,7 +120,12 @@ const ConstructCard: React.FC<{
 };
 
 // 熵实体组件
-const EntropyCard: React.FC<{ entity: EntropyEntity }> = ({ entity }) => {
+const EntropyCard: React.FC<{ 
+    entity: EntropyEntity; 
+    isSelected: boolean; 
+    onSelect: (id: string) => void;
+    hasMultipleEnemies: boolean;
+}> = ({ entity, isSelected, onSelect, hasMultipleEnemies }) => {
     const hpPercent = (entity.hp / entity.maxHp) * 100;
 
     if (entity.isDead) {
@@ -142,11 +147,20 @@ const EntropyCard: React.FC<{ entity: EntropyEntity }> = ({ entity }) => {
 
     return (
         <motion.div
-            className="fui-panel p-4 relative border-r-2 border-l-0 border-glitch-red/50"
+            className={`fui-panel p-4 relative border-r-2 border-l-0 ${
+                isSelected 
+                    ? 'border-neon-cyan border-2 bg-neon-cyan/10' 
+                    : 'border-glitch-red/50'
+            } ${hasMultipleEnemies ? 'cursor-pointer hover:border-neon-cyan/70' : ''}`}
             initial={{ x: 50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
+            onClick={() => hasMultipleEnemies && onSelect(entity.id)}
+            whileHover={hasMultipleEnemies ? { scale: 1.02 } : {}}
+            whileTap={hasMultipleEnemies ? { scale: 0.98 } : {}}
             style={{
-                boxShadow: '0 0 30px rgba(255, 0, 60, 0.2)',
+                boxShadow: isSelected 
+                    ? '0 0 30px rgba(0, 243, 255, 0.4), inset 0 0 15px rgba(0, 243, 255, 0.1)' 
+                    : '0 0 30px rgba(255, 0, 60, 0.2)',
             }}
         >
             {/* 腐蚀特效遮罩 */}
@@ -168,15 +182,24 @@ const EntropyCard: React.FC<{ entity: EntropyEntity }> = ({ entity }) => {
             {/* 头部 */}
             <div className="flex justify-between items-start mb-3 relative gap-2">
                 <div className="min-w-0 flex-1">
-                    <h3 className="text-glitch-red font-display font-bold text-base glitch-text truncate" data-text={entity.name}>
+                    <h3 className={`font-display font-bold text-base glitch-text truncate ${isSelected ? 'text-neon-cyan' : 'text-glitch-red'}`} data-text={entity.name}>
                         {entity.name}
                     </h3>
                     <span className="text-xs text-gray-500 font-mono truncate block">{entity.form}</span>
                 </div>
-                {/* 威胁指示器 */}
+                {/* 威胁/锁定指示器 */}
                 <div className="flex items-center gap-1 shrink-0">
-                    <span className="text-xs text-glitch-red/60 font-mono">威胁</span>
-                    <div className="w-2 h-2 bg-glitch-red rounded-full animate-pulse" />
+                    {isSelected ? (
+                        <>
+                            <span className="text-xs text-neon-cyan font-mono">🎯 锁定</span>
+                            <div className="w-2 h-2 bg-neon-cyan rounded-full animate-pulse" />
+                        </>
+                    ) : (
+                        <>
+                            <span className="text-xs text-glitch-red/60 font-mono">威胁</span>
+                            <div className="w-2 h-2 bg-glitch-red rounded-full animate-pulse" />
+                        </>
+                    )}
                 </div>
             </div>
 
@@ -243,9 +266,29 @@ export const BattleField: React.FC = () => {
         useSkill,
         setScreen,
         battleState,
-        currentTheme
+        currentTheme,
+        selectedTargetId,
+        setSelectedTarget
     } = useGameStore();
     const labels = currentTheme.pageLabels.battle;
+
+    // 计算存活的敌人数量
+    const aliveEnemies = entropyEntities.filter(e => !e.isDead);
+    const hasMultipleEnemies = aliveEnemies.length > 1;
+
+    // 如果当前选中的敌人已死亡，自动选择第一个存活敌人
+    React.useEffect(() => {
+        if (selectedTargetId) {
+            const selectedEnemy = entropyEntities.find(e => e.id === selectedTargetId);
+            if (!selectedEnemy || selectedEnemy.isDead) {
+                const firstAlive = aliveEnemies[0];
+                setSelectedTarget(firstAlive?.id || null);
+            }
+        } else if (aliveEnemies.length === 1) {
+            // 只有一个敌人时自动选中
+            setSelectedTarget(aliveEnemies[0].id);
+        }
+    }, [entropyEntities, selectedTargetId, aliveEnemies, setSelectedTarget]);
 
     const {
         handleAnswerSubmit,
@@ -359,7 +402,13 @@ export const BattleField: React.FC = () => {
                     </div>
                     <AnimatePresence>
                         {entropyEntities.map((entity) => (
-                            <EntropyCard key={entity.id} entity={entity} />
+                            <EntropyCard 
+                                key={entity.id} 
+                                entity={entity} 
+                                isSelected={selectedTargetId === entity.id}
+                                onSelect={(id) => setSelectedTarget(id)}
+                                hasMultipleEnemies={hasMultipleEnemies}
+                            />
                         ))}
                     </AnimatePresence>
                 </motion.div>

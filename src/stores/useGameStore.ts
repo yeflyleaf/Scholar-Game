@@ -20,6 +20,8 @@ import type {
     GameSettings,
     GameTheme,
     Inscription,
+    InscriptionEffectContext,
+    InscriptionTrigger,
     ObserverProfile,
     Question,
     StarSector
@@ -85,11 +87,18 @@ interface GameState {
     usedQuestionIds: Set<string>;
     remainingQuestionCount: number;
     
+    // 连击系统
+    comboCount: number; // 当前连击数
+    
     // 视觉效果
     battleLog: BattleLogEntry[];
     damageIndicators: DamageIndicator[];
     isScreenShaking: boolean;
     glitchIntensity: number; // 0-1
+    
+    // 铭文系统
+    inscriptionTriggeredFlags: Set<string>; // 铭文触发标记（用于追踪一次性效果）
+    triggerInscriptions: (trigger: InscriptionTrigger, damageSource?: { type: 'skill' | 'question'; baseDamage: number }) => number | void;
 
     // === 动作 ===
     // 设置
@@ -179,11 +188,61 @@ export const useGameStore = create<GameState>()(
             questionQueue: [],
             usedQuestionIds: new Set<string>(),
             remainingQuestionCount: 0,
+            comboCount: 0, // 连击计数器初始化
             
             battleLog: [],
             damageIndicators: [],
             isScreenShaking: false,
             glitchIntensity: 0,
+            
+            // 铭文系统初始状态
+            inscriptionTriggeredFlags: new Set<string>(),
+            
+            // 铭文效果触发函数
+            triggerInscriptions: (trigger, damageSource) => {
+                const { observerProfile, currentTurn, constructs, entropyEntities, addBattleLog, inscriptionTriggeredFlags } = get();
+                
+                // 从玩家背包中获取铭文ID，然后从INSCRIPTIONS常量中查找完整铭文对象（包含effect函数）
+                // 这是因为存储到localStorage的铭文会丢失effect函数
+                const inventoryInscriptionIds = observerProfile.inventory.map(i => i.id);
+                const matchingInscriptions = INSCRIPTIONS.filter(
+                    inscription => inventoryInscriptionIds.includes(inscription.id) && inscription.trigger === trigger
+                );
+                
+                if (matchingInscriptions.length === 0) return damageSource?.baseDamage;
+                
+                // 构建效果上下文
+                const context: InscriptionEffectContext = {
+                    currentTurn,
+                    constructs,
+                    entropyEntities,
+                    addBattleLog: (msg: string) => addBattleLog(msg, 'system'),
+                    triggeredFlags: inscriptionTriggeredFlags,
+                    updateConstructs: (updater: (constructs: Construct[]) => Construct[]) => {
+                        set(state => ({ constructs: updater(state.constructs) }));
+                    },
+                    updateEnemies: (updater: (enemies: EntropyEntity[]) => EntropyEntity[]) => {
+                        set(state => ({ entropyEntities: updater(state.entropyEntities) }));
+                    },
+                    damageSource
+                };
+                
+                // 触发所有匹配的铭文效果
+                let finalDamage = damageSource?.baseDamage;
+                for (const inscription of matchingInscriptions) {
+                    const result = inscription.effect(context);
+                    // 如果铭文返回了数值（伤害），则更新最终伤害
+                    if (typeof result === 'number') {
+                        finalDamage = result;
+                        // 更新上下文中的伤害值供后续铭文使用
+                        if (context.damageSource) {
+                            context.damageSource.baseDamage = result;
+                        }
+                    }
+                }
+                
+                return finalDamage;
+            },
 
             settings: {
                 resolution: "1920x1080",
@@ -220,6 +279,7 @@ export const useGameStore = create<GameState>()(
                 questionQueue: [],
                 usedQuestionIds: new Set<string>(),
                 remainingQuestionCount: 0,
+                comboCount: 0,
                 battleLog: [],
                 damageIndicators: [],
                 isScreenShaking: false,
@@ -408,19 +468,25 @@ export const useGameStore = create<GameState>()(
                     currentQuestion: shuffleQuestion(firstQuestion),
                     usedQuestionIds: usedIds,
                     remainingQuestionCount: selectedQuestions.length,
-                    glitchIntensity: 0
+                    glitchIntensity: 0,
+                    comboCount: 0, // 重置连击计数
+                    inscriptionTriggeredFlags: new Set<string>() // 重置铭文触发标记
                 });
                 
                 get().addBattleLog(`进入扇区: ${sector.name}`, 'system');
                 get().addBattleLog(`熵状态: ${sector.status === 'STABLE' ? '稳定' : sector.status === 'HIGH_ENTROPY' ? '高熵警报' : '已锁定'}`, 'system');
                 get().addBattleLog(`题目来源: ${isAIMode ? '🤖 AI动态生成' : '📚 内置题库'}`, 'system');
                 get().addBattleLog(`本关卡共 ${selectedQuestions.length} 道题目`, 'system');
+                
+                // 触发战斗开始时的铭文效果（如：空指针护盾）
+                get().triggerInscriptions('battle_start');
             },
 
             resetBattle: () => {
                 set({
                     battleState: 'PLAYER_TURN',
                     currentTurn: 1,
+                    comboCount: 0,
                     glitchIntensity: 0
                 });
             },
@@ -430,7 +496,7 @@ export const useGameStore = create<GameState>()(
             setSelectedTarget: (id) => set({ selectedTargetId: id }),
 
             useSkill: (constructId, skillId, targetId) => {
-                const { constructs, entropyEntities, addBattleLog, addDamageIndicator } = get();
+                const { constructs, entropyEntities, addBattleLog, addDamageIndicator, triggerInscriptions } = get();
                 const construct = constructs.find(c => c.id === constructId);
                 const skill = construct?.skills.find(s => s.id === skillId);
                 
@@ -453,27 +519,39 @@ export const useGameStore = create<GameState>()(
 
                 // 应用效果
                 let updatedEnemies = [...entropyEntities];
+                const previousDeadCount = entropyEntities.filter(e => e.isDead).length;
                 
                 // 伤害倍率 (终极技能伤害更高)
                 const damageMultiplier = skill.type === 'ultimate' ? 2.5 : 1;
 
                 if (skill.targetType === 'single_enemy' && targetId) {
+                    // 计算基础伤害
+                    const baseDamage = Math.floor(50 * damageMultiplier);
+                    // 触发on_damage铭文效果（如：创世编译器），可能返回增强后的伤害
+                    const finalDamage = triggerInscriptions('on_damage', { type: 'skill', baseDamage }) as number ?? baseDamage;
+                    
                     updatedEnemies = updatedEnemies.map(e => {
                         if (e.id === targetId) {
-                            const damage = Math.floor(50 * damageMultiplier); 
-                            const newHp = Math.max(0, e.hp - damage);
-                            addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); 
+                            const newHp = Math.max(0, e.hp - finalDamage);
+                            addDamageIndicator({ value: finalDamage, x: 50, y: 50, type: 'damage' }); 
                             return { ...e, hp: newHp, isDead: newHp <= 0 };
                         }
                         return e;
                     });
                     addBattleLog(`${construct.name} 对目标使用了 ${skill.name}！`, 'combat');
                 } else if (skill.targetType === 'all_enemies') {
-                     updatedEnemies = updatedEnemies.map(e => {
-                        const damage = Math.floor(30 * damageMultiplier);
-                        const newHp = Math.max(0, e.hp - damage);
-                        addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
-                        return { ...e, hp: newHp, isDead: newHp <= 0 };
+                    // 计算基础伤害
+                    const baseDamage = Math.floor(30 * damageMultiplier);
+                    // 触发on_damage铭文效果
+                    const finalDamage = triggerInscriptions('on_damage', { type: 'skill', baseDamage }) as number ?? baseDamage;
+                    
+                    updatedEnemies = updatedEnemies.map(e => {
+                        if (!e.isDead) {
+                            const newHp = Math.max(0, e.hp - finalDamage);
+                            addDamageIndicator({ value: finalDamage, x: 50, y: 50, type: 'damage' });
+                            return { ...e, hp: newHp, isDead: newHp <= 0 };
+                        }
+                        return e;
                     });
                     addBattleLog(`${construct.name} 对所有敌人使用了 ${skill.name}！`, 'combat');
                 } else if (skill.targetType === 'ally') {
@@ -501,6 +579,14 @@ export const useGameStore = create<GameState>()(
 
                 set({ constructs: finalConstructs, entropyEntities: updatedEnemies });
                 
+                // 检查是否有敌人被击败，触发on_enemy_defeat铭文
+                const newlyDefeatedCount = updatedEnemies.filter(e => e.isDead).length - previousDeadCount;
+                if (newlyDefeatedCount > 0) {
+                    for (let i = 0; i < newlyDefeatedCount; i++) {
+                        get().triggerInscriptions('on_enemy_defeat');
+                    }
+                }
+                
                 // 检查胜利
                 if (updatedEnemies.every(e => e.isDead)) {
                     setTimeout(() => set({ battleState: 'VICTORY', currentScreen: 'CAUSALITY_RECORD' }), 1000);
@@ -510,7 +596,7 @@ export const useGameStore = create<GameState>()(
             },
 
             answerQuestion: (optionIndex) => {
-                const { currentQuestion, entropyEntities, addBattleLog, addDamageIndicator } = get();
+                const { currentQuestion, entropyEntities, addBattleLog, addDamageIndicator, comboCount, selectedTargetId, setSelectedTarget } = get();
                 if (!currentQuestion) return;
 
                 const userAnswers = Array.isArray(optionIndex) ? optionIndex : [optionIndex];
@@ -522,7 +608,21 @@ export const useGameStore = create<GameState>()(
                     userAnswers.every(a => correctAnswers.includes(a));
 
                 if (isCorrect) {
-                    addBattleLog('逻辑验证成功！熵值降低。', 'system');
+                    // 更新连击计数
+                    const newComboCount = comboCount + 1;
+                    set({ comboCount: newComboCount });
+                    
+                    // 连击伤害计算：基础伤害5，2连击10伤害，3连击15伤害
+                    // 公式：伤害 = 基础伤害(5) × min(连击数, 3)
+                    const baseDamage = GAME_CONFIG.baseDamage; // 5
+                    const comboMultiplier = Math.min(newComboCount, GAME_CONFIG.comboThreshold); // 最多3倍
+                    const damage = baseDamage * comboMultiplier;
+                    
+                    if (newComboCount >= 2) {
+                        addBattleLog(`⚡ ${newComboCount}连击！逻辑验证成功！熵值降低。`, 'system');
+                    } else {
+                        addBattleLog('逻辑验证成功！熵值降低。', 'system');
+                    }
                     
                     // 答对题目，为每个存活的构造体增加 10 点能量
                     const energyGain = 10;
@@ -536,17 +636,71 @@ export const useGameStore = create<GameState>()(
                     set({ constructs: updatedConstructs });
                     addBattleLog(`能量充能 +${energyGain}！`, 'system');
                     
-                    // 对随机敌人或所有敌人造成伤害
-                    const damage = GAME_CONFIG.baseDamage;
-                    const updatedEnemies = entropyEntities.map(e => {
-                        if (!e.isDead) {
-                             const newHp = Math.max(0, e.hp - damage);
-                             addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
-                             return { ...e, hp: newHp, isDead: newHp <= 0 };
+                    // 确定攻击目标：优先选中的目标，否则选择第一个存活敌人
+                    const aliveEnemies = entropyEntities.filter(e => !e.isDead);
+                    let targetId = selectedTargetId;
+                    
+                    // 如果没有选中目标或选中的目标已死亡，选择第一个存活敌人
+                    if (!targetId || !aliveEnemies.find(e => e.id === targetId)) {
+                        targetId = aliveEnemies[0]?.id || null;
+                    }
+                    
+                    // 对锁定的目标造成连击伤害
+                    const previousDeadCount = entropyEntities.filter(e => e.isDead).length;
+                    let updatedEnemies = entropyEntities.map(e => {
+                        // 只攻击锁定的目标
+                        if (e.id === targetId && !e.isDead) {
+                            const newHp = Math.max(0, e.hp - damage);
+                            addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
+                            const targetName = e.name;
+                            if (newComboCount >= 2) {
+                                addBattleLog(`连击加成！对 ${targetName} 造成 ${damage} 点伤害！`, 'combat');
+                            } else {
+                                addBattleLog(`对 ${targetName} 造成 ${damage} 点伤害！`, 'combat');
+                            }
+                            return { ...e, hp: newHp, isDead: newHp <= 0 };
                         }
                         return e;
                     });
+                    
+                    // Boss被动技能：血量首次低于50%时回复25%最大生命
+                    const { inscriptionTriggeredFlags } = get();
+                    const bossPassiveKey = 'boss-passive-heal-triggered';
+                    updatedEnemies = updatedEnemies.map(e => {
+                        if (e.id === 'entropy-boss' && !e.isDead && !inscriptionTriggeredFlags.has(bossPassiveKey)) {
+                            const hpPercent = e.hp / e.maxHp;
+                            if (hpPercent < 0.5) {
+                                // 触发被动回血
+                                const healAmount = Math.floor(e.maxHp * 0.25);
+                                const newHp = Math.min(e.maxHp, e.hp + healAmount);
+                                inscriptionTriggeredFlags.add(bossPassiveKey);
+                                addBattleLog(`⚠️ 【奇点·抖动】核心重构！恢复 ${healAmount} 点生命值！`, 'system');
+                                addDamageIndicator({ value: healAmount, x: 50, y: 50, type: 'heal' });
+                                return { ...e, hp: newHp };
+                            }
+                        }
+                        return e;
+                    });
+                    
                     set({ entropyEntities: updatedEnemies });
+                    
+                    // 如果目标被击杀，自动选择下一个存活敌人
+                    const targetEnemy = updatedEnemies.find(e => e.id === targetId);
+                    if (targetEnemy?.isDead) {
+                        const nextAlive = updatedEnemies.find(e => !e.isDead);
+                        if (nextAlive) {
+                            setSelectedTarget(nextAlive.id);
+                            addBattleLog(`${targetEnemy.name} 已消解！目标切换至 ${nextAlive.name}`, 'system');
+                        }
+                    }
+                    
+                    // 检查是否有敌人被击败，触发on_enemy_defeat铭文（如：熵噬虫）
+                    const newlyDefeatedCount = updatedEnemies.filter(e => e.isDead).length - previousDeadCount;
+                    if (newlyDefeatedCount > 0) {
+                        for (let i = 0; i < newlyDefeatedCount; i++) {
+                            get().triggerInscriptions('on_enemy_defeat');
+                        }
+                    }
                     
                      if (updatedEnemies.every(e => e.isDead)) {
                         setTimeout(() => set({ battleState: 'VICTORY', currentScreen: 'CAUSALITY_RECORD' }), 1000);
@@ -555,18 +709,56 @@ export const useGameStore = create<GameState>()(
                     }
 
                 } else {
-                    addBattleLog('逻辑错误！熵值上升！', 'system');
+                    // 答错时重置连击计数
+                    set({ comboCount: 0 });
+                    addBattleLog('逻辑错误！熵值上升！连击中断！', 'system');
                     set({ glitchIntensity: Math.min(1, get().glitchIntensity + 0.2) });
-                    // 受到伤害
-                    const damage = 20;
+                    
+                    // 随机选择一个存活的敌人进行攻击
+                    const aliveEnemiesForAttack = entropyEntities.filter(e => !e.isDead);
+                    if (aliveEnemiesForAttack.length === 0) return;
+                    
+                    const attackerIndex = Math.floor(Math.random() * aliveEnemiesForAttack.length);
+                    const attacker = aliveEnemiesForAttack[attackerIndex];
+                    const baseDamage = attacker.damage; // 使用敌人的攻击力
+                    
+                    // 随机选择一个存活的构造体受到伤害
+                    const aliveConstructs = get().constructs.filter(c => !c.isDead);
+                    if (aliveConstructs.length === 0) return;
+                    
+                    const randomIndex = Math.floor(Math.random() * aliveConstructs.length);
+                    const targetConstruct = aliveConstructs[randomIndex];
+                    
+                    addBattleLog(`${attacker.name} 发动攻击！`, 'combat');
+                    
                     const updatedConstructs = get().constructs.map(c => {
-                         const newHp = Math.max(0, c.hp - damage);
-                         addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); // 应该在玩家身上
-                         return { ...c, hp: newHp, isDead: newHp <= 0 };
+                        // 只对随机选中的目标造成伤害
+                        if (c.id !== targetConstruct.id) return c;
+                        
+                        // 检查是否有护盾状态效果
+                        const shieldEffect = c.statusEffects.find(e => e.effect === 'shield');
+                        let actualDamage = baseDamage;
+                        let newStatusEffects = c.statusEffects;
+                        
+                        if (shieldEffect) {
+                            // 应用护盾减伤
+                            actualDamage = Math.floor(baseDamage * (1 - shieldEffect.value / 100));
+                            addBattleLog(`【空指针护盾】抵挡了 ${baseDamage - actualDamage} 点伤害！护盾消散。`, 'system');
+                            // 移除护盾效果（一次性使用）
+                            newStatusEffects = c.statusEffects.filter(e => e.effect !== 'shield');
+                        }
+                        
+                        const newHp = Math.max(0, c.hp - actualDamage);
+                        addDamageIndicator({ value: actualDamage, x: 50, y: 50, type: 'damage' });
+                        addBattleLog(`${c.name} 受到 ${actualDamage} 点伤害！`, 'combat');
+                        return { ...c, hp: newHp, isDead: newHp <= 0, statusEffects: newStatusEffects };
                     });
                     set({ constructs: updatedConstructs });
                     
-                    if (updatedConstructs.every(c => c.isDead)) {
+                    // 触发低血量铭文效果（如：量子锚点）
+                    get().triggerInscriptions('on_low_hp');
+                    
+                    if (get().constructs.every(c => c.isDead)) {
                          setTimeout(() => set({ battleState: 'DEFEAT', currentScreen: 'CAUSALITY_RECORD' }), 1000);
                     } else {
                         get().nextTurn();
@@ -602,6 +794,9 @@ export const useGameStore = create<GameState>()(
                     questionQueue: remainingQ,
                     remainingQuestionCount: remainingQ.length + 1 // 当前题目 + 剩余题目
                 });
+                
+                // 触发回合结束时的铭文效果（如：逻辑残响）
+                get().triggerInscriptions('turn_end');
             },
 
             // === 视觉辅助 ===

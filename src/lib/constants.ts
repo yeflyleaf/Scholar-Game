@@ -54,9 +54,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     // 构造体英文称号，用于装饰性显示
     title: "The Arbiter",
     // 当前生命值 (Health Points)，降为0时角色无法战斗
-    hp: 150,
+    hp: 300,
     // 最大生命值上限
-    maxHp: 150,
+    maxHp: 300,
     // 当前能量值，用于释放终极技能
     energy: 100,
     // 最大能量值上限
@@ -75,9 +75,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能英文名称
         nameEn: "Force Interrupt",
         // 技能详细描述，解释技能效果
-        description: "对单体造成高额逻辑伤害，并清除目标所有增益状态。",
+        description: "对单体造成高额逻辑伤害 (20点伤害)。",
         // 技能冷却时间（回合数）
-        cooldown: 3,
+        cooldown: 8,
         // 当前剩余冷却时间，0表示可以使用
         currentCooldown: 0,
         // 技能类型：active(主动技能) / ultimate(终极技能) / passive(被动技能)
@@ -85,7 +85,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能目标类型：single_enemy(单体敌人) / all_enemies(全体敌人) / self(自身) / ally(队友)
         targetType: "single_enemy",
         // 技能消耗的资源数值（通常指能量或行动点）
-        cost: 30,
+        cost: 60,
         // 技能释放时的视觉特效ID
         visualEffect: "data_deletion",
       },
@@ -98,9 +98,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         nameEn: "Final Verdict",
         // 技能详细描述
         description:
-          "消耗所有能量，对全体敌人造成毁灭性打击。若敌人处于逻辑死锁状态，伤害翻倍。",
+          "消耗所有能量，对全体敌人造成毁灭性打击 (20点伤害)。",
         // 技能冷却时间
-        cooldown: 5,
+        cooldown: 20,
         // 当前剩余冷却时间
         currentCooldown: 0,
         // 技能类型：终极技能
@@ -124,13 +124,13 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     // 构造体英文称号
     title: "The Weaver",
     // 当前生命值
-    hp: 120,
+    hp: 150,
     // 最大生命值
-    maxHp: 120,
+    maxHp: 150,
     // 当前能量值
-    energy: 100,
+    energy: 250,
     // 最大能量值
-    maxEnergy: 100,
+    maxEnergy: 250,
     // 存活状态标识
     isDead: false,
     // 状态效果列表
@@ -146,9 +146,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         nameEn: "Link Blockade",
         // 技能描述
         description:
-          "对全体敌人造成中等伤害，并施加'逻辑死锁'（无法行动1回合）。",
+          "对全体敌人施加'逻辑死锁'（无法行动一回合）。",
         // 技能冷却时间
-        cooldown: 4,
+        cooldown: 10,
         // 当前剩余冷却时间
         currentCooldown: 0,
         // 技能类型
@@ -156,7 +156,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能目标类型
         targetType: "all_enemies",
         // 技能消耗
-        cost: 40,
+        cost: 80,
         // 视觉特效ID
         visualEffect: "hex_shield",
       },
@@ -169,9 +169,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         nameEn: "Broadcast Storm",
         // 技能描述
         description:
-          "消耗所有能量，引发网络风暴，对全体敌人造成多段高频伤害，并降低其攻击力。",
+          "消耗所有能量，引发网络风暴，对全体敌人造成多段高频伤害，并降低其攻击力50%，持续三回合。",
         // 技能冷却时间
-        cooldown: 5,
+        cooldown: 20,
         // 当前剩余冷却时间
         currentCooldown: 0,
         // 技能类型
@@ -179,7 +179,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能目标类型
         targetType: "all_enemies",
         // 技能消耗
-        cost: 100,
+        cost: 250,
         // 视觉特效ID
         visualEffect: "digital_storm",
       },
@@ -199,9 +199,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     // 最大生命值
     maxHp: 200,
     // 当前能量值
-    energy: 100,
+    energy: 150,
     // 最大能量值
-    maxEnergy: 100,
+    maxEnergy: 150,
     // 存活状态标识
     isDead: false,
     // 状态效果列表
@@ -216,9 +216,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能英文名称
         nameEn: "Hash Rebuild",
         // 技能描述
-        description: "为我方全体施加护盾，并修复受损的逻辑扇区（回血）。",
+        description: "为我方全体施加护盾 (使下一次受到的伤害降低50%)，并修复自身受损的逻辑扇区（回血）。",
         // 技能冷却时间
-        cooldown: 3,
+        cooldown: 15,
         // 当前剩余冷却时间
         currentCooldown: 0,
         // 技能类型
@@ -226,7 +226,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能目标类型：自身（实际效果可能影响全体）
         targetType: "self",
         // 技能消耗
-        cost: 35,
+        cost: 100,
         // 视觉特效ID
         visualEffect: "hex_shield",
       },
@@ -239,9 +239,9 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         nameEn: "System Restore",
         // 技能描述
         description:
-          "消耗所有能量，将全体队友的状态回滚至最佳时刻（大幅回血并清除所有异常状态）。",
+          "消耗所有能量，将全体队友分别回复最大生命和最大能量的25%。",
         // 技能冷却时间
-        cooldown: 6,
+        cooldown: 25,
         // 当前剩余冷却时间
         currentCooldown: 0,
         // 技能类型
@@ -249,7 +249,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能目标类型
         targetType: "ally",
         // 技能消耗
-        cost: 100,
+        cost: 150,
         // 视觉特效ID
         visualEffect: "time_rewind",
       },
@@ -352,9 +352,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     // 实体形态/类型，决定其外观和行为模式
     form: "WHITE_NOISE",
     // 当前生命值
-    hp: 50,
+    hp: 150,
     // 最大生命值
-    maxHp: 50,
+    maxHp: 150,
     // 基础攻击力，对玩家造成的伤害数值
     damage: 10,
     // 该实体携带的题库，玩家攻击时需要回答这些问题
@@ -370,8 +370,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-2",
     name: "虚数·崩坏体",
     form: "IMAGINARY_COLLAPSE",
-    hp: 120,
-    maxHp: 120,
+    hp: 250,
+    maxHp: 250,
     damage: 25,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
@@ -382,9 +382,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-3",
     name: "空指针·虚空",
     form: "NULL_POINTER",
-    hp: 60,
-    maxHp: 60,
-    damage: 15,
+    hp: 300,
+    maxHp: 300,
+    damage: 20,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -394,9 +394,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-4",
     name: "内存·泄露者",
     form: "MEMORY_LEAK",
-    hp: 70,
-    maxHp: 70,
-    damage: 18,
+    hp: 350,
+    maxHp: 350,
+    damage: 45,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -406,9 +406,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-5",
     name: "栈溢出·巨像",
     form: "STACK_OVERFLOW",
-    hp: 80,
-    maxHp: 80,
-    damage: 20,
+    hp: 400,
+    maxHp: 400,
+    damage: 30,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -418,9 +418,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-6",
     name: "死锁·幽灵",
     form: "DEADLOCK_PHANTOM",
-    hp: 90,
-    maxHp: 90,
-    damage: 22,
+    hp: 450,
+    maxHp: 450,
+    damage: 50,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -430,9 +430,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-7",
     name: "竞态·幻影",
     form: "RACE_CONDITION",
-    hp: 100,
-    maxHp: 100,
-    damage: 25,
+    hp: 500,
+    maxHp: 500,
+    damage: 40,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -442,9 +442,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-8",
     name: "蓝屏·恐惧",
     form: "BSOD_TERROR",
-    hp: 110,
-    maxHp: 110,
-    damage: 28,
+    hp: 550,
+    maxHp: 550,
+    damage: 35,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -454,9 +454,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-9",
     name: "404·虚无",
     form: "NOT_FOUND_VOID",
-    hp: 130,
-    maxHp: 130,
-    damage: 30,
+    hp: 600,
+    maxHp: 600,
+    damage: 50,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -466,9 +466,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-10",
     name: "死循环·衔尾蛇",
     form: "INFINITE_LOOP",
-    hp: 150,
-    maxHp: 150,
-    damage: 32,
+    hp: 550,
+    maxHp: 550,
+    damage: 60,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -478,9 +478,9 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     id: "entropy-11",
     name: "段错误·粉碎者",
     form: "SEGFAULT_BREAKER",
-    hp: 170,
-    maxHp: 170,
-    damage: 35,
+    hp: 500,
+    maxHp: 500,
+    damage: 80,
     questionBank: SAMPLE_QUESTIONS,
     statusEffects: [],
     isDead: false,
@@ -494,11 +494,11 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     // 实体形态/类型
     form: "SINGULARITY",
     // 当前生命值
-    hp: 300,
+    hp: 800,
     // 最大生命值
-    maxHp: 300,
+    maxHp: 800,
     // 基础攻击力
-    damage: 40,
+    damage: 100,
     // 携带题库
     questionBank: SAMPLE_QUESTIONS,
     // 状态效果列表
@@ -546,7 +546,11 @@ export const STAR_SECTORS: StarSector[] = [
     difficulty: 3,
     position: { x: 40, y: 80 },
     totalQuestions: 60,
-    entropyEntities: [INITIAL_ENTROPY_ENTITIES[3], INITIAL_ENTROPY_ENTITIES[4]], // 2 enemies
+    entropyEntities: [
+      INITIAL_ENTROPY_ENTITIES[3], // entropy-4 内存·泄露者
+      INITIAL_ENTROPY_ENTITIES[4], // entropy-5 栈溢出·巨像
+      INITIAL_ENTROPY_ENTITIES[2], // entropy-3 空指针·虚空 (新增)
+    ],
     rewards: { exp: 300 },
     missionBriefing:
       "线程同步锁失效，数据竞争正在破坏核心数据结构。任务：重新建立互斥机制，消除竞态条件。",
@@ -560,10 +564,11 @@ export const STAR_SECTORS: StarSector[] = [
     position: { x: 55, y: 30 },
     totalQuestions: 80,
     entropyEntities: [
-      INITIAL_ENTROPY_ENTITIES[5],
-      INITIAL_ENTROPY_ENTITIES[6],
-      INITIAL_ENTROPY_ENTITIES[7],
-    ], // 3 enemies
+      INITIAL_ENTROPY_ENTITIES[5], // entropy-6 死锁·幽灵
+      INITIAL_ENTROPY_ENTITIES[6], // entropy-7 竞态·幻影
+      INITIAL_ENTROPY_ENTITIES[7], // entropy-8 蓝屏·恐惧
+      INITIAL_ENTROPY_ENTITIES[4], // entropy-5 栈溢出·巨像 (新增)
+    ],
     rewards: { exp: 500 },
     missionBriefing:
       "传输层协议握手序列被熵噪声干扰。任务：重建连接状态机，确保数据包可靠传输。",
@@ -577,10 +582,12 @@ export const STAR_SECTORS: StarSector[] = [
     position: { x: 70, y: 70 },
     totalQuestions: 100,
     entropyEntities: [
-      INITIAL_ENTROPY_ENTITIES[8],
-      INITIAL_ENTROPY_ENTITIES[9],
-      INITIAL_ENTROPY_ENTITIES[10],
-    ], // 3 enemies
+      INITIAL_ENTROPY_ENTITIES[8],  // entropy-9 404·虚无
+      INITIAL_ENTROPY_ENTITIES[9],  // entropy-10 死循环·衔尾蛇
+      INITIAL_ENTROPY_ENTITIES[10], // entropy-11 段错误·粉碎者
+      INITIAL_ENTROPY_ENTITIES[6],  // entropy-7 竞态·幻影 (新增)
+      INITIAL_ENTROPY_ENTITIES[2],  // entropy-3 空指针·虚空 (新增)
+    ],
     rewards: { exp: 700 },
     missionBriefing:
       "检测到无限递归循环，堆栈空间即将耗尽。任务：优化递归算法，引入尾递归或迭代方案，防止栈溢出。",
@@ -594,7 +601,11 @@ export const STAR_SECTORS: StarSector[] = [
     difficulty: 6,
     position: { x: 85, y: 50 },
     totalQuestions: 120,
-    entropyEntities: [INITIAL_ENTROPY_ENTITIES[11]], // 1 boss
+    entropyEntities: [
+      INITIAL_ENTROPY_ENTITIES[11], // entropy-boss 奇点·抖动
+      INITIAL_ENTROPY_ENTITIES[1],  // entropy-2 虚数·崩坏体 (新增)
+      INITIAL_ENTROPY_ENTITIES[8],  // entropy-9 404·虚无 (新增)
+    ],
     rewards: { exp: 1000 },
     missionBriefing:
       "系统核心逻辑正在发生剧烈抖动，资源调度完全失效。任务：直面奇点，重构底层调度算法，恢复系统秩序。",
@@ -606,63 +617,204 @@ export const STAR_SECTORS: StarSector[] = [
 export const INSCRIPTIONS: Inscription[] = [
   {
     // 铭文唯一标识符
-    id: "inscription-banker",
+    id: "inscription-genesis-compiler",
     // 铭文显示名称
-    name: "银行家算法",
+    name: "创世编译器",
     // 稀有度等级：SSR / SR / R / N
     rarity: "SSR",
     // 铭文功能描述
     description:
-      "前文明用来规避资源死锁的神圣逻辑。装备后，对'死锁级'崩坏兽伤害提升 50%。",
-    // 铭文的具体逻辑效果函数（目前为空实现）
-    effect: () => {},
+      "传说中第一位编程者留下的神器。据说它能将混沌的熵流重新编译为有序的逻辑。装备后，在战斗开始20个回合后，所有技能伤害提升 10%，在战斗开始50个回合后，所有技能伤害提升 20%，在战斗开始80个回合后，所有技能伤害提升 30%。",
+    // 铭文触发时机：造成伤害时
+    trigger: "on_damage",
+    // 铭文效果函数：根据回合数返回伤害倍率
+    effect: (context) => {
+      const { currentTurn, damageSource, addBattleLog } = context;
+      if (!damageSource || damageSource.type !== 'skill') return damageSource?.baseDamage;
+      
+      let multiplier = 1.0;
+      if (currentTurn >= 80) {
+        multiplier = 1.3; // 30% 伤害提升
+      } else if (currentTurn >= 50) {
+        multiplier = 1.2; // 20% 伤害提升
+      } else if (currentTurn >= 20) {
+        multiplier = 1.1; // 10% 伤害提升
+      }
+      
+      if (multiplier > 1.0) {
+        const bonusDamage = Math.floor(damageSource.baseDamage * (multiplier - 1));
+        addBattleLog(`【创世编译器】回合${currentTurn}，伤害提升 ${Math.round((multiplier - 1) * 100)}%！(+${bonusDamage})`);
+      }
+      
+      return Math.floor(damageSource.baseDamage * multiplier);
+    },
     // 铭文图标资源ID
-    icon: "banker_algo_icon",
+    icon: "genesis_compiler_icon",
   },
   {
     // 铭文唯一标识符
-    id: "inscription-dijkstra",
+    id: "inscription-quantum-anchor",
     // 铭文显示名称
-    name: "最短路径",
+    name: "量子锚点",
     // 稀有度等级
     rarity: "SR",
     // 铭文功能描述
-    description: "在星图中移动时，不消耗行动力。",
+    description:
+      "一枚刻印着坍缩波函数的晶片，能在时间线分叉时锁定观察者的存在。当生命值首次降至30%以下时，立即回复 50% 已损失的生命值，每场战斗仅触发一次。",
+    // 铭文触发时机：受到伤害后检查
+    trigger: "on_low_hp",
     // 铭文效果函数
-    effect: () => {},
+    effect: (context) => {
+      const { constructs, triggeredFlags, addBattleLog, updateConstructs } = context;
+      const flagKey = "quantum-anchor-triggered";
+      
+      // 如果已触发过，跳过
+      if (triggeredFlags.has(flagKey)) return;
+      
+      // 检查是否有构造体血量低于30%
+      const needHealing = constructs.some(c => !c.isDead && c.hp < c.maxHp * 0.3);
+      if (!needHealing) return;
+      
+      // 标记已触发
+      triggeredFlags.add(flagKey);
+      
+      // 为所有存活且血量低于30%的构造体恢复50%已损失的生命值
+      updateConstructs((current) => current.map(c => {
+        if (!c.isDead && c.hp < c.maxHp * 0.3) {
+          const lostHp = c.maxHp - c.hp;
+          const healAmount = Math.floor(lostHp * 0.5);
+          const newHp = Math.min(c.maxHp, c.hp + healAmount);
+          addBattleLog(`【量子锚点】${c.name} 生命值锁定！恢复 ${healAmount} 点生命值！`);
+          return { ...c, hp: newHp };
+        }
+        return c;
+      }));
+    },
     // 铭文图标资源ID
-    icon: "dijkstra_icon",
+    icon: "quantum_anchor_icon",
   },
   {
-    id: "inscription-mutex",
-    name: "互斥锁",
+    // 铭文唯一标识符
+    id: "inscription-entropy-siphon",
+    // 铭文显示名称
+    name: "熵噬虫",
+    // 稀有度等级
     rarity: "R",
-    description: "每回合开始时，有30%几率使一个敌人陷入逻辑死锁。",
-    effect: () => {},
-    icon: "mutex_lock_icon",
+    // 铭文功能描述
+    description:
+      "从虚数·崩坏体内核中提取的寄生程序。每次击败敌人时，窃取其残余熵值转化为能量，恢复 15 点能量值。",
+    // 铭文触发时机：击败敌人时
+    trigger: "on_enemy_defeat",
+    // 铭文效果函数
+    effect: (context) => {
+      const { addBattleLog, updateConstructs } = context;
+      const energyGain = 15;
+      
+      addBattleLog(`【熵噬虫】窃取残余熵值，全体恢复 ${energyGain} 点能量！`);
+      
+      updateConstructs((current) => current.map(c => {
+        if (!c.isDead) {
+          const newEnergy = Math.min(c.maxEnergy, c.energy + energyGain);
+          return { ...c, energy: newEnergy };
+        }
+        return c;
+      }));
+    },
+    // 铭文图标资源ID
+    icon: "entropy_siphon_icon",
   },
   {
-    id: "inscription-hello-world",
-    name: "Hello World",
+    // 铭文唯一标识符
+    id: "inscription-null-shield",
+    // 铭文显示名称
+    name: "空指针护盾",
+    // 稀有度等级
     rarity: "N",
-    description: "初学者的第一行代码。战斗开始时，恢复 10 点生命值。",
-    effect: () => {},
-    icon: "hello_world_icon",
+    // 铭文功能描述
+    description:
+      "利用空引用的虚无特性构建的薄弱屏障。战斗开始时获得一层护盾，可抵挡一次攻击的 50% 伤害。",
+    // 铭文触发时机：战斗开始时
+    trigger: "battle_start",
+    // 铭文效果函数：为所有构造体添加护盾状态
+    effect: (context) => {
+      const { addBattleLog, updateConstructs } = context;
+      
+      addBattleLog(`【空指针护盾】虚空屏障已激活，可抵挡首次攻击 50% 伤害！`);
+      
+      // 添加护盾状态效果
+      updateConstructs((current) => current.map(c => {
+        if (!c.isDead) {
+          const shieldEffect = {
+            id: "null-shield-effect",
+            name: "空指针护盾",
+            duration: 99, // 持续整场战斗，但只触发一次
+            type: "buff" as const,
+            effect: "shield" as const,
+            value: 50 // 50% 减伤
+          };
+          return { 
+            ...c, 
+            statusEffects: [...c.statusEffects, shieldEffect]
+          };
+        }
+        return c;
+      }));
+    },
+    // 铭文图标资源ID
+    icon: "null_shield_icon",
   },
   {
-    id: "inscription-console-log",
-    name: "调试日志",
+    // 铭文唯一标识符
+    id: "inscription-logic-residue",
+    // 铭文显示名称
+    name: "逻辑残响",
+    // 稀有度等级
     rarity: "N",
-    description: "调试信息的残留。战斗结算时，经验值获取增加 5%。",
-    effect: () => {},
-    icon: "console_log_icon",
+    // 铭文功能描述
+    description:
+      "前文明崩溃时残留在信息层的微弱回音。每回合结束时，有 5% 几率减少一个技能 1 回合冷却时间。",
+    // 铭文触发时机：每回合结束时
+    trigger: "turn_end",
+    // 铭文效果函数
+    effect: (context) => {
+      const { addBattleLog, updateConstructs } = context;
+      
+      // 5% 几率触发
+      if (Math.random() > 0.05) return;
+      
+      // 找到一个处于冷却中的技能
+      let triggered = false;
+      updateConstructs((current) => current.map(c => {
+        if (triggered || c.isDead) return c;
+        
+        const skillsOnCooldown = c.skills.filter(s => s.currentCooldown > 0);
+        if (skillsOnCooldown.length === 0) return c;
+        
+        // 随机选择一个冷却中的技能
+        const randomSkill = skillsOnCooldown[Math.floor(Math.random() * skillsOnCooldown.length)];
+        triggered = true;
+        
+        addBattleLog(`【逻辑残响】时空回响！${c.name} 的 ${randomSkill.name} 冷却时间 -1！`);
+        
+        return {
+          ...c,
+          skills: c.skills.map(s => 
+            s.id === randomSkill.id 
+              ? { ...s, currentCooldown: Math.max(0, s.currentCooldown - 1) }
+              : s
+          )
+        };
+      }));
+    },
+    // 铭文图标资源ID
+    icon: "logic_residue_icon",
   },
 ];
 
 // 7. 游戏配置
 export const GAME_CONFIG = {
   entropyThreshold: 100,
-  baseDamage: 30,
+  baseDamage: 5,
   comboThreshold: 3,
   gachaCost: 100,
 } as const;
@@ -774,35 +926,39 @@ export const DEFAULT_THEME: GameTheme = {
 
   inscriptions: [
     {
-      id: "inscription-banker",
-      name: "银行家算法",
+      id: "inscription-genesis-compiler",
+      name: "创世编译器",
       rarity: "SSR",
       description:
-        '前文明用来规避资源死锁的神圣逻辑。装备后，对"死锁级"崩坏兽伤害提升 50%。',
+        "传说中第一位编程者留下的神器。据说它能将混沌的熵流重新编译为有序的逻辑。装备后，在战斗开始20个回合后，所有技能伤害提升 10%，在战斗开始50个回合后，所有技能伤害提升 20%，在战斗开始80个回合后，所有技能伤害提升 30%。",
     },
     {
-      id: "inscription-dijkstra",
-      name: "最短路径",
+      id: "inscription-quantum-anchor",
+      name: "量子锚点",
       rarity: "SR",
-      description: "在星图中移动时，不消耗行动力。",
+      description:
+        "一枚刻印着坍缩波函数的晶片，能在时间线分叉时锁定观察者的存在。当生命值首次降至30%以下时，立即回复 50% 已损失的生命值，每场战斗仅触发一次。",
     },
     {
-      id: "inscription-mutex",
-      name: "互斥锁",
+      id: "inscription-entropy-siphon",
+      name: "熵噬虫",
       rarity: "R",
-      description: "每回合开始时，有30%几率使一个敌人陷入逻辑死锁。",
+      description:
+        "从虚数·崩坏体内核中提取的寄生程序。每次击败敌人时，窃取其残余熵值转化为能量，恢复 15 点能量值。",
     },
     {
-      id: "inscription-hello-world",
-      name: "Hello World",
+      id: "inscription-null-shield",
+      name: "空指针护盾",
       rarity: "N",
-      description: "初学者的第一行代码。战斗开始时，恢复 10 点生命值。",
+      description:
+        "利用空引用的虚无特性构建的薄弱屏障。战斗开始时获得一层护盾，可抵挡一次攻击的 50% 伤害。",
     },
     {
-      id: "inscription-console-log",
-      name: "调试日志",
+      id: "inscription-logic-residue",
+      name: "逻辑残响",
       rarity: "N",
-      description: "调试信息的残留。战斗结算时，经验值获取增加 5%。",
+      description:
+        "前文明崩溃时残留在信息层的微弱回音。每回合结束时，有 5% 几率减少一个技能 1 回合冷却时间。",
     },
   ],
 

@@ -129,13 +129,48 @@ export interface Question {
 
 // 3. Progression System - 进度系统
 
+// 铭文效果上下文 - 传递给铭文效果函数的战斗信息
+export interface InscriptionEffectContext {
+  // 战斗状态
+  currentTurn: number;
+  // 玩家构造体列表
+  constructs: Construct[];
+  // 敌人列表
+  entropyEntities: EntropyEntity[];
+  // 日志函数
+  addBattleLog: (message: string) => void;
+  // 铭文触发标记（用于追踪一次性效果是否已触发）
+  triggeredFlags: Set<string>;
+  // 修改构造体状态
+  updateConstructs: (updater: (constructs: Construct[]) => Construct[]) => void;
+  // 修改敌人状态
+  updateEnemies: (updater: (enemies: EntropyEntity[]) => EntropyEntity[]) => void;
+  // 当前伤害源（用于伤害计算铭文）
+  damageSource?: {
+    type: 'skill' | 'question';
+    baseDamage: number;
+  };
+}
+
+// 铭文触发时机
+export type InscriptionTrigger = 
+  | 'battle_start'      // 战斗开始时
+  | 'turn_end'          // 每回合结束时
+  | 'on_damage'         // 造成伤害时（用于计算伤害加成）
+  | 'on_take_damage'    // 受到伤害时
+  | 'on_enemy_defeat'   // 击败敌人时
+  | 'on_low_hp';        // 生命值低于阈值时
+
 // Inscription - 核心铭文 (Gacha Items)
 export interface Inscription {
   id: string;
   name: string;
-    rarity: "N" | "R" | "SR" | "SSR";
+  rarity: "N" | "R" | "SR" | "SSR";
   description: string;
-  effect: (target: Construct | EntropyEntity) => void;
+  // 铭文触发时机
+  trigger: InscriptionTrigger;
+  // 铭文效果函数，返回可能修改过的伤害值（用于伤害类铭文）
+  effect: (context: InscriptionEffectContext) => number | void;
   icon: string; // 六边形图标路径
 }
 
