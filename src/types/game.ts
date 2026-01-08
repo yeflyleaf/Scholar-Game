@@ -92,6 +92,7 @@ export interface Construct {
   model: ConstructModel;
   name: string;
   title: string; // 例如："The Arbiter"
+  attack: number; // 攻击力，决定造成的伤害
   hp: number;
   maxHp: number;
   energy: number; // 用于技能
@@ -99,6 +100,41 @@ export interface Construct {
   skills: Skill[];
   statusEffects: StatusEffect[];
   isDead: boolean;
+}
+
+// 敌人专属技能类型
+export type EnemySkillType =
+  | "debuff_player"      // 对玩家施加负面效果
+  | "self_buff"          // 自我强化
+  | "damage_all"         // 全体伤害
+  | "damage_single"      // 单体伤害
+  | "heal_self"          // 自我回复
+  | "special";           // 特殊机制
+
+// 敌人专属技能接口
+export interface EnemySkill {
+  id: string;
+  name: string;              // 技能名称
+  nameEn: string;            // 英文名称
+  description: string;       // 技能描述
+  type: EnemySkillType;      // 技能类型
+  cooldown: number;          // 冷却时间（回合数）
+  currentCooldown: number;   // 当前剩余冷却
+  triggerCondition?: {       // 触发条件（可选）
+    type: "hp_below" | "turn_count" | "always"; // 条件类型
+    value?: number;          // 条件阈值
+  };
+  effect: {                  // 技能效果
+    damageMultiplier?: number;     // 伤害倍率
+    healPercent?: number;          // 回复百分比
+    statusToApply?: {              // 施加的状态效果
+      effectType: StatusEffectType;
+      duration: number;
+      value: number;
+    };
+    specialEffect?: string;        // 特殊效果标识符
+  };
+  visualEffect?: string;     // 视觉特效标识符
 }
 
 export interface EntropyEntity {
@@ -112,6 +148,8 @@ export interface EntropyEntity {
   statusEffects: StatusEffect[];
   isDead: boolean;
   visualGlitchIntensity: number; // 0-1，用于渲染故障特效
+  // 敌人专属技能
+  skill?: EnemySkill;
 }
 
 export interface Question {

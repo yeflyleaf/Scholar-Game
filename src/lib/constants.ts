@@ -15,6 +15,7 @@ export const APP_META = {
 
 import type {
   Construct,
+  EnemySkill,
   EntropyEntity,
   GameTheme,
   Inscription,
@@ -53,10 +54,12 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     name: "裁决者",
     // 构造体英文称号，用于装饰性显示
     title: "The Arbiter",
+    // 攻击力，决定答题正确时造成的伤害
+    attack: 5,
     // 当前生命值 (Health Points)，降为0时角色无法战斗
-    hp: 300,
+    hp: 500,
     // 最大生命值上限
-    maxHp: 300,
+    maxHp: 500,
     // 当前能量值，用于释放终极技能
     energy: 100,
     // 最大能量值上限
@@ -75,7 +78,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能英文名称
         nameEn: "Force Interrupt",
         // 技能详细描述，解释技能效果
-        description: "对单体造成高额逻辑伤害 (20点伤害)。",
+        description: "对单体造成高额逻辑伤害 (30点伤害)。",
         // 技能冷却时间（回合数）
         cooldown: 8,
         // 当前剩余冷却时间，0表示可以使用
@@ -98,7 +101,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         nameEn: "Final Verdict",
         // 技能详细描述
         description:
-          "消耗所有能量，对全体敌人造成毁灭性打击 (20点伤害)。",
+          "消耗所有能量，对全体敌人造成毁灭性打击 (30点伤害)。",
         // 技能冷却时间
         cooldown: 20,
         // 当前剩余冷却时间
@@ -123,14 +126,16 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     name: "织网者",
     // 构造体英文称号
     title: "The Weaver",
+    // 攻击力
+    attack: 15,
     // 当前生命值
-    hp: 150,
+    hp: 350,
     // 最大生命值
-    maxHp: 150,
+    maxHp: 350,
     // 当前能量值
-    energy: 250,
+    energy: 300,
     // 最大能量值
-    maxEnergy: 250,
+    maxEnergy: 300,
     // 存活状态标识
     isDead: false,
     // 状态效果列表
@@ -194,10 +199,12 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     name: "虚构者",
     // 构造体英文称号
     title: "The Architect",
+    // 攻击力
+    attack: 10,
     // 当前生命值
-    hp: 200,
+    hp: 400,
     // 最大生命值
-    maxHp: 200,
+    maxHp: 400,
     // 当前能量值
     energy: 150,
     // 最大能量值
@@ -241,7 +248,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         description:
           "消耗所有能量，将全体队友分别回复最大生命和最大能量的25%。",
         // 技能冷却时间
-        cooldown: 25,
+        cooldown: 20,
         // 当前剩余冷却时间
         currentCooldown: 0,
         // 技能类型
@@ -341,6 +348,255 @@ export const SAMPLE_QUESTIONS: Question[] = [
   },
 ];
 
+// 3.5 敌人专属技能定义
+// 每个认知熵实体都拥有一个符合其主题的专属技能
+// 技能冷却结束后将自动触发，详见 游戏数值机制一览.md
+export const ENEMY_SKILLS: Record<string, EnemySkill> = {
+  // 🔊 白噪·干扰者 - 信号干扰 (Signal Interference)
+  // 类型: 减益 | 冷却: 5回合 | 效果: 下一道题答题时间减少5秒
+  "skill-white-noise": {
+    id: "skill-white-noise",
+    name: "信号干扰",
+    nameEn: "Signal Interference",
+    description: "释放高频噪声，干扰逻辑构造体的信息接收，下一道题目的答题时间减少5秒。",
+    type: "debuff_player",
+    cooldown: 5, // 每5回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "always" },
+    effect: {
+      specialEffect: "reduce_time_limit",
+      statusToApply: {
+        effectType: "entropy_erosion",
+        duration: 1,
+        value: 5, // 减少5秒答题时间
+      },
+    },
+    visualEffect: "static_noise",
+  },
+
+  // 🌀 虚数·崩坏体 - 虚空坍缩 (Void Collapse)
+  // 类型: 伤害 | 冷却: 15回合 | 效果: 1.5倍真实伤害，无视护盾和减伤
+  "skill-imaginary-collapse": {
+    id: "skill-imaginary-collapse",
+    name: "虚空坍缩",
+    nameEn: "Void Collapse",
+    description: "引发虚数空间坍缩，造成1.5倍基础伤害的真实伤害，无视所有护盾和减伤效果。",
+    type: "damage_single",
+    cooldown: 15, // 每15回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "always" },
+    effect: {
+      damageMultiplier: 1.5,
+      specialEffect: "true_damage", // 真实伤害，无视护盾
+    },
+    visualEffect: "void_implosion",
+  },
+
+  // ⚠️ 空指针·虚空 - 引用消解 (Reference Dissolution)
+  // 类型: 减益 | 冷却: 20回合 | 效果: 随机使一个已就绪技能进入3回合冷却
+  "skill-null-pointer": {
+    id: "skill-null-pointer",
+    name: "引用消解",
+    nameEn: "Reference Dissolution",
+    description: "消解逻辑链接，随机使一名逻辑构造体的一个已就绪技能进入3回合冷却。",
+    type: "debuff_player",
+    cooldown: 20, // 每20回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "always" },
+    effect: {
+      specialEffect: "force_cooldown",
+      statusToApply: {
+        effectType: "logic_lock",
+        duration: 3, // 强制进入3回合冷却
+        value: 1, // 锁定1个技能
+      },
+    },
+    visualEffect: "null_void",
+  },
+
+  // 💧 内存·泄露者 - 资源侵蚀 (Resource Erosion)
+  // 类型: 减益 | 冷却: 10回合 | 效果: 全体3回合内每回合损失5点能量
+  "skill-memory-leak": {
+    id: "skill-memory-leak",
+    name: "资源侵蚀",
+    nameEn: "Resource Erosion",
+    description: "悄然吞噬系统资源，全体逻辑构造体在3回合内每回合损失5点能量。",
+    type: "debuff_player",
+    cooldown: 10, // 每10回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "always" },
+    effect: {
+      specialEffect: "energy_drain",
+      statusToApply: {
+        effectType: "entropy_erosion",
+        duration: 3, // 持续3回合
+        value: 5, // 每回合损失5能量
+      },
+    },
+    visualEffect: "data_leak",
+  },
+
+  // 📚 栈溢出·巨像 - 递归压制 (Recursive Oppression)
+  // 类型: 自强 | 冷却: 12回合(第5回合后) | 效果: 攻击力每回合+10%，持续4回合(最高+40%)
+  "skill-stack-overflow": {
+    id: "skill-stack-overflow",
+    name: "递归压制",
+    nameEn: "Recursive Oppression",
+    description: "进入失控递归状态，攻击力每回合增加10%，持续4回合（最高40%加成）。",
+    type: "self_buff",
+    cooldown: 12, // 第5回合后每12回合触发
+    currentCooldown: 5, // 初始需要5回合才能首次触发
+    triggerCondition: { type: "turn_count", value: 5 },
+    effect: {
+      specialEffect: "stacking_damage",
+      statusToApply: {
+        effectType: "damage_boost",
+        duration: 4, // 持续4回合
+        value: 10, // 每回合+10%伤害
+      },
+    },
+    visualEffect: "stack_explosion",
+  },
+
+  // 🔗 死锁·幽灵 - 资源禁锢 (Resource Imprisonment)
+  // 类型: 控制 | 冷却: 8回合 | 效果: 随机一名玩家陷入「逻辑死锁」2回合
+  "skill-deadlock": {
+    id: "skill-deadlock",
+    name: "资源禁锢",
+    nameEn: "Resource Imprisonment",
+    description: "形成逻辑死锁，随机使一名逻辑构造体陷入「逻辑死锁」状态，无法行动2回合。",
+    type: "debuff_player",
+    cooldown: 8, // 每8回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "always" },
+    effect: {
+      specialEffect: "stun_single",
+      statusToApply: {
+        effectType: "logic_lock",
+        duration: 2, // 锁定2回合
+        value: 100, // 完全锁定
+      },
+    },
+    visualEffect: "chain_lock",
+  },
+
+  // ⏱️ 竞态·幻影 - 时序混乱 (Temporal Chaos)
+  // 类型: 特殊 | 冷却: 30回合 | 效果: 清空随机一个玩家的能量
+  "skill-race-condition": {
+    id: "skill-race-condition",
+    name: "时序混乱",
+    nameEn: "Temporal Chaos",
+    description: "扰乱时间线，使随机一个逻辑构造体的能量清空！",
+    type: "special",
+    cooldown: 30, // 每30回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "always" },
+    effect: {
+      specialEffect: "drain_all_energy", // 清空能量
+    },
+    visualEffect: "time_distortion",
+  },
+
+  // 💀 蓝屏·恐惧 - 系统崩溃 (System Crash)
+  // 类型: 处决 | 冷却: 15回合 | 效果: 若玩家血量<40%，对其造成2倍伤害
+  "skill-bsod-terror": {
+    id: "skill-bsod-terror",
+    name: "系统崩溃",
+    nameEn: "System Crash",
+    description: "引发严重系统错误！若任意逻辑构造体血量低于40%，对其造成2倍伤害。",
+    type: "damage_single",
+    cooldown: 15, // 每15回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "hp_below", value: 40 }, // 血量低于40%时触发
+    effect: {
+      damageMultiplier: 2.0,
+      specialEffect: "execute_low_hp",
+    },
+    visualEffect: "blue_screen_flash",
+  },
+
+  // 🔍 404·虚无 - 资源丢失 (Resource Not Found)
+  // 类型: 减益 | 冷却: 15回合(第10回合后) | 效果: 全体技能冷却+2回合
+  "skill-not-found": {
+    id: "skill-not-found",
+    name: "资源丢失",
+    nameEn: "Resource Not Found",
+    description: "请求的资源不存在！全体逻辑构造体所有技能冷却时间+2回合。",
+    type: "debuff_player",
+    cooldown: 15, // 第10回合后每15回合触发
+    currentCooldown: 10, // 初始需要10回合才能首次触发
+    triggerCondition: { type: "turn_count", value: 10 },
+    effect: {
+      specialEffect: "extend_cooldowns",
+      statusToApply: {
+        effectType: "entropy_erosion",
+        duration: 1,
+        value: 2, // 冷却+2回合
+      },
+    },
+    visualEffect: "void_404",
+  },
+
+  // ♾️ 死循环·衔尾蛇 - 无限迭代 (Infinite Iteration)
+  // 类型: 续航 | 触发: 被动（每次攻击后）| 效果: 恢复自身最大生命值10%
+  "skill-infinite-loop": {
+    id: "skill-infinite-loop",
+    name: "无限迭代",
+    nameEn: "Infinite Iteration",
+    description: "进入无穷循环，每次攻击后恢复自身最大生命值的10%。",
+    type: "heal_self",
+    cooldown: 0, // 被动技能，无冷却
+    currentCooldown: 0,
+    triggerCondition: { type: "always" }, // 每次攻击后自动触发
+    effect: {
+      healPercent: 10,
+      specialEffect: "heal_on_attack",
+    },
+    visualEffect: "ouroboros_glow",
+  },
+
+  // 💥 段错误·粉碎者 - 内存越界 (Memory Boundary Breach)
+  // 类型: AOE | 冷却: 8回合 | 效果: 0.5倍全体伤害，20%几率眩晕1回合
+  "skill-segfault": {
+    id: "skill-segfault",
+    name: "内存越界",
+    nameEn: "Memory Boundary Breach",
+    description: "突破内存边界，对全体逻辑构造体造成0.5倍基础伤害，并有20%几率使其陷入「眩晕」1回合。",
+    type: "damage_all",
+    cooldown: 8, // 每8回合触发一次
+    currentCooldown: 0,
+    triggerCondition: { type: "always" },
+    effect: {
+      damageMultiplier: 0.5, // 0.5倍伤害
+      specialEffect: "aoe_stun_chance",
+      statusToApply: {
+        effectType: "stunned",
+        duration: 1, // 眩晕1回合
+        value: 20, // 20%几率
+      },
+    },
+    visualEffect: "memory_shatter",
+  },
+
+  // ⭐ 奇点·抖动 (Boss) - 熵爆发 (Entropy Burst)
+  // 类型: 毁灭 | 触发: 每损失10%最大生命值 | 效果: 1.5倍全体伤害
+  "skill-singularity": {
+    id: "skill-singularity",
+    name: "熵爆发",
+    nameEn: "Entropy Burst",
+    description: "释放奇点蕴含的毁灭性能量！每损失10%最大生命值时自动触发，对全体逻辑构造体造成1.5倍伤害。",
+    type: "damage_all",
+    cooldown: 0, // 基于生命值触发，非冷却机制
+    currentCooldown: 0,
+    triggerCondition: { type: "hp_below", value: 10 }, // 每损失10%血量触发
+    effect: {
+      damageMultiplier: 1.5,
+      specialEffect: "scaling_damage_by_hp_lost",
+    },
+    visualEffect: "singularity_explosion",
+  },
+};
+
 // 4. 认知熵实体 (敌人)
 // 游戏中出现的敌对单位列表
 export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
@@ -365,6 +621,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     isDead: false,
     // 视觉故障强度 (0.0 - 1.0)，影响UI的扭曲程度
     visualGlitchIntensity: 0.2,
+    // 专属技能：信号干扰
+    skill: ENEMY_SKILLS["skill-white-noise"],
   },
   {
     id: "entropy-2",
@@ -377,6 +635,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.5,
+    // 专属技能：虚空坍缩
+    skill: ENEMY_SKILLS["skill-imaginary-collapse"],
   },
   {
     id: "entropy-3",
@@ -389,6 +649,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.3,
+    // 专属技能：引用消解
+    skill: ENEMY_SKILLS["skill-null-pointer"],
   },
   {
     id: "entropy-4",
@@ -401,6 +663,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.35,
+    // 专属技能：资源侵蚀
+    skill: ENEMY_SKILLS["skill-memory-leak"],
   },
   {
     id: "entropy-5",
@@ -413,6 +677,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.4,
+    // 专属技能：递归压制
+    skill: ENEMY_SKILLS["skill-stack-overflow"],
   },
   {
     id: "entropy-6",
@@ -425,6 +691,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.45,
+    // 专属技能：资源禁锢
+    skill: ENEMY_SKILLS["skill-deadlock"],
   },
   {
     id: "entropy-7",
@@ -437,6 +705,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.5,
+    // 专属技能：时序混乱
+    skill: ENEMY_SKILLS["skill-race-condition"],
   },
   {
     id: "entropy-8",
@@ -449,6 +719,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.55,
+    // 专属技能：系统崩溃
+    skill: ENEMY_SKILLS["skill-bsod-terror"],
   },
   {
     id: "entropy-9",
@@ -461,6 +733,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.6,
+    // 专属技能：资源丢失
+    skill: ENEMY_SKILLS["skill-not-found"],
   },
   {
     id: "entropy-10",
@@ -473,6 +747,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.65,
+    // 专属技能：无限迭代
+    skill: ENEMY_SKILLS["skill-infinite-loop"],
   },
   {
     id: "entropy-11",
@@ -485,6 +761,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     statusEffects: [],
     isDead: false,
     visualGlitchIntensity: 0.7,
+    // 专属技能：内存越界
+    skill: ENEMY_SKILLS["skill-segfault"],
   },
   {
     // 实体唯一标识符
@@ -507,6 +785,8 @@ export const INITIAL_ENTROPY_ENTITIES: EntropyEntity[] = [
     isDead: false,
     // 视觉故障强度
     visualGlitchIntensity: 0.8,
+    // Boss专属技能：熵爆发
+    skill: ENEMY_SKILLS["skill-singularity"],
   },
 ];
 
@@ -814,7 +1094,6 @@ export const INSCRIPTIONS: Inscription[] = [
 // 7. 游戏配置
 export const GAME_CONFIG = {
   entropyThreshold: 100,
-  baseDamage: 5,
   comboThreshold: 3,
   gachaCost: 100,
 } as const;

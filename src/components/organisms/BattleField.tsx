@@ -11,19 +11,23 @@ const ConstructCard: React.FC<{
     construct: Construct;
     onUseSkill: (constructId: string, skillId: string) => void;
     isActive: boolean;
-}> = ({ construct, onUseSkill, isActive }) => {
+    onSelect: (id: string) => void;
+}> = ({ construct, onUseSkill, isActive, onSelect }) => {
     const hpPercent = (construct.hp / construct.maxHp) * 100;
     const energyPercent = (construct.energy / construct.maxEnergy) * 100;
 
     return (
         <motion.div
-            className={`fui-panel p-6 relative shrink-0 ${construct.isDead ? 'opacity-40 grayscale' : ''}`}
+            className={`fui-panel p-6 relative shrink-0 ${construct.isDead ? 'opacity-40 grayscale cursor-not-allowed' : 'cursor-pointer'}`}
             initial={{ x: -50, opacity: 0 }}
             animate={{ x: 0, opacity: 1 }}
+            onClick={() => !construct.isDead && onSelect(construct.id)}
+            whileHover={!construct.isDead ? { scale: 1.02 } : {}}
+            whileTap={!construct.isDead ? { scale: 0.98 } : {}}
             style={{
                 boxShadow: isActive
                     ? '0 0 30px rgba(0, 243, 255, 0.4), inset 0 0 20px rgba(0, 243, 255, 0.1)'
-                    : undefined,
+                    : !construct.isDead ? '0 0 10px rgba(0, 243, 255, 0.1)' : undefined,
                 overflow: 'visible',
             }}
         >
@@ -42,10 +46,17 @@ const ConstructCard: React.FC<{
                     <h3 className="text-neon-cyan font-display font-bold text-sm truncate">{construct.name}</h3>
                     <span className="text-[12px] text-gray-500 font-mono truncate block">{construct.model}</span>
                 </div>
-                {/* 状态图标 */}
-                <div className="flex gap-1 shrink-0">
+                {/* 状态指示器 - 显示出战状态 */}
+                <div className="flex items-center gap-1 shrink-0">
                     {!construct.isDead && (
-                        <div className="w-2 h-2 bg-stable rounded-full animate-pulse" />
+                        <>
+                            {isActive ? (
+                                <span className="text-xs text-neon-cyan font-mono">⚔️ 出战中</span>
+                            ) : (
+                                <span className="text-xs text-gray-500 font-mono hover:text-neon-cyan/70">点击出战</span>
+                            )}
+                            <div className={`w-2 h-2 rounded-full animate-pulse ${isActive ? 'bg-neon-cyan' : 'bg-stable'}`} />
+                        </>
                     )}
                 </div>
             </div>
@@ -268,7 +279,9 @@ export const BattleField: React.FC = () => {
         battleState,
         currentTheme,
         selectedTargetId,
-        setSelectedTarget
+        setSelectedTarget,
+        activeConstructId,
+        setActiveConstruct
     } = useGameStore();
     const labels = currentTheme.pageLabels.battle;
 
@@ -289,6 +302,26 @@ export const BattleField: React.FC = () => {
             setSelectedTarget(aliveEnemies[0].id);
         }
     }, [entropyEntities, selectedTargetId, aliveEnemies, setSelectedTarget]);
+
+    // 计算存活的构造体
+    const aliveConstructs = constructs.filter(c => !c.isDead);
+    
+    // 如果当前选中的出战角色已死亡或未选择，自动选择第一个存活角色
+    React.useEffect(() => {
+        if (activeConstructId) {
+            const activeConstruct = constructs.find(c => c.id === activeConstructId);
+            if (!activeConstruct || activeConstruct.isDead) {
+                // 当前选中角色死亡，切换到第一个存活角色
+                const firstAlive = aliveConstructs[0];
+                if (firstAlive) {
+                    setActiveConstruct(firstAlive.id);
+                }
+            }
+        } else if (aliveConstructs.length > 0) {
+            // 没有选中任何角色，默认选择第一个存活角色
+            setActiveConstruct(aliveConstructs[0].id);
+        }
+    }, [constructs, activeConstructId, aliveConstructs, setActiveConstruct]);
 
     const {
         handleAnswerSubmit,
@@ -364,12 +397,13 @@ export const BattleField: React.FC = () => {
                         <div className="w-2 h-2 bg-neon-cyan rounded-full" />
                         {labels.constructsLabel}
                     </div>
-                    {constructs.map((construct, index) => (
+                    {constructs.map((construct) => (
                         <ConstructCard
                             key={construct.id}
                             construct={construct}
                             onUseSkill={useSkill}
-                            isActive={index === 0}
+                            isActive={activeConstructId === construct.id}
+                            onSelect={setActiveConstruct}
                         />
                     ))}
                 </motion.div>
