@@ -110,7 +110,6 @@ export const SettingsScreen: React.FC = () => {
         setProvider,
         setApiKey,
         setModel,
-        setAccountId,
         checkStatus,
         generateQuestions,
         generateTheme,
@@ -122,7 +121,6 @@ export const SettingsScreen: React.FC = () => {
     // UI State
     const [activeTab, setActiveTab] = useState<'china' | 'international'>('china');
     const [apiKeyInput, setApiKeyInput] = useState('');
-    const [accountIdInput, setAccountIdInput] = useState('');
     const [modelInput, setModelInput] = useState('');
     const [prevModel, setPrevModel] = useState<string | null>(null);
     const [saveStatus, setSaveStatus] = useState<'idle' | 'success'>('idle');
@@ -181,7 +179,6 @@ export const SettingsScreen: React.FC = () => {
     const handleSelectProvider = async (id: string) => {
         await setProvider(id);
         setApiKeyInput('');
-        setAccountIdInput('');
         setSaveStatus('idle');
     };
 
@@ -193,12 +190,6 @@ export const SettingsScreen: React.FC = () => {
                 setSaveStatus('success');
                 setTimeout(() => setSaveStatus('idle'), 3000);
             }
-        }
-    };
-
-    const handleSaveAccountId = async () => {
-        if (accountIdInput.trim()) {
-            await setAccountId(accountIdInput.trim());
         }
     };
 
@@ -509,30 +500,6 @@ export const SettingsScreen: React.FC = () => {
                                 )}
                             </motion.button>
                         </div>
-
-                        {/* Account ID for Cloudflare */}
-                        {providerId === 'cloudflare' && (
-                            <div className="flex gap-4">
-                                <div className="flex-1">
-                                    <input
-                                        type="text"
-                                        value={accountIdInput}
-                                        onChange={(e) => setAccountIdInput(e.target.value)}
-                                        placeholder="Cloudflare Account ID"
-                                        className="fui-input w-full"
-                                    />
-                                </div>
-                                <motion.button
-                                    onClick={handleSaveAccountId}
-                                    disabled={!accountIdInput.trim()}
-                                    className="hex-button px-6 disabled:opacity-50"
-                                    whileHover={{ scale: 1.02 }}
-                                    whileTap={{ scale: 0.98 }}
-                                >
-                                    保存 ID
-                                </motion.button>
-                            </div>
-                        )}
 
                         {/* Error Display */}
                         {error && (

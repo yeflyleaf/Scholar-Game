@@ -1,3 +1,8 @@
+/**
+ * Scholar Game - Electron Preload Script
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
+ */
 const { contextBridge, ipcRenderer } = require('electron');
 
 // Expose protected methods to the renderer process
@@ -12,7 +17,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
     setProvider: (providerId) => ipcRenderer.invoke('ai:set-provider', providerId),
     setApiKey: (apiKey) => ipcRenderer.invoke('ai:set-api-key', apiKey),
     setModel: (model) => ipcRenderer.invoke('ai:set-model', model),
-    setAccountId: (accountId) => ipcRenderer.invoke('ai:set-account-id', accountId),
     checkStatus: () => ipcRenderer.invoke('ai:check-status'),
     checkQuotaStatus: () => ipcRenderer.invoke('ai:check-quota-status'),
     resetQuota: () => ipcRenderer.invoke('ai:reset-quota'),

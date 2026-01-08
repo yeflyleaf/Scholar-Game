@@ -34,7 +34,6 @@ interface UseAIReturn {
   setProvider: (providerId: string) => Promise<boolean>;
   setApiKey: (key: string) => Promise<boolean>;
   setModel: (model: string) => Promise<boolean>;
-  setAccountId: (accountId: string) => Promise<boolean>;
   checkStatus: () => Promise<AIStatus | null>;
   testConnection: () => Promise<ConnectionTestResult>;
   
@@ -183,22 +182,6 @@ export function useAI(): UseAIReturn {
         setError(result.error || 'Failed to set model');
         return false;
       }
-    } catch (e) {
-      setError(e instanceof Error ? e.message : 'Unknown error');
-      return false;
-    }
-  }, [electronAPI]);
-
-  // Set account ID (for Cloudflare)
-  const setAccountId = useCallback(async (accountId: string): Promise<boolean> => {
-    if (!electronAPI?.ai) {
-      setError('AI API only available in Electron');
-      return false;
-    }
-
-    try {
-      const result = await electronAPI.ai.setAccountId(accountId);
-      return result.success;
     } catch (e) {
       setError(e instanceof Error ? e.message : 'Unknown error');
       return false;
@@ -445,7 +428,6 @@ export function useAI(): UseAIReturn {
     setProvider,
     setApiKey,
     setModel,
-    setAccountId,
     checkStatus,
     generateQuestions,
     generateKnowledgeTree,

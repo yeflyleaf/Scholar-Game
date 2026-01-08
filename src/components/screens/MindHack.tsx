@@ -95,13 +95,20 @@ const rarityConfig: Record<string, { bg: string; border: string; text: string; g
 };
 
 export const MindHack: React.FC = () => {
-    const { setScreen, performMindHack, currentTheme } = useGameStore();
+    const { setScreen, performMindHack, currentTheme, observerProfile } = useGameStore();
     const labels = currentTheme.pageLabels.mindHack;
     const [result, setResult] = useState<Inscription | null>(null);
     const [isHacking, setIsHacking] = useState(false);
     const [phase, setPhase] = useState<'idle' | 'hacking' | 'reveal'>('idle');
 
+    // 获取当前点数
+    const hackPoints = observerProfile.hackPoints;
+    const maxHackPoints = 3;
+    const canHack = hackPoints >= 1;
+
     const handleHack = async () => {
+        if (!canHack) return;
+        
         setIsHacking(true);
         setPhase('hacking');
         
@@ -109,8 +116,13 @@ export const MindHack: React.FC = () => {
         await new Promise(resolve => setTimeout(resolve, 2500));
         
         const item = performMindHack();
-        setResult(item);
-        setPhase('reveal');
+        if (item) {
+            setResult(item);
+            setPhase('reveal');
+        } else {
+            // 点数不足，返回 idle 状态
+            setPhase('idle');
+        }
         setIsHacking(false);
     };
 
@@ -159,63 +171,122 @@ export const MindHack: React.FC = () => {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.8 }}
                         >
+                            {/* 抽卡点数显示 */}
+                            <motion.div 
+                                className="mb-6 flex flex-col items-center gap-2"
+                                initial={{ opacity: 0, y: -20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.2 }}
+                            >
+                                <span className="text-sm font-mono text-gray-400 tracking-wider">量子能量储备</span>
+                                <div className="flex gap-3">
+                                    {[...Array(maxHackPoints)].map((_, i) => (
+                                        <motion.div
+                                            key={i}
+                                            className={`w-8 h-8 rounded-full border-2 flex items-center justify-center ${
+                                                i < hackPoints 
+                                                    ? 'border-neon-cyan bg-neon-cyan/20' 
+                                                    : 'border-gray-600 bg-gray-800/50'
+                                            }`}
+                                            animate={i < hackPoints ? {
+                                                boxShadow: ['0 0 10px rgba(0, 243, 255, 0.3)', '0 0 20px rgba(0, 243, 255, 0.5)', '0 0 10px rgba(0, 243, 255, 0.3)'],
+                                            } : {}}
+                                            transition={{ duration: 2, repeat: Infinity, delay: i * 0.2 }}
+                                        >
+                                            <span className={`text-sm font-bold ${i < hackPoints ? 'text-neon-cyan' : 'text-gray-600'}`}>
+                                                ⬡
+                                            </span>
+                                        </motion.div>
+                                    ))}
+                                </div>
+                                <span className={`text-xs font-mono ${hackPoints > 0 ? 'text-neon-cyan' : 'text-glitch-red'}`}>
+                                    {hackPoints} / {maxHackPoints} 点
+                                </span>
+                            </motion.div>
+
                             {/* 骇入按钮 */}
                             <motion.button
                                 onClick={handleHack}
-                                className="relative w-72 h-72 rounded-full flex items-center justify-center group"
-                                whileHover={{ scale: 1.05 }}
-                                whileTap={{ scale: 0.95 }}
+                                disabled={!canHack}
+                                className={`relative w-72 h-72 rounded-full flex items-center justify-center group ${
+                                    !canHack ? 'cursor-not-allowed opacity-50' : ''
+                                }`}
+                                whileHover={canHack ? { scale: 1.05 } : {}}
+                                whileTap={canHack ? { scale: 0.95 } : {}}
                             >
                                 {/* 外环 */}
-                                <div className="absolute inset-0 rounded-full border-2 border-neon-cyan/30" />
+                                <div className={`absolute inset-0 rounded-full border-2 ${
+                                    canHack ? 'border-neon-cyan/30' : 'border-gray-600/30'
+                                }`} />
                                 
                                 {/* 旋转虚线环 */}
                                 <motion.div
-                                    className="absolute inset-2 rounded-full border border-dashed border-neon-cyan/50"
-                                    animate={{ rotate: 360 }}
+                                    className={`absolute inset-2 rounded-full border border-dashed ${
+                                        canHack ? 'border-neon-cyan/50' : 'border-gray-600/50'
+                                    }`}
+                                    animate={{ rotate: canHack ? 360 : 0 }}
                                     transition={{ duration: 20, repeat: Infinity, ease: 'linear' }}
                                 />
                                 
                                 {/* 内部光晕圆 */}
                                 <motion.div
-                                    className="absolute inset-8 rounded-full bg-gradient-to-br from-neon-cyan/10 to-transparent"
-                                    animate={{
+                                    className={`absolute inset-8 rounded-full bg-gradient-to-br ${
+                                        canHack ? 'from-neon-cyan/10' : 'from-gray-600/10'
+                                    } to-transparent`}
+                                    animate={canHack ? {
                                         boxShadow: [
                                             '0 0 30px rgba(0, 243, 255, 0.2)',
                                             '0 0 60px rgba(0, 243, 255, 0.4)',
                                             '0 0 30px rgba(0, 243, 255, 0.2)',
                                         ],
-                                    }}
+                                    } : {}}
                                     transition={{ duration: 2, repeat: Infinity }}
                                 />
                                 
                                 {/* 六边形图标 */}
                                 <motion.div
                                     className="relative z-10"
-                                    animate={{
+                                    animate={canHack ? {
                                         rotateY: [0, 180, 360],
-                                    }}
+                                    } : {}}
                                     transition={{ duration: 6, repeat: Infinity, ease: 'easeInOut' }}
                                 >
-                                    <span className="text-6xl text-neon-cyan group-hover:text-white transition-colors">
+                                    <span className={`text-6xl ${
+                                        canHack 
+                                            ? 'text-neon-cyan group-hover:text-white' 
+                                            : 'text-gray-600'
+                                    } transition-colors`}>
                                         ⬡
                                     </span>
                                 </motion.div>
                                 
                                 {/* 文本 */}
                                 <div className="absolute inset-0 flex flex-col items-center justify-center">
-                                    <span className="text-2xl font-display text-neon-cyan group-hover:text-white transition-colors mt-24">
-                                        {labels.hackButton}
+                                    <span className={`text-2xl font-display ${
+                                        canHack 
+                                            ? 'text-neon-cyan group-hover:text-white' 
+                                            : 'text-gray-600'
+                                    } transition-colors mt-24`}>
+                                        {canHack ? labels.hackButton : '能量不足'}
                                     </span>
                                     <span className="text-xs font-mono text-gray-500 mt-2">
-                                        INITIATE HACK
+                                        {canHack ? 'INITIATE HACK' : 'INSUFFICIENT ENERGY'}
                                     </span>
                                 </div>
                             </motion.button>
 
                             <p className="text-sm font-mono text-gray-500 mt-8 text-center max-w-md">
-                                连接量子之海，打捞前文明的残响...<br/>
-                                <span className="text-neon-cyan/50">{labels.warningText}</span>
+                                {canHack ? (
+                                    <>
+                                        连接量子之海，打捞前文明的残响...<br/>
+                                        <span className="text-neon-cyan/50">{labels.warningText}</span>
+                                    </>
+                                ) : (
+                                    <>
+                                        量子能量不足，无法建立连接...<br/>
+                                        <span className="text-glitch-red/70">通关战斗关卡可获得能量点</span>
+                                    </>
+                                )}
                             </p>
                         </motion.div>
                     )}

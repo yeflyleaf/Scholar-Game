@@ -8,7 +8,19 @@
 export type ConstructModel = "ARBITER" | "WEAVER" | "ARCHITECT";
 
 // Entropy Form - 认知熵形态 (敌人类型)
-export type EntropyForm = "WHITE_NOISE" | "IMAGINARY_COLLAPSE" | "SINGULARITY";
+export type EntropyForm = 
+  | "WHITE_NOISE" 
+  | "IMAGINARY_COLLAPSE" 
+  | "SINGULARITY"
+  | "NULL_POINTER"
+  | "MEMORY_LEAK"
+  | "STACK_OVERFLOW"
+  | "DEADLOCK_PHANTOM"
+  | "RACE_CONDITION"
+  | "BSOD_TERROR"
+  | "NOT_FOUND_VOID"
+  | "INFINITE_LOOP"
+  | "SEGFAULT_BREAKER";
 
 // Question Types - 题目类型
 export type QuestionType =
@@ -70,9 +82,9 @@ export interface Skill {
   cooldown: number;
   currentCooldown: number;
   type: "active" | "passive" | "ultimate";
-  targetType: "self" | "single_enemy" | "all_enemies";
+  targetType: "self" | "single_enemy" | "all_enemies" | "ally";
   cost?: number; // 能量/MP 消耗
-  visualEffect?: "data_deletion" | "binary_stream" | "hex_shield"; // 用于视觉特效
+  visualEffect?: "data_deletion" | "binary_stream" | "hex_shield" | "digital_storm" | "time_rewind"; // 用于视觉特效
 }
 
 export interface Construct {
@@ -121,7 +133,7 @@ export interface Question {
 export interface Inscription {
   id: string;
   name: string;
-  rarity: "R" | "SR" | "SSR";
+    rarity: "N" | "R" | "SR" | "SSR";
   description: string;
   effect: (target: Construct | EntropyEntity) => void;
   icon: string; // 六边形图标路径
@@ -161,6 +173,7 @@ export interface ObserverProfile {
   inventory: Inscription[];
   clearedSectors: string[];
   entropyStabilized: number; // 总共降低的熵值 (分数)
+  hackPoints: number; // 铭文抽卡点数 (初始1点，通关+1，最多3点)
 }
 
 // 4. 视觉效果与日志
@@ -245,7 +258,7 @@ export interface GameTheme {
   inscriptions: Array<{
     id: string;
     name: string;                  // 原 "银行家算法"
-    rarity: "R" | "SR" | "SSR";
+      rarity: "N" | "R" | "SR" | "SSR";
     description: string;           // 铭文效果描述
   }>;
 

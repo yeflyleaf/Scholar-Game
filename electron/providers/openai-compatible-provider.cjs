@@ -2,7 +2,9 @@
  * OpenAI 兼容提供商
  * 处理所有使用 OpenAI 兼容 API 格式的提供商
  * 支持：DeepSeek、Groq、硅基流动、Kimi、OpenRouter、Together、Fireworks、
- *       Cerebras、Mistral、AIML、阿里云、华为、火山引擎、腾讯、百度
+ *       Cerebras、Mistral、AIML、阿里云、华为、火山引擎、百度
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 
 const { BaseProvider } = require('./base-provider.cjs');
@@ -32,7 +34,6 @@ class OpenAICompatibleProvider extends BaseProvider {
 
     // 额外配置
     this.extraHeaders = config.extraHeaders || {};
-    this.accountId = config.accountId || null; // 用于 Cloudflare
   }
 
   getAvailableModels() {
@@ -48,10 +49,6 @@ class OpenAICompatibleProvider extends BaseProvider {
    * 构建请求 URL
    */
   getRequestUrl() {
-    // 处理 Cloudflare 的特殊 URL 格式
-    if (this.providerName === 'cloudflare' && this.accountId) {
-      return this.baseUrl.replace('{account_id}', this.accountId) + `/${this.model}`;
-    }
     return `${this.baseUrl}/chat/completions`;
   }
 
@@ -176,9 +173,25 @@ class OpenAICompatibleProvider extends BaseProvider {
       const data = await response.json();
       
       // 处理不同的响应格式
-      // 1. 标准 OpenAI 格式
-      if (data.choices && data.choices[0]?.message?.content) {
-        return data.choices[0].message.content;
+      // 1. 标准 OpenAI 格式（含推理模型支持，如智谱 glm-4.6）
+      if (data.choices && data.choices[0]?.message) {
+        const message = data.choices[0].message;
+        // 推理模型（如 glm-4.6、DeepSeek-R1）可能将内容放在 reasoning_content
+        // content 可能是空字符串 ""，需要用 typeof 和 length 判断
+        const content = message.content;
+        const reasoningContent = message.reasoning_content;
+        
+        // 优先返回 content（非空字符串）
+        if (typeof content === 'string' && content.trim().length > 0) {
+          return content;
+        }
+        // 如果 content 为空，尝试 reasoning_content
+        if (typeof reasoningContent === 'string' && reasoningContent.trim().length > 0) {
+          console.log(`[${this.providerName}] Using reasoning_content from response`);
+          return reasoningContent;
+        }
+        // 如果两者都为空，返回一个明确的提示
+        console.warn(`[${this.providerName}] Both content and reasoning_content are empty`);
       }
       // 2. 百度千帆/文心一言格式
       if (data.result) {
@@ -192,19 +205,15 @@ class OpenAICompatibleProvider extends BaseProvider {
       if (data.response) {
         return data.response;
       }
-      // 5. 腾讯云混元格式
-      if (data.Response?.Choices?.[0]?.Message?.Content) {
-        return data.Response.Choices[0].Message.Content;
-      }
-      // 6. 通用 content 字段
+      // 5. 通用 content 字段
       if (data.content) {
         return data.content;
       }
-      // 7. 通用 text 字段
+      // 6. 通用 text 字段
       if (data.text) {
         return data.text;
       }
-      // 8. 通用 output 字段（阿里云等）
+      // 7. 通用 output 字段（阿里云等）
       if (data.output?.text) {
         return data.output.text;
       }
@@ -229,10 +238,6 @@ class OpenAICompatibleProvider extends BaseProvider {
   /**
    * 设置额外配置
    */
-  setAccountId(accountId) {
-    this.accountId = accountId;
-  }
-
   setExtraHeaders(headers) {
     this.extraHeaders = headers;
   }

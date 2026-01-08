@@ -1,6 +1,8 @@
 /**
  * 基础 AI 提供商 - 所有 AI 提供商的抽象基类
  * 所有提供商必须实现这些方法
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 
 class BaseProvider {

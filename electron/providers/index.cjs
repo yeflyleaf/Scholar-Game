@@ -1,13 +1,13 @@
 /**
  * 提供商索引
  * 导出所有提供商和工具
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 
 const { BaseProvider } = require('./base-provider.cjs');
 const { GeminiProvider } = require('./gemini-provider.cjs');
 const { OpenAICompatibleProvider } = require('./openai-compatible-provider.cjs');
-const { HuggingFaceProvider } = require('./huggingface-provider.cjs');
-const { CloudflareProvider } = require('./cloudflare-provider.cjs');
 const { 
   PROVIDER_REGISTRY, 
   getAllProviders, 
@@ -28,8 +28,6 @@ module.exports = {
   // Providers
   GeminiProvider,
   OpenAICompatibleProvider,
-  HuggingFaceProvider,
-  CloudflareProvider,
   
   // Registry
   PROVIDER_REGISTRY,

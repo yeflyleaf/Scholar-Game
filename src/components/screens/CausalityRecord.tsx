@@ -104,9 +104,17 @@ const ReconstructionEffect: React.FC = () => {
 };
 
 export const CausalityRecord: React.FC = () => {
-    const { setScreen, battleState, currentSector, resetBattle } = useGameStore();
+    const { setScreen, battleState, currentSector, resetBattle, addHackPoint } = useGameStore();
     // 使用本地状态锁定结果，防止在点击继续（重置战斗状态）时闪烁错误页面
-    const [isVictory] = useState(battleState === 'VICTORY');
+    // 同时在初始化时处理胜利奖励，避免使用 useEffect 导致级联渲染
+    const [isVictory] = useState(() => {
+        const victory = battleState === 'VICTORY';
+        if (victory) {
+            // 胜利时增加抽卡点数（在初始化期间执行，只运行一次）
+            addHackPoint();
+        }
+        return victory;
+    });
 
     const handleContinue = () => {
         resetBattle();

@@ -1,3 +1,8 @@
+/**
+ * Scholar Game - Application Root Component
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
+ */
 // 应用程序入口 (App) - 处理屏幕路由切换
 import { AnimatePresence, motion } from 'framer-motion';
 import {

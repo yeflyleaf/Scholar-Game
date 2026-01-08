@@ -115,7 +115,6 @@ export interface AIAPI {
   setProvider: (providerId: string) => Promise<APIResponse<void>>;
   setApiKey: (apiKey: string) => Promise<APIResponse<void>>;
   setModel: (model: string) => Promise<APIResponse<void>>;
-  setAccountId: (accountId: string) => Promise<APIResponse<void>>;
   checkStatus: () => Promise<AIStatus>;
   checkQuotaStatus: () => Promise<QuotaStatus>;
   resetQuota: () => Promise<APIResponse<void>>;

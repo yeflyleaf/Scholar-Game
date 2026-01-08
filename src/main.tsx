@@ -1,6 +1,7 @@
 /**
  * Scholar Game - Frontend Entry Point
- * Author: yeflyleaf
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 // 入口文件 (main) - 渲染 React 应用根组件
 import { StrictMode } from 'react';

@@ -64,7 +64,8 @@ interface GameState {
     unlockSector: (sectorId: string) => void;
 
     // === 思维骇入 (抽卡) ===
-    performMindHack: () => Inscription;
+    performMindHack: () => Inscription | null; // 返回rnull表示点数不足
+    addHackPoint: () => void; // 通关后增加抽卡点数
 
     // === 战斗系统 ===
     battleState: BattleState;
@@ -158,7 +159,8 @@ export const useGameStore = create<GameState>()(
                 unlockedConstructs: ['ARBITER', 'WEAVER', 'ARCHITECT'],
                 inventory: [],
                 clearedSectors: [],
-                entropyStabilized: 0
+                entropyStabilized: 0,
+                hackPoints: 1 // 初始1个抽卡点数
             },
 
             sectors: STAR_SECTORS,
@@ -202,7 +204,8 @@ export const useGameStore = create<GameState>()(
                     unlockedConstructs: ['ARBITER', 'WEAVER', 'ARCHITECT'],
                     inventory: [],
                     clearedSectors: [],
-                    entropyStabilized: 0
+                    entropyStabilized: 0,
+                    hackPoints: 1 // 重置时也是1个点数
                 },
                 sectors: STAR_SECTORS,
                 currentTheme: DEFAULT_THEME, // Reset theme as well
@@ -244,18 +247,84 @@ export const useGameStore = create<GameState>()(
 
             // === 思维骇入 ===
             performMindHack: () => {
-                // 简单的随机抽卡逻辑
-                const randomIndex = Math.floor(Math.random() * INSCRIPTIONS.length);
-                const item = INSCRIPTIONS[randomIndex];
+                const { observerProfile } = get();
                 
+                // 检查是否有足够的抽卡点数
+                if (observerProfile.hackPoints < 1) {
+                    console.log('[思维骇入] 点数不足，无法抽卡');
+                    return null;
+                }
+                
+                // 抽卡概率配置
+                // SSR: 13%, SR: 17%, R: 20%, N: 25% (每个N物品)
+                // 总和: 13 + 17 + 20 + 25 + 25 = 100%
+                
+                const weights: Record<string, number> = {
+                    'SSR': 13,
+                    'SR': 17,
+                    'R': 20,
+                    'N': 25 
+                };
+
+                // 创建带权重的物品列表
+                const weightedItems = INSCRIPTIONS.map(item => ({
+                    item,
+                    weight: weights[item.rarity] || 0
+                }));
+
+                // 计算总权重
+                const totalWeight = weightedItems.reduce((sum, { weight }) => sum + weight, 0);
+                
+                // 生成随机数
+                const randomValue = Math.random() * totalWeight;
+                let cumulativeProbability = 0;
+                let selectedItem: Inscription | undefined;
+                
+                for (const { item, weight } of weightedItems) {
+                    cumulativeProbability += weight;
+                    if (randomValue < cumulativeProbability) {
+                        selectedItem = item;
+                        break;
+                    }
+                }
+                
+                // Fallback
+                if (!selectedItem) selectedItem = INSCRIPTIONS[INSCRIPTIONS.length - 1];
+
+                // 消耗1个点数并添加物品到背包
                 set(state => ({
                     observerProfile: {
                         ...state.observerProfile,
-                        inventory: [...state.observerProfile.inventory, item]
+                        hackPoints: state.observerProfile.hackPoints - 1,
+                        inventory: [...state.observerProfile.inventory, selectedItem!]
                     }
                 }));
                 
-                return item;
+                console.log(`[思维骇入] 抽卡成功！获得: ${selectedItem!.name} (剩余点数: ${get().observerProfile.hackPoints})`);
+                return selectedItem!;
+            },
+
+            // 通关后增加抽卡点数
+            addHackPoint: () => {
+                set(state => {
+                    const currentPoints = state.observerProfile.hackPoints;
+                    const maxPoints = 3; // 最多存储3个点数
+                    
+                    if (currentPoints >= maxPoints) {
+                        console.log(`[思维骇入] 点数已达上限 (${maxPoints})`);
+                        return state;
+                    }
+                    
+                    const newPoints = currentPoints + 1;
+                    console.log(`[思维骇入] 通关奖励，点数+1 (当前: ${newPoints}/${maxPoints})`);
+                    
+                    return {
+                        observerProfile: {
+                            ...state.observerProfile,
+                            hackPoints: newPoints
+                        }
+                    };
+                });
             },
 
             // === 战斗设置 ===
@@ -322,11 +391,16 @@ export const useGameStore = create<GameState>()(
                 // 判断是否使用AI题目
                 const isAIMode = sector.aiQuestions && sector.aiQuestions.length > 0;
 
+                // 深拷贝并将能量值重置为0
+                const battleConstructs = JSON.parse(JSON.stringify(INITIAL_CONSTRUCTS)).map(
+                    (c: Construct) => ({ ...c, energy: 0 })
+                );
+                
                 set({
                     currentScreen: 'BATTLE',
                     currentSector: sector,
                     entropyEntities: JSON.parse(JSON.stringify(sector.entropyEntities)), // 深拷贝
-                    constructs: JSON.parse(JSON.stringify(INITIAL_CONSTRUCTS)), // 重置队伍
+                    constructs: battleConstructs, // 重置队伍，能量归零
                     battleState: 'PLAYER_TURN',
                     currentTurn: 1,
                     battleLog: [],
@@ -371,7 +445,7 @@ export const useGameStore = create<GameState>()(
                 }
 
                 // 扣除消耗
-                const updatedConstructs = constructs.map(c => 
+                let currentConstructsState = constructs.map(c => 
                     c.id === constructId 
                         ? { ...c, energy: c.energy - (skill.cost || 0) } 
                         : c
@@ -380,12 +454,15 @@ export const useGameStore = create<GameState>()(
                 // 应用效果
                 let updatedEnemies = [...entropyEntities];
                 
+                // 伤害倍率 (终极技能伤害更高)
+                const damageMultiplier = skill.type === 'ultimate' ? 2.5 : 1;
+
                 if (skill.targetType === 'single_enemy' && targetId) {
                     updatedEnemies = updatedEnemies.map(e => {
                         if (e.id === targetId) {
-                            const damage = 50; // 基础技能伤害
+                            const damage = Math.floor(50 * damageMultiplier); 
                             const newHp = Math.max(0, e.hp - damage);
-                            addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); // 模拟坐标
+                            addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' }); 
                             return { ...e, hp: newHp, isDead: newHp <= 0 };
                         }
                         return e;
@@ -393,16 +470,27 @@ export const useGameStore = create<GameState>()(
                     addBattleLog(`${construct.name} 对目标使用了 ${skill.name}！`, 'combat');
                 } else if (skill.targetType === 'all_enemies') {
                      updatedEnemies = updatedEnemies.map(e => {
-                        const damage = 30; // AOE 伤害
+                        const damage = Math.floor(30 * damageMultiplier);
                         const newHp = Math.max(0, e.hp - damage);
                         addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
                         return { ...e, hp: newHp, isDead: newHp <= 0 };
                     });
                     addBattleLog(`${construct.name} 对所有敌人使用了 ${skill.name}！`, 'combat');
+                } else if (skill.targetType === 'ally') {
+                    // 治疗/护盾逻辑
+                    const healAmount = skill.type === 'ultimate' ? 100 : 30;
+                    currentConstructsState = currentConstructsState.map(c => {
+                        const newHp = Math.min(c.maxHp, c.hp + healAmount);
+                        if (newHp > c.hp) {
+                             addDamageIndicator({ value: newHp - c.hp, x: 50, y: 50, type: 'heal' });
+                        }
+                        return { ...c, hp: newHp };
+                    });
+                    addBattleLog(`${construct.name} 对全体队友使用了 ${skill.name}！`, 'combat');
                 }
 
                 // 设置冷却
-                const finalConstructs = updatedConstructs.map(c => 
+                const finalConstructs = currentConstructsState.map(c => 
                     c.id === constructId 
                         ? { 
                             ...c, 
@@ -435,6 +523,19 @@ export const useGameStore = create<GameState>()(
 
                 if (isCorrect) {
                     addBattleLog('逻辑验证成功！熵值降低。', 'system');
+                    
+                    // 答对题目，为每个存活的构造体增加 10 点能量
+                    const energyGain = 10;
+                    const updatedConstructs = get().constructs.map(c => {
+                        if (!c.isDead) {
+                            const newEnergy = Math.min(c.maxEnergy, c.energy + energyGain);
+                            return { ...c, energy: newEnergy };
+                        }
+                        return c;
+                    });
+                    set({ constructs: updatedConstructs });
+                    addBattleLog(`能量充能 +${energyGain}！`, 'system');
+                    
                     // 对随机敌人或所有敌人造成伤害
                     const damage = GAME_CONFIG.baseDamage;
                     const updatedEnemies = entropyEntities.map(e => {
@@ -642,20 +743,16 @@ export const useGameStore = create<GameState>()(
                     }
                     
                     const neededCount = questionsPerSector[sectorIndex];
-                    const sectorQuestions: Question[] = [];
                     
-                    // 从题库中选择题目，如果不够则循环使用
-                    for (let i = 0; i < neededCount; i++) {
-                        const questionIndex = i % totalAvailable;
-                        const question = { 
-                            ...allQuestions[questionIndex],
-                            // 为每个关卡的题目生成唯一ID，避免重复
-                            id: `${sector.id}-${allQuestions[questionIndex].id}-${i}`
-                        };
-                        sectorQuestions.push(question);
-                    }
+                    // 修改逻辑：将所有AI题目都分配给该关卡，让 startBattle 在进入战斗时随机抽取
+                    // 这样每次进入关卡都会从总题库中随机选择指定数量的题目
+                    const sectorQuestions = allQuestions.map((q, i) => ({
+                        ...q,
+                        // 为每个关卡的题目生成唯一ID，避免重复
+                        id: `${sector.id}-${q.id}-${i}`
+                    }));
                     
-                    console.log(`[AI分配] 关卡 "${sector.name}" (${sector.id}): 分配 ${sectorQuestions.length} 道题目`);
+                    console.log(`[AI分配] 关卡 "${sector.name}" (${sector.id}): 关联全量题库 ${sectorQuestions.length} 题 (需抽取 ${neededCount} 题)`);
                     
                     return {
                         ...sector,

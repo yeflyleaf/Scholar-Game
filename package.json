@@ -4,7 +4,15 @@
   "version": "1.4.0",
   "description": "智者计划 - 为世界上所有的不挂科而战！",
   "license": "AGPL-3.0",
-  "author": "yeflyleaf",
+  "author": {
+    "name": "yeflyleaf",
+    "url": "https://github.com/yeflyleaf"
+  },
+  "homepage": "https://github.com/yeflyleaf",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/yeflyleaf"
+  },
   "main": "electron/main.cjs",
   "type": "module",
   "scripts": {

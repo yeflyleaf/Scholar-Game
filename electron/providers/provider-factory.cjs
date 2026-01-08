@@ -1,12 +1,12 @@
 /**
  * AI 提供商工厂
  * 根据提供商 ID 创建适当的提供商实例
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 
 const { GeminiProvider } = require('./gemini-provider.cjs');
 const { OpenAICompatibleProvider } = require('./openai-compatible-provider.cjs');
-const { HuggingFaceProvider } = require('./huggingface-provider.cjs');
-const { CloudflareProvider } = require('./cloudflare-provider.cjs');
 const { getProviderById, getAllProviders } = require('./provider-registry.cjs');
 
 /**
@@ -35,12 +35,6 @@ function createProvider(providerId, config = {}) {
     
     case 'openai-compatible':
       return new OpenAICompatibleProvider(mergedConfig);
-    
-    case 'huggingface':
-      return new HuggingFaceProvider(mergedConfig);
-    
-    case 'cloudflare':
-      return new CloudflareProvider(mergedConfig);
     
     default:
       // 未知类型默认为 OpenAI 兼容

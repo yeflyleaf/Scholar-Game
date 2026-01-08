@@ -1,6 +1,8 @@
 /**
  * 统一 AI 服务
  * 管理 AI 提供商并处理内容生成的主要服务
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 
 const fs = require('fs');
@@ -14,7 +16,6 @@ class AIService {
     this.providerId = null;
     this.apiKey = null;
     this.model = null;
-    this.accountId = null; // 用于 Cloudflare
     
     // 配额耗尽状态 Map <providerId, timestamp>
     // 记录每个提供商的配额耗尽时间
@@ -98,7 +99,6 @@ class AIService {
         this.providerId = config.providerId || 'gemini';
         this.apiKey = config.apiKey || null;
         this.model = config.model || null;
-        this.accountId = config.accountId || null;
         return config;
       } catch (e) {
         console.error('[AIService] Failed to load config:', e);
@@ -114,7 +114,6 @@ class AIService {
       providerId: this.providerId,
       apiKey: this.apiKey,
       model: this.model,
-      accountId: this.accountId,
     };
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
   }
@@ -129,7 +128,6 @@ class AIService {
       this.provider = createProvider(this.providerId, {
         apiKey: this.apiKey,
         model: this.model,
-        accountId: this.accountId,
       });
       console.log(`[AIService] Initialized provider: ${this.providerId}`);
       return true;
@@ -170,14 +168,6 @@ class AIService {
     this.saveConfig();
     if (this.provider) {
       this.provider.setModel(model);
-    }
-  }
-
-  setAccountId(accountId) {
-    this.accountId = accountId;
-    this.saveConfig();
-    if (this.provider && typeof this.provider.setAccountId === 'function') {
-      this.provider.setAccountId(accountId);
     }
   }
 
@@ -241,16 +231,6 @@ class AIService {
       this.provider.setModel(this.model);
     }
 
-    // 5. 对于 Cloudflare，还需要检查 accountId
-    if (this.providerId === 'cloudflare') {
-      if (!this.accountId) {
-        return { success: false, message: 'Cloudflare Account ID 未设置' };
-      }
-      if (typeof this.provider.setAccountId === 'function') {
-        this.provider.setAccountId(this.accountId);
-      }
-    }
-
     const startTime = Date.now();
     try {
       console.log(`[AIService] 测试连接: ${this.providerId} / ${this.model}`);
@@ -279,212 +259,176 @@ class AIService {
       console.error(`[AIService] 测试失败:`, error.message);
       
       // 8. 提供更友好的错误信息
-      // 整合硅基流动 + Google Gemini + 通用 OpenAI 兼容 API 的错误码
+      // 整合七大厂商 (Gemini, SiliconFlow, Groq, X.AI, OpenAI, Zhipu, Baidu) 的错误码
       let errorMessage = error.message;
       const msg = errorMessage.toLowerCase();
       
+      // 辅助函数：检查是否包含关键字
+      const has = (...keywords) => keywords.some(k => msg.includes(k.toLowerCase()));
+
       // ========================================
       // 4xx 客户端错误
       // ========================================
       
       // 400 Bad Request - 请求参数不正确
-      // 硅基流动: max_tokens 设置过高
-      // Gemini: INVALID_ARGUMENT (请求格式错误), FAILED_PRECONDITION (免费层不可用/未启用计费)
-      if (msg.includes('400') || msg.includes('bad request') || msg.includes('invalid request') || msg.includes('invalid_request') || msg.includes('invalid_argument')) {
-        if (msg.includes('max_tokens') || msg.includes('max_total_tokens') || msg.includes('max_seq_len') || msg.includes('maxoutputtokens')) {
+      if (has('400', 'bad request', 'invalid request', 'invalid_request', 'invalid_argument', '1003', '1214')) {
+        if (has('max_tokens', 'max_total_tokens', 'max_seq_len', 'maxoutputtokens')) {
           errorMessage = '请求参数错误：max_tokens 设置过高，请减少生成长度';
-        } else if (msg.includes('failed_precondition') || msg.includes('precondition') || msg.includes('not available in your country') || msg.includes('billing')) {
+        } else if (has('failed_precondition', 'precondition', 'not available in your country', 'billing')) {
           errorMessage = 'Gemini API 在当前地区不可用，或需要启用 Google Cloud 计费';
-        } else if (msg.includes('model') || msg.includes('invalid_model')) {
-          errorMessage = '请求参数错误：模型名称无效，请检查模型配置';
-        } else if (msg.includes('api_key') || msg.includes('apikey')) {
+        } else if (has('model', 'invalid_model', 'unsupported model')) {
+          errorMessage = '请求参数错误：模型名称无效或不支持，请检查模型配置';
+        } else if (has('api_key', 'apikey', 'auth')) {
           errorMessage = 'API 密钥格式错误，请检查密钥是否完整';
+        } else if (has('1214', 'content cannot be empty')) {
+          errorMessage = '智谱AI：输入内容为空或格式错误';
         } else {
-          errorMessage = '请求参数错误，请检查 API 配置是否正确';
-        }
-      }
-      // 401 Unauthorized - API Key 无效
-      // 硅基流动: API Key 设置不正确
-      // Gemini: API key 无效/泄露被封/端点配置错误/区域限制
-      else if (msg.includes('401') || msg.includes('unauthorized') || msg.includes('invalid api key') || msg.includes('invalid_api_key') || msg.includes('authentication') || msg.includes('api key not valid')) {
-        if (msg.includes('leaked') || msg.includes('blocked') || msg.includes('revoked')) {
-          errorMessage = 'API 密钥已被撤销或封禁，请重新生成密钥';
-        } else if (msg.includes('endpoint') || msg.includes('vertex')) {
-          errorMessage = 'API 端点配置错误，请确认使用正确的 API 格式';
-        } else if (msg.includes('region') || msg.includes('country') || msg.includes('地区')) {
-          errorMessage = 'API 在当前地区不可用，请检查是否需要代理';
-        } else {
-          errorMessage = 'API 密钥无效，请检查密钥是否正确';
-        }
-      }
-      // 402 Payment Required - 需要付费/余额不足
-      else if (msg.includes('402') || msg.includes('payment required') || msg.includes('insufficient_quota') || msg.includes('billing') || msg.includes('insufficient quota')) {
-        errorMessage = '账户余额不足或需要启用付费，请前往平台充值';
-      }
-      // 403 Forbidden - 权限不足
-      // 硅基流动: 【未实名认证】最常见，余额不足，无模型权限
-      // Gemini: PERMISSION_DENIED (API key 权限不足/微调模型未认证/违反服务条款)
-      else if (msg.includes('403') || msg.includes('forbidden') || msg.includes('permission_denied') || msg.includes('permission denied') || msg.includes('权限不足')) {
-        if (msg.includes('实名') || msg.includes('认证') || msg.includes('verify') || msg.includes('verification') || msg.includes('identity')) {
-          errorMessage = '账户未实名认证，请先完成实名认证后重试';
-        } else if (msg.includes('tuned') || msg.includes('fine-tune') || msg.includes('finetune')) {
-          errorMessage = '微调模型权限不足，请检查模型访问权限';
-        } else if (msg.includes('terms') || msg.includes('tos') || msg.includes('policy') || msg.includes('violation')) {
-          errorMessage = '请求可能违反服务条款，请检查输入内容';
-        } else if (msg.includes('余额') || msg.includes('balance') || msg.includes('quota') || msg.includes('credit')) {
-          errorMessage = '账户余额不足或已欠费，请充值后重试';
-        } else if (msg.includes('region') || msg.includes('country') || msg.includes('地区') || msg.includes('location')) {
-          errorMessage = 'API 在当前地区受限，请检查是否需要代理';
-        } else {
-          errorMessage = '权限不足，请检查：1.是否已实名认证 2.账户余额是否充足 3.是否有该模型的使用权限 4.是否需要代理访问';
-        }
-      }
-      // 404 Not Found - 资源/模型不存在
-      // Gemini: 文件/模型不存在，参数对当前 API 版本无效
-      else if (msg.includes('404') || msg.includes('not found') || msg.includes('model not found') || msg.includes('does not exist') || msg.includes('no such model') || msg.includes('resource not found')) {
-        if (msg.includes('file') || msg.includes('image') || msg.includes('video') || msg.includes('audio')) {
-          errorMessage = '引用的文件资源不存在，请检查文件路径';
-        } else if (msg.includes('version') || msg.includes('api version')) {
-          errorMessage = 'API 版本不支持此参数，请检查 API 配置';
-        } else {
-          errorMessage = '模型不存在或已下线，请选择其他可用模型';
-        }
-      }
-      // 405 Method Not Allowed - 方法不允许
-      else if (msg.includes('405') || msg.includes('method not allowed')) {
-        errorMessage = 'API 端点配置错误，请检查提供商设置';
-      }
-      // 408 Request Timeout - 请求超时
-      else if (msg.includes('408') || msg.includes('timeout') || msg.includes('timed out') || msg.includes('超时') || msg.includes('deadline_exceeded') || msg.includes('deadline exceeded')) {
-        errorMessage = '请求超时，建议：1.检查网络 2.减少输入内容 3.稍后重试';
-      }
-      // 409 Conflict - 冲突
-      else if (msg.includes('409') || msg.includes('conflict')) {
-        errorMessage = '请求冲突，请稍后重试';
-      }
-      // 413 Payload Too Large - 请求体过大
-      else if (msg.includes('413') || msg.includes('payload too large') || msg.includes('request entity too large') || msg.includes('too long') || msg.includes('too large')) {
-        errorMessage = '输入内容过长，请减少文本长度';
-      }
-      // 415 Unsupported Media Type - 不支持的媒体类型
-      else if (msg.includes('415') || msg.includes('unsupported media type')) {
-        errorMessage = '请求格式不支持，请联系开发者';
-      }
-      // 422 Unprocessable Entity - 无法处理的请求
-      else if (msg.includes('422') || msg.includes('unprocessable') || msg.includes('validation failed') || msg.includes('validation error')) {
-        errorMessage = '请求参数验证失败，请检查模型和参数配置';
-      }
-      // 429 Too Many Requests - 速率限制/限流
-      // 硅基流动: TPM/RPM/IPM/IPD 限流
-      // Gemini: RESOURCE_EXHAUSTED (超出速率限制，免费层限制较严)
-      else if (msg.includes('429') || msg.includes('too many requests') || msg.includes('rate limit') || msg.includes('ratelimit') || msg.includes('resource_exhausted') || msg.includes('resource exhausted') || msg.includes('配额') || msg.includes('quota exceeded') || msg.includes('quota_exceeded')) {
-        if (msg.includes('tpm') || msg.includes('tokens per minute')) {
-          errorMessage = '每分钟 Token 数已达上限（TPM 限流），请稍后重试';
-        } else if (msg.includes('rpm') || msg.includes('requests per minute')) {
-          errorMessage = '每分钟请求数已达上限（RPM 限流），请稍后重试';
-        } else if (msg.includes('rpd') || msg.includes('requests per day') || msg.includes('daily') || msg.includes('per day')) {
-          errorMessage = '今日请求次数已达上限（每日限额），请明天再试';
-        } else if (msg.includes('free') || msg.includes('免费')) {
-          errorMessage = '免费额度已用尽，请升级付费计划或稍后重试';
-        } else {
-          errorMessage = 'API 请求频率过高，已触发限流，请稍后重试';
+          errorMessage = '请求参数错误 (400)，请检查 API 配置和参数是否正确';
         }
       }
       
+      // 401 Unauthorized - API Key 无效
+      else if (has('401', 'unauthorized', 'invalid api key', 'invalid_api_key', 'authentication', 'api key not valid', '1000', '1001', '1002', '110', '111')) {
+        if (has('leaked', 'blocked', 'revoked')) {
+          errorMessage = 'API 密钥已被撤销或封禁，请重新生成密钥';
+        } else if (has('endpoint', 'vertex')) {
+          errorMessage = 'API 端点配置错误，请确认使用正确的 API 格式';
+        } else if (has('region', 'country', '地区')) {
+          errorMessage = 'API 在当前地区不可用，请检查是否需要代理';
+        } else if (has('1000', '1001', 'signature')) {
+          errorMessage = '智谱AI：JWT 签名校验失败，请检查 API Key';
+        } else if (has('1002', 'token expired', '111')) {
+          errorMessage = 'API Token 已过期，请重新获取';
+        } else {
+          errorMessage = '鉴权失败 (401)：API 密钥无效，请检查密钥是否正确';
+        }
+      }
+      
+      // 402 Payment Required - 需要付费/余额不足
+      else if (has('402', 'payment required', 'insufficient_quota', 'billing', 'insufficient quota', 'balance')) {
+        errorMessage = '账户余额不足或需要启用付费，请前往平台充值';
+      }
+      
+      // 403 Forbidden - 权限不足
+      else if (has('403', 'forbidden', 'permission_denied', 'permission denied', 'access denied', '权限不足', '6')) {
+        if (has('实名', '认证', 'verify', 'verification', 'identity')) {
+          errorMessage = '硅基流动：账户未实名认证，请先完成实名认证后重试';
+        } else if (has('tuned', 'fine-tune', 'finetune')) {
+          errorMessage = '微调模型权限不足，请检查模型访问权限';
+        } else if (has('terms', 'tos', 'policy', 'violation', 'safety')) {
+          errorMessage = '请求违反服务条款或安全策略，请检查输入内容';
+        } else if (has('region', 'country', '地区', 'location')) {
+          errorMessage = 'API 在当前地区受限，请检查是否需要代理';
+        } else if (has('6', 'access denied')) {
+          errorMessage = '百度千帆：无权限访问该资源，请检查开通状态';
+        } else {
+          errorMessage = '权限不足 (403)，请检查：实名认证、余额、模型权限或代理设置';
+        }
+      }
+      
+      // 404 Not Found - 资源/模型不存在
+      else if (has('404', 'not found', 'model not found', 'does not exist', 'no such model', 'resource not found')) {
+        if (has('file', 'image', 'video', 'audio')) {
+          errorMessage = '引用的文件资源不存在，请检查文件路径';
+        } else if (has('version', 'api version')) {
+          errorMessage = 'API 版本不支持此参数，请检查 API 配置';
+        } else {
+          errorMessage = '模型不存在或已下线 (404)，请选择其他可用模型';
+        }
+      }
+      
+      // 405 Method Not Allowed
+      else if (has('405', 'method not allowed')) {
+        errorMessage = 'API 请求方法错误 (405)，请检查端点配置';
+      }
+      
+      // 413 Payload Too Large
+      else if (has('413', 'payload too large', 'request entity too large', 'too long', 'too large')) {
+        errorMessage = '输入内容过长 (413)，请减少文本长度';
+      }
+      
+      // 415 Unsupported Media Type
+      else if (has('415', 'unsupported media type')) {
+        errorMessage = '不支持的媒体类型 (415)，请检查输入格式';
+      }
+      
+      // 422 Unprocessable Entity
+      else if (has('422', 'unprocessable', 'validation failed', 'validation error')) {
+        errorMessage = '请求无法处理 (422)，通常是语义错误或参数验证失败';
+      }
+      
+      // 429 Too Many Requests - 速率限制
+      else if (has('429', 'too many requests', 'rate limit', 'ratelimit', 'resource_exhausted', 'quota exceeded', '1302', '1303', '1305', '17', '18', '19')) {
+        if (has('tpm', 'tokens per minute')) {
+          errorMessage = '触发 TPM 速率限制 (每分钟 Token 数)，请稍后重试';
+        } else if (has('rpm', 'requests per minute')) {
+          errorMessage = '触发 RPM 速率限制 (每分钟请求数)，请稍后重试';
+        } else if (has('rpd', 'daily', 'per day')) {
+          errorMessage = '触发每日请求限额，请明天再试';
+        } else if (has('free', '免费')) {
+          errorMessage = '免费版配额已用尽，请升级或稍后重试';
+        } else if (has('17', '18', 'qps')) {
+          errorMessage = '百度千帆：QPS 超限，请稍后重试';
+        } else {
+          errorMessage = '请求过于频繁 (429)，已触发限流，请稍后重试';
+        }
+      }
+      
+      // Groq/X.AI Custom Codes
+      else if (has('498', 'capacity exceeded')) {
+         errorMessage = 'Groq/X.AI：Flex Tier 容量已满，请稍后重试';
+      }
+      else if (has('499', 'cancelled')) {
+         errorMessage = '请求被取消 (499)';
+      }
+
       // ========================================
       // 5xx 服务器错误
       // ========================================
       
-      // 500 Internal Server Error - 服务异常
-      // Gemini: INTERNAL (Google 服务器意外错误)
-      else if (msg.includes('500') || msg.includes('internal server error') || msg.includes('internal error') || msg.includes('internal') || msg.includes('服务异常')) {
-        errorMessage = 'AI 服务内部错误，建议：1.减少输入内容 2.尝试其他模型 3.稍后重试';
+      // 500 Internal Server Error
+      else if (has('500', 'internal server error', 'internal error', 'internal', '服务异常', '336')) {
+        errorMessage = 'AI 服务内部错误 (500)，请稍后重试';
       }
-      // 501 Not Implemented - 功能未实现
-      else if (msg.includes('501') || msg.includes('not implemented')) {
-        errorMessage = '该功能暂未支持';
+      // 502 Bad Gateway
+      else if (has('502', 'bad gateway')) {
+        errorMessage = '网关错误 (502)，上游服务无效，请稍后重试';
       }
-      // 502 Bad Gateway - 网关错误
-      else if (msg.includes('502') || msg.includes('bad gateway')) {
-        errorMessage = 'AI 服务网关错误，请稍后重试';
+      // 503 Service Unavailable
+      else if (has('503', 'service unavailable', 'unavailable', 'overloaded', 'capacity', 'maintenance', '1301')) {
+        errorMessage = '服务暂时不可用 (503)，系统过载或维护中，请稍后重试';
       }
-      // 503 Service Unavailable - 服务不可用/过载
-      // 硅基流动: 服务负载高
-      // Gemini: UNAVAILABLE (服务过载或维护)
-      else if (msg.includes('503') || msg.includes('service unavailable') || msg.includes('unavailable') || msg.includes('overloaded') || msg.includes('过载') || msg.includes('负载') || msg.includes('maintenance')) {
-        errorMessage = 'AI 服务暂时不可用，建议：1.错峰使用 2.选择其他模型 3.稍后重试';
+      // 504 Gateway Timeout
+      else if (has('504', 'gateway timeout', 'deadline_exceeded', 'timed out')) {
+        errorMessage = '服务响应超时 (504)，请减少输入或稍后重试';
       }
-      // 504 Gateway Timeout - 网关超时
-      // Gemini: DEADLINE_EXCEEDED (处理超时)
-      else if (msg.includes('504') || msg.includes('gateway timeout') || msg.includes('deadline') || msg.includes('processing time')) {
-        errorMessage = 'AI 服务响应超时，建议：1.减少输入内容 2.增加超时时间 3.稍后重试';
-      }
-      // 529 Site is overloaded - 站点过载（Cloudflare 特有）
-      else if (msg.includes('529') || msg.includes('site is overloaded')) {
-        errorMessage = 'AI 服务过载，请稍后重试';
-      }
-      
+
       // ========================================
-      // 网络相关错误
+      // 网络和其他错误
       // ========================================
-      
-      else if (msg.includes('fetch failed') || msg.includes('network error') || msg.includes('enotfound') || msg.includes('econnrefused') || msg.includes('无法连接') || msg.includes('failed to fetch')) {
-        if (msg.includes('googleapis') || msg.includes('google') || msg.includes('gemini')) {
-          errorMessage = '无法连接到 Google 服务器，请检查是否需要代理才能访问';
-        } else {
-          errorMessage = '网络连接失败，请检查：1.网络是否正常 2.是否需要代理';
-        }
+      else if (has('fetch failed', 'network error', 'enotfound', 'econnrefused', '无法连接')) {
+         if (has('google', 'gemini', 'googleapis')) {
+           errorMessage = '无法连接到 Google 服务器，请检查代理设置';
+         } else {
+           errorMessage = '网络连接失败，请检查网络设置或代理';
+         }
       }
-      else if (msg.includes('econnreset') || msg.includes('connection reset') || msg.includes('socket hang up')) {
-        errorMessage = '网络连接被重置，请检查网络稳定性后重试';
+      else if (has('timeout', 'etimedout')) {
+         errorMessage = '请求超时，请检查网络连接';
       }
-      else if (msg.includes('etimedout') || msg.includes('connect etimedout') || msg.includes('connection timed out')) {
-        errorMessage = '网络连接超时，请检查网络或尝试使用代理';
+      else if (has('context length', 'token limit', 'input too long')) {
+         errorMessage = '输入长度超过模型限制，请减少内容';
       }
-      else if (msg.includes('ssl') || msg.includes('certificate') || msg.includes('cert') || msg.includes('tls')) {
-        errorMessage = 'SSL/TLS 连接失败，请检查系统时间和网络环境';
+      else if (has('content filter', 'safety', 'blocked', 'harmful')) {
+         errorMessage = '内容被安全策略拦截，请修改输入';
       }
-      else if (msg.includes('dns') || msg.includes('getaddrinfo') || msg.includes('域名') || msg.includes('resolve')) {
-        errorMessage = 'DNS 解析失败，请检查网络设置或更换 DNS';
+      else if (has('empty response', 'no response')) {
+         errorMessage = '服务返回空响应，请重试';
       }
-      else if (msg.includes('proxy') || msg.includes('tunnel') || msg.includes('代理') || msg.includes('407')) {
-        errorMessage = '代理连接失败，请检查代理服务器设置';
+      else if (has('json', 'parse error', '解析')) {
+         errorMessage = '响应格式错误，请稍后重试';
       }
-      
-      // ========================================
-      // AI 服务特定错误
-      // ========================================
-      
-      // 上下文长度限制
-      else if (msg.includes('context length') || msg.includes('context_length') || msg.includes('token limit') || msg.includes('max_seq_len') || msg.includes('context window') || msg.includes('input too long')) {
-        errorMessage = '输入内容超过模型最大上下文长度，请减少输入内容';
-      }
-      // 内容安全过滤
-      // Gemini: 内容安全检查较严格
-      else if (msg.includes('content filter') || msg.includes('content_filter') || msg.includes('safety') || msg.includes('blocked') || msg.includes('moderation') || msg.includes('违规') || msg.includes('harmful') || msg.includes('unsafe')) {
-        errorMessage = '内容触发安全过滤，请修改输入内容后重试';
-      }
-      // Gemini 特定: 候选内容被过滤
-      else if (msg.includes('candidate') || msg.includes('finish_reason') || msg.includes('block_reason')) {
-        errorMessage = 'AI 生成的内容被安全策略拦截，请尝试修改提示词';
-      }
-      // 模型错误
-      else if (msg.includes('invalid model') || msg.includes('model_not_found') || msg.includes('model error') || msg.includes('unsupported model')) {
-        errorMessage = '模型不可用或配置错误，请选择其他模型';
-      }
-      // 空响应
-      else if (msg.includes('empty response') || msg.includes('no response') || msg.includes('空响应') || msg.includes('no candidates') || msg.includes('no content')) {
-        errorMessage = '服务返回空响应，可能是内容被过滤，请稍后重试或修改输入';
-      }
-      // JSON 解析错误
-      else if (msg.includes('json') || msg.includes('parse error') || msg.includes('解析') || msg.includes('unexpected token')) {
-        errorMessage = '响应格式错误，请稍后重试';
-      }
-      // API 版本错误
-      else if (msg.includes('api version') || msg.includes('deprecated') || msg.includes('版本')) {
-        errorMessage = 'API 版本不兼容，请联系开发者更新';
-      }
-      
+
       return {
         success: false,
         message: errorMessage

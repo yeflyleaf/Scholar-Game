@@ -1,6 +1,8 @@
 /**
  * 提供商注册表 - 所有支持的 AI 提供商的配置
  * 包含每个提供商的元数据，包括端点、模型和兼容性
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 
 const PROVIDER_REGISTRY = {
@@ -17,7 +19,7 @@ const PROVIDER_REGISTRY = {
       { 
         id: 'gemini-2.5-flash', 
         name: 'gemini-2.5-flash', 
-        description: '最新最快的模型',
+        description: '高性价比模型',
         rateLimits: {
           rpm: 5,
           tpm: 250000
@@ -35,6 +37,7 @@ const PROVIDER_REGISTRY = {
     ],
     region: 'international',
     requiresProxy: true,
+    note: '前往 Google AI Studio 获取 API Key',
   },
 
   // ============================================
@@ -47,12 +50,12 @@ const PROVIDER_REGISTRY = {
     name: '硅基流动 SiliconFlow',
     type: 'openai-compatible',
     baseUrl: 'https://api.siliconflow.cn/v1',
-    defaultModel: 'deepseek-ai/DeepSeek-R1-0528-Qwen3-8B',
+    defaultModel: 'deepseek-ai/DeepSeek-V3.2',
     models: [
       { 
         id: 'deepseek-ai/DeepSeek-V3.2', 
         name: 'DeepSeek-V3.2', 
-        description: '', 
+        description: '深度求索V3.2', 
         rateLimits: {
           rpm: 1000,
           tpm: 100000
@@ -61,7 +64,7 @@ const PROVIDER_REGISTRY = {
       { 
         id: 'deepseek-ai/DeepSeek-R1', 
         name: 'DeepSeek-R1', 
-        description: '',
+        description: '深度求索R1',
         rateLimits: {
           rpm: 1000,
           tpm: 100000
@@ -88,6 +91,7 @@ const PROVIDER_REGISTRY = {
     ],
     region: 'china',
     requiresProxy: false,
+    note: '前往硅基流动官网注册获取 API Key',
   },
 
   // Groq
@@ -96,73 +100,142 @@ const PROVIDER_REGISTRY = {
     name: 'Groq',
     type: 'openai-compatible',
     baseUrl: 'https://api.groq.com/openai/v1',
-    defaultModel: 'llama-3.3-70b-versatile',
+    defaultModel: 'meta-llama/llama-guard-4-12b',
     models: [
-      { id: 'llama-3.3-70b-versatile', name: 'llama-3.3-70b-versatile', description: '最强开源模型' },
-      { id: 'llama-3.1-70b-versatile', name: 'llama-3.1-70b-versatile', description: '高质量输出' },
-      { id: 'llama-3.1-8b-instant', name: 'llama-3.1-8b-instant', description: '超快响应' },
-      { id: 'mixtral-8x7b-32768', name: 'mixtral-8x7b-32768', description: 'MoE 架构' },
+      {
+        id: 'llama-3.3-70b-versatile', 
+        name: 'llama-3.3-70b-versatile', 
+        description: '开源模型',
+        rateLimits: {
+          rpm: 1000,
+          tpm: 300000
+        }
+      },
+      { 
+        id: 'meta-llama/llama-guard-4-12b', 
+        name: 'llama-guard-4-12b', 
+        description: '轻量开源模型',
+        rateLimits: {
+          rpm: 100,
+          tpm: 30000
+        }
+      },
+      { 
+        id: 'openai/gpt-oss-120b', 
+        name: 'gpt-oss-120b', 
+        description: 'ChatGPT轻量模型',
+        rateLimits: {
+          rpm: 1000,
+          tpm: 250000
+        }
+      },
     ],
     region: 'international',
     requiresProxy: true,
+    note: '前往 Groq Console 获取 API Key',
+  },
+
+  // X.AI (Grok)
+  xai: {
+    id: 'xai',
+    name: 'X.AI (Grok)',
+    type: 'openai-compatible',
+    baseUrl: 'https://api.x.ai/v1',
+    defaultModel: 'grok-3-mini',
+    models: [
+      {
+        id: 'grok-4-1-fast-reasoning', 
+        name: 'grok-4-1-fast-reasoning', 
+        description: '最新最强模型',
+        rateLimits: {
+          rpm: 480,
+          tpm: 4000000
+        }
+      },
+      { 
+        id: 'grok-3-mini', 
+        name: 'grok-3-mini', 
+        description: '快速推理版本',
+        rateLimits: {
+          rpm: 480
+        }
+      },
+    ],
+    region: 'international',
+    requiresProxy: true,
+    note: '前往 X.AI Console 获取 API Key',
+  },
+
+  // OpenAI
+  openai: {
+    id: 'openai',
+    name: 'OpenAI',
+    type: 'openai-compatible',
+    baseUrl: 'https://api.openai.com/v1',
+    defaultModel: 'gpt-5.1',
+    models: [
+      { 
+        id: 'gpt-5.1', 
+        name: 'gpt-5.1', 
+        description: '最新多模态模型',
+        rateLimits: {
+          rpm: 3,
+          tpm: 10000,
+        }
+      },
+      { 
+        id: 'gpt-4.1', 
+        name: 'gpt-4.1', 
+        description: '高性价比版本',
+        rateLimits: {
+          rpm: 3,
+          tpm: 10000,
+        }
+      },
+      { 
+        id: 'gpt-4.1-nano', 
+        name: 'gpt-4.1-nano', 
+        description: '增强版',
+        rateLimits: {
+          rpm: 3,
+          tpm: 60000,
+        }
+      },
+      { 
+        id: 'o4-mini', 
+        name: 'o4-mini', 
+        description: '轻量版',
+        rateLimits: {
+          rpm: 3,
+          tpm: 100000,
+        }
+      },
+    ],
+    region: 'international',
+    requiresProxy: true,
+    note: '前往 OpenAI Platform 获取 API Key',
   },
 
   // ============================================
   // 中国云提供商
   // ============================================
 
-  // 讯飞星火 (iFlytek Spark)
-  spark: {
-    id: 'spark',
-    name: '讯飞星火 (iFlytek Spark)',
-    type: 'openai-compatible',
-    baseUrl: 'https://spark-api-open.xf-yun.com/v1',
-    defaultModel: 'generalv3.5',
-    models: [
-      { id: 'generalv3.5', name: 'generalv3.5', description: '星火大模型 Max' },
-      { id: 'generalv3', name: 'generalv3', description: '星火大模型 Pro' },
-      { id: 'pro-128k', name: 'pro-128k', description: '长文本支持' },
-      { id: 'general', name: 'general', description: '轻量版' },
-      { id: '4.0Ultra', name: '4.0Ultra', description: '最强版本' },
-    ],
-    region: 'china',
-    requiresProxy: false,
-  },
-
   // 智谱 AI (Zhipu AI)
+  // 注意：智谱AI使用并发数限制，以下RPM为L1等级估算值（并发数×6）
   zhipu: {
     id: 'zhipu',
     name: '智谱 AI (BigModel)',
     type: 'openai-compatible',
     baseUrl: 'https://open.bigmodel.cn/api/paas/v4',
-    defaultModel: 'glm-4',
+    defaultModel: 'glm-4.6',
     models: [
-      { id: 'glm-4', name: 'glm-4', description: '最强通用模型' },
-      { id: 'glm-4-air', name: 'glm-4-air', description: '高性价比' },
-      { id: 'glm-4-flash', name: 'glm-4-flash', description: '快速免费' },
-      { id: 'glm-4-long', name: 'glm-4-long', description: '超长上下文' },
+      { id: 'glm-4.6', name: 'glm-4.6', description: '深度推理模型', rateLimits: { rpm: 3,tpm: 10000} },
+      { id: 'glm-4.5-air', name: 'glm-4.5-air', description: '高性价比', rateLimits: { rpm: 5,tpm: 10000} },
+      { id: 'glm-4.5-flash', name: 'glm-4.5-flash', description: '快速免费', rateLimits: { rpm: 2,tpm: 10000} },
     ],
     region: 'china',
     requiresProxy: false,
-  },
-
-  // 腾讯云混元
-  tencent: {
-    id: 'tencent',
-    name: '腾讯云混元',
-    type: 'openai-compatible',
-    // 腾讯云混元 OpenAI 兼容端点
-    baseUrl: 'https://api.hunyuan.cloud.tencent.com/v1',
-    defaultModel: 'hunyuan-lite',
-    models: [
-      { id: 'hunyuan-lite', name: 'hunyuan-lite', description: '轻量免费版' },
-      { id: 'hunyuan-standard', name: 'hunyuan-standard', description: '标准版' },
-      { id: 'hunyuan-pro', name: 'hunyuan-pro', description: '专业版' },
-      { id: 'hunyuan-turbo', name: 'hunyuan-turbo', description: '高速版' },
-    ],
-    region: 'china',
-    requiresProxy: false,
-    note: '使用腾讯云控制台获取的 SecretId 和 SecretKey 生成的 API Key',
+    note: '前往智谱 AI 开放平台获取 API Key',
   },
 
   // 百度千帆 (使用新版 OpenAI 兼容 API)
@@ -172,59 +245,17 @@ const PROVIDER_REGISTRY = {
     type: 'openai-compatible',
     // 新版 API 端点，支持标准 OpenAI 格式
     baseUrl: 'https://qianfan.baidubce.com/v2',
-    defaultModel: 'ernie-4.0-8k',
+    defaultModel: 'ernie-4.5-turbo-128k',
     models: [
-      { id: 'ernie-4.0-8k', name: 'ernie-4.0-8k', description: '文心一言4.0 最强版' },
-      { id: 'ernie-4.0-turbo-8k', name: 'ernie-4.0-turbo-8k', description: '文心一言4.0 高速版' },
-      { id: 'ernie-3.5-8k', name: 'ernie-3.5-8k', description: '文心一言3.5' },
-      { id: 'ernie-speed-128k', name: 'ernie-speed-128k', description: '长上下文版' },
-      { id: 'ernie-lite-8k', name: 'ernie-lite-8k', description: '轻量免费版' },
+      { id: 'ernie-4.5-turbo-128k', name: 'ernie-4.5-turbo-128k', description: '文心4.5 Turbo', rateLimits: { rpm: 5000, tpm: 400000 } },
+      { id: 'deepseek-v3.2', name: 'deepseek-v3.2', description: '深度求索V3.2', rateLimits: { rpm: 60, tpm: 150000 } },
+      { id: 'deepseek-r1', name: 'deepseek-r1', description: '深度求索R1', rateLimits: { rpm: 5000, tpm: 1000000 } },
     ],
     region: 'china',
     requiresProxy: false,
     note: '使用百度智能云控制台获取的 API Key',
   },
 
-  // ============================================
-  // 特殊 API 格式提供商
-  // ============================================
-
-  // Hugging Face
-  huggingface: {
-    id: 'huggingface',
-    name: 'Hugging Face',
-    type: 'huggingface',
-    baseUrl: 'https://api-inference.huggingface.co/models',
-    defaultModel: 'meta-llama/Meta-Llama-3-8B-Instruct',
-    models: [
-      { id: 'meta-llama/Meta-Llama-3-8B-Instruct', name: 'Meta-Llama-3-8B-Instruct', description: 'Meta 开源' },
-      { id: 'mistralai/Mistral-7B-Instruct-v0.3', name: 'Mistral-7B-Instruct-v0.3', description: 'Mistral 开源' },
-      { id: 'google/gemma-7b-it', name: 'gemma-7b-it', description: 'Google 开源' },
-      { id: 'microsoft/Phi-3-mini-4k-instruct', name: 'Phi-3-mini-4k-instruct', description: 'Microsoft' },
-      { id: 'Qwen/Qwen2-7B-Instruct', name: 'Qwen2-7B-Instruct', description: '通义千问' },
-    ],
-    region: 'international',
-    requiresProxy: true,
-  },
-
-  // Cloudflare Workers AI
-  cloudflare: {
-    id: 'cloudflare',
-    name: 'Cloudflare Workers AI',
-    type: 'cloudflare',
-    baseUrl: 'https://api.cloudflare.com/client/v4/accounts/{account_id}/ai/run',
-    defaultModel: '@cf/meta/llama-3.1-8b-instruct',
-    models: [
-      { id: '@cf/meta/llama-3.1-8b-instruct', name: 'llama-3.1-8b-instruct', description: 'Meta' },
-      { id: '@cf/meta/llama-3.1-70b-instruct', name: 'llama-3.1-70b-instruct', description: 'Meta 大型' },
-      { id: '@cf/mistral/mistral-7b-instruct-v0.2', name: 'mistral-7b-instruct-v0.2', description: 'Mistral' },
-      { id: '@cf/qwen/qwen1.5-14b-chat-awq', name: 'qwen1.5-14b-chat-awq', description: '通义千问' },
-      { id: '@cf/google/gemma-7b-it', name: 'gemma-7b-it', description: 'Google' },
-    ],
-    region: 'international',
-    requiresProxy: true,
-    note: '需要 Account ID 和 API Token',
-  },
 };
 
 /**

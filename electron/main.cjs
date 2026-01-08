@@ -1,7 +1,8 @@
 /**
  * Scholar Game - Electron Main Process
- * Author: yeflyleaf
- * Description: Main entry point for the application
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
+ * @description Main entry point for the application
  */
 const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
@@ -133,16 +134,6 @@ ipcMain.handle("ai:set-api-key", async (event, apiKey) => {
 ipcMain.handle("ai:set-model", async (event, model) => {
   try {
     aiService.setModel(model);
-    return { success: true };
-  } catch (error) {
-    return { success: false, error: error.message };
-  }
-});
-
-// Set Account ID (for Cloudflare)
-ipcMain.handle("ai:set-account-id", async (event, accountId) => {
-  try {
-    aiService.setAccountId(accountId);
     return { success: true };
   } catch (error) {
     return { success: false, error: error.message };

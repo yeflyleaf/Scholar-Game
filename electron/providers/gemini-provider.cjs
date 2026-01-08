@@ -1,6 +1,8 @@
 /**
  * Gemini 提供商 - Google Gemini API 实现
  * 处理 Google Gemini 模型使用的特定 API 格式
+ * @author yeflyleaf
+ * @link https://github.com/yeflyleaf
  */
 
 const { BaseProvider } = require('./base-provider.cjs');
