@@ -1,6 +1,6 @@
 // 页面：因果录入 (CausalityRecord) - 战斗结算界面，显示胜利或失败结果
 import { motion } from 'framer-motion';
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import { useGameStore } from '../../stores/useGameStore';
 
 // 胜利时的粒子爆炸特效
@@ -104,19 +104,44 @@ const ReconstructionEffect: React.FC = () => {
 };
 
 export const CausalityRecord: React.FC = () => {
-    const { setScreen, battleState, currentSector, resetBattle, addHackPoint } = useGameStore();
+    const { setScreen, battleState, currentSector, resetBattle, addHackPoint, addExp } = useGameStore();
     // 使用本地状态锁定结果，防止在点击继续（重置战斗状态）时闪烁错误页面
     const [isVictory] = useState(() => battleState === 'VICTORY');
     // 使用ref追踪是否已处理胜利奖励
     const rewardProcessedRef = useRef(false);
     
-    // 使用useEffect处理胜利奖励，避免在渲染期间调用setState
-    useEffect(() => {
+    // 奖励信息状态
+    const [rewardInfo, setRewardInfo] = useState({
+        earnedExp: 0,
+        earnedHackPoint: false,
+        levelUpInfo: null as { levelUp: boolean; newLevel: number } | null
+    });
+    
+    // 使用 useLayoutEffect 在 DOM 更新后同步执行奖励发放
+    // 这样可以避免在渲染期间调用 setState 的问题
+    React.useLayoutEffect(() => {
         if (isVictory && !rewardProcessedRef.current) {
             rewardProcessedRef.current = true;
+            
+            // 1. 发放抽卡点数奖励
             addHackPoint();
+            
+            // 2. 发放经验值奖励（来自关卡配置）
+            const expReward = currentSector?.rewards?.exp || 0;
+            let levelUpResult: { levelUp: boolean; newLevel: number } | null = null;
+            
+            if (expReward > 0) {
+                levelUpResult = addExp(expReward);
+            }
+            
+            setRewardInfo({
+                earnedExp: expReward,
+                earnedHackPoint: true,
+                levelUpInfo: levelUpResult
+            });
         }
-    }, [isVictory, addHackPoint]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []); // 空依赖，只在挂载时执行一次
 
     const handleContinue = () => {
         resetBattle();
@@ -259,20 +284,52 @@ export const CausalityRecord: React.FC = () => {
 
                     {isVictory && (
                         <motion.div
-                            className="flex items-center justify-center gap-6 mt-6"
+                            className="flex flex-col items-center gap-4 mt-6"
                             initial={{ opacity: 0 }}
                             animate={{ opacity: 1 }}
                             transition={{ delay: 1.1 }}
                         >
-                            <div className="text-center">
-                                <p className="text-sm text-gray-500 font-mono">熵值降低</p>
-                                <p className="text-3xl font-display text-stable text-glow-cyan">-15%</p>
+                            {/* 奖励显示 */}
+                            <div className="flex items-center justify-center gap-8">
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-500 font-mono">经验值获得</p>
+                                    <p className="text-3xl font-display text-holographic-gold text-glow-gold">+{rewardInfo.earnedExp} EXP</p>
+                                </div>
+                                <div className="w-px h-12 bg-gray-700" />
+                                <div className="text-center">
+                                    <p className="text-sm text-gray-500 font-mono">骇入点数</p>
+                                    <p className="text-3xl font-display text-neon-cyan text-glow-cyan">
+                                        {rewardInfo.earnedHackPoint ? '+1 ⚡' : '-'}
+                                    </p>
+                                </div>
                             </div>
-                            <div className="w-px h-12 bg-gray-700" />
-                            <div className="text-center">
-                                <p className="text-sm text-gray-500 font-mono">逻辑完整性</p>
-                                <p className="text-3xl font-display text-holographic-gold text-glow-gold">+100</p>
-                            </div>
+                            
+                            {/* 升级提示 */}
+                            {rewardInfo.levelUpInfo?.levelUp && (
+                                <motion.div
+                                    className={`mt-4 px-6 py-3 border rounded ${
+                                        rewardInfo.levelUpInfo.newLevel >= 10 
+                                            ? 'border-yellow-400/70 bg-yellow-400/20' 
+                                            : 'border-holographic-gold/50 bg-holographic-gold/10'
+                                    }`}
+                                    initial={{ scale: 0, opacity: 0 }}
+                                    animate={{ scale: 1, opacity: 1 }}
+                                    transition={{ delay: 1.4, type: 'spring' }}
+                                    style={rewardInfo.levelUpInfo.newLevel >= 10 ? {
+                                        boxShadow: '0 0 30px rgba(255, 215, 0, 0.4)',
+                                    } : undefined}
+                                >
+                                    {rewardInfo.levelUpInfo.newLevel >= 10 ? (
+                                        <p className="text-yellow-400 font-display text-xl">
+                                            🏆 恭喜达到满级！ Lv.{rewardInfo.levelUpInfo.newLevel} MAX
+                                        </p>
+                                    ) : (
+                                        <p className="text-holographic-gold font-display text-xl">
+                                            🎉 等级提升！ Lv.{rewardInfo.levelUpInfo.newLevel}
+                                        </p>
+                                    )}
+                                </motion.div>
+                            )}
                         </motion.div>
                     )}
 

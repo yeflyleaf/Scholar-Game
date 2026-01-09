@@ -569,7 +569,14 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
 
 // 主组件
 export const GrandUnificationSim: React.FC = () => {
-    const { sectors, currentSector, selectSector, startBattle, setScreen, currentTheme } = useGameStore();
+
+    // const { sectors, currentSector, selectSector, startBattle, setScreen, currentTheme, observerProfile: _realProfile } = useGameStore();
+    
+    // yeflyleafTODO: 临时硬编码满级测试，测试完记得删除这行，改回 observerProfile
+    // const observerProfile = { ..._realProfile, level: 2, exp: 1900, maxExp: 2000 };
+
+    const { sectors, currentSector, selectSector, startBattle, setScreen, currentTheme, observerProfile } = useGameStore();
+
     const labels = currentTheme.pageLabels.levelSelect;
     // Fix: Force update label if it's the old default
     const missionBriefingLabel = labels.missionBriefing === '任务简报' ? DEFAULT_THEME.pageLabels.levelSelect.missionBriefing : labels.missionBriefing;
@@ -602,18 +609,83 @@ export const GrandUnificationSim: React.FC = () => {
 
             {/* 星图区域 */}
             <div className="flex-1 relative">
-                {/* 标题 */}
+                {/* 标题和等级信息 - 水平布局 */}
                 <motion.div
-                    className="absolute top-6 left-8 z-30"
+                    className="absolute top-6 left-8 z-30 flex items-center gap-8"
                     initial={{ opacity: 0, x: -30 }}
                     animate={{ opacity: 1, x: 0 }}
                 >
-                    <h1 className="text-4xl font-display font-bold text-cyan-400 glitch-text" data-text={labels.title}>
-                        {labels.title}
-                    </h1>
-                    <p className="text-sm font-mono text-gray-500 mt-1 tracking-widest">
-                        {labels.subtitle}
-                    </p>
+                    {/* 标题 */}
+                    <div>
+                        <h1 className="text-4xl font-display font-bold text-cyan-400 glitch-text" data-text={labels.title}>
+                            {labels.title}
+                        </h1>
+                        <p className="text-sm font-mono text-gray-500 mt-1 tracking-widest">
+                            {labels.subtitle}
+                        </p>
+                    </div>
+                    
+                    {/* 分隔线 */}
+                    <div className="w-px h-12 bg-cyan-400/30" />
+                    
+                    {/* 等级和经验条 */}
+                    <motion.div 
+                        className="flex items-center gap-4 px-4 py-2 rounded-lg"
+                        style={{
+                            background: 'rgba(16, 20, 36, 0.65)',
+                            backdropFilter: 'blur(8px)',
+                            border: observerProfile.level >= 10 
+                                ? '1px solid rgba(212, 175, 55, 0.6)' 
+                                : '1px solid rgba(212, 175, 55, 0.3)',
+                            boxShadow: observerProfile.level >= 10 
+                                ? '0 0 20px rgba(212, 175, 55, 0.3)' 
+                                : 'none',
+                        }}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ delay: 0.3 }}
+                    >
+                        {/* 等级 */}
+                        <div className="flex items-center gap-2">
+                            <span className="text-2xl font-display font-bold text-yellow-400" style={{ textShadow: '0 0 10px rgba(212, 175, 55, 0.5)' }}>
+                                Lv.{observerProfile.level}
+                            </span>
+                            {observerProfile.level >= 10 && (
+                                <span className="text-xs text-yellow-400/80 font-mono">MAX</span>
+                            )}
+                        </div>
+                        
+                        {/* 分隔线 */}
+                        <div className="w-px h-8 bg-gray-600" />
+                        
+                        {/* 经验条 */}
+                        <div className="flex flex-col gap-1">
+                            <div className="flex justify-between text-xs font-mono text-gray-400 gap-6">
+                                <span>EXP</span>
+                                {observerProfile.level >= 10 ? (
+                                    <span className="text-yellow-400">∞</span>
+                                ) : (
+                                    <span>{observerProfile.exp} / {observerProfile.maxExp}</span>
+                                )}
+                            </div>
+                            <div className="w-32 h-2 bg-gray-800 rounded-full overflow-hidden">
+                                <motion.div
+                                    className="h-full rounded-full"
+                                    style={{
+                                        background: observerProfile.level >= 10
+                                            ? 'linear-gradient(90deg, #d4af37 0%, #ffd700 50%, #d4af37 100%)'
+                                            : 'linear-gradient(90deg, #d4af37 0%, #00f3ff 100%)',
+                                        boxShadow: observerProfile.level >= 10
+                                            ? '0 0 15px rgba(255, 215, 0, 0.8)'
+                                            : '0 0 10px rgba(212, 175, 55, 0.5)',
+                                    }}
+                                    initial={{ width: 0 }}
+                                    animate={{ width: observerProfile.level >= 10 ? '100%' : `${(observerProfile.exp / observerProfile.maxExp) * 100}%` }}
+                                    transition={{ duration: 0.8, delay: 0.5 }}
+                                />
+                            </div>
+                        </div>
+                    </motion.div>
                 </motion.div>
 
                 {/* 几何节点 */}

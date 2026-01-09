@@ -8,9 +8,9 @@
 export type ConstructModel = "ARBITER" | "WEAVER" | "ARCHITECT";
 
 // Entropy Form - 认知熵形态 (敌人类型)
-export type EntropyForm = 
-  | "WHITE_NOISE" 
-  | "IMAGINARY_COLLAPSE" 
+export type EntropyForm =
+  | "WHITE_NOISE"
+  | "IMAGINARY_COLLAPSE"
   | "SINGULARITY"
   | "NULL_POINTER"
   | "MEMORY_LEAK"
@@ -84,7 +84,12 @@ export interface Skill {
   type: "active" | "passive" | "ultimate";
   targetType: "self" | "single_enemy" | "all_enemies" | "ally";
   cost?: number; // 能量/MP 消耗
-  visualEffect?: "data_deletion" | "binary_stream" | "hex_shield" | "digital_storm" | "time_rewind"; // 用于视觉特效
+  visualEffect?:
+    | "data_deletion"
+    | "binary_stream"
+    | "hex_shield"
+    | "digital_storm"
+    | "time_rewind"; // 用于视觉特效
 }
 
 export interface Construct {
@@ -104,37 +109,47 @@ export interface Construct {
 
 // 敌人专属技能类型
 export type EnemySkillType =
-  | "debuff_player"      // 对玩家施加负面效果
-  | "self_buff"          // 自我强化
-  | "damage_all"         // 全体伤害
-  | "damage_single"      // 单体伤害
-  | "heal_self"          // 自我回复
-  | "special";           // 特殊机制
+  | "debuff_player" // 对玩家施加负面效果
+  | "self_buff" // 自我强化
+  | "damage_all" // 全体伤害
+  | "damage_single" // 单体伤害
+  | "heal_self" // 自我回复
+  | "special"; // 特殊机制
 
 // 敌人专属技能接口
 export interface EnemySkill {
   id: string;
-  name: string;              // 技能名称
-  nameEn: string;            // 英文名称
-  description: string;       // 技能描述
-  type: EnemySkillType;      // 技能类型
-  cooldown: number;          // 冷却时间（回合数）
-  currentCooldown: number;   // 当前剩余冷却
-  triggerCondition?: {       // 触发条件（可选）
-    type: "hp_below" | "turn_count" | "always"; // 条件类型
-    value?: number;          // 条件阈值
+  name: string; // 技能名称
+  nameEn: string; // 英文名称
+  description: string; // 技能描述
+  type: EnemySkillType; // 技能类型
+  cooldown: number; // 冷却时间（回合数）
+  currentCooldown: number; // 当前剩余冷却
+  triggerCondition?: {
+    // 触发条件（可选）
+    type:
+      | "hp_below"
+      | "turn_count"
+      | "always"
+      | "on_attack"
+      | "on_hp_loss_threshold"; // 条件类型
+    // on_attack: 攻击时触发（敌人攻击玩家时）
+    // on_hp_loss_threshold: 每损失指定百分比血量时触发（如Boss每损失10%血量）
+    value?: number; // 条件阈值
   };
-  effect: {                  // 技能效果
-    damageMultiplier?: number;     // 伤害倍率
-    healPercent?: number;          // 回复百分比
-    statusToApply?: {              // 施加的状态效果
+  effect: {
+    // 技能效果
+    damageMultiplier?: number; // 伤害倍率
+    healPercent?: number; // 回复百分比
+    statusToApply?: {
+      // 施加的状态效果
       effectType: StatusEffectType;
       duration: number;
       value: number;
     };
-    specialEffect?: string;        // 特殊效果标识符
+    specialEffect?: string; // 特殊效果标识符
   };
-  visualEffect?: string;     // 视觉特效标识符
+  visualEffect?: string; // 视觉特效标识符
 }
 
 export interface EntropyEntity {
@@ -144,12 +159,14 @@ export interface EntropyEntity {
   hp: number;
   maxHp: number;
   damage: number;
-  questionBank: Question[]; // 它们窃取的“知识”
+  questionBank: Question[]; // 它们窃取的"知识"
   statusEffects: StatusEffect[];
   isDead: boolean;
   visualGlitchIntensity: number; // 0-1，用于渲染故障特效
-  // 敌人专属技能
+  // 敌人专属技能（单个技能，保持与普通敌人的兼容性）
   skill?: EnemySkill;
+  // 敌人专属技能列表（支持Boss等拥有多个技能的敌人）
+  skills?: EnemySkill[];
 }
 
 export interface Question {
@@ -182,22 +199,24 @@ export interface InscriptionEffectContext {
   // 修改构造体状态
   updateConstructs: (updater: (constructs: Construct[]) => Construct[]) => void;
   // 修改敌人状态
-  updateEnemies: (updater: (enemies: EntropyEntity[]) => EntropyEntity[]) => void;
+  updateEnemies: (
+    updater: (enemies: EntropyEntity[]) => EntropyEntity[]
+  ) => void;
   // 当前伤害源（用于伤害计算铭文）
   damageSource?: {
-    type: 'skill' | 'question';
+    type: "skill" | "question";
     baseDamage: number;
   };
 }
 
 // 铭文触发时机
-export type InscriptionTrigger = 
-  | 'battle_start'      // 战斗开始时
-  | 'turn_end'          // 每回合结束时
-  | 'on_damage'         // 造成伤害时（用于计算伤害加成）
-  | 'on_take_damage'    // 受到伤害时
-  | 'on_enemy_defeat'   // 击败敌人时
-  | 'on_low_hp';        // 生命值低于阈值时
+export type InscriptionTrigger =
+  | "battle_start" // 战斗开始时
+  | "turn_end" // 每回合结束时
+  | "on_damage" // 造成伤害时（用于计算伤害加成）
+  | "on_take_damage" // 受到伤害时
+  | "on_enemy_defeat" // 击败敌人时
+  | "on_low_hp"; // 生命值低于阈值时
 
 // Inscription - 核心铭文 (Gacha Items)
 export interface Inscription {
@@ -279,36 +298,36 @@ export interface GameSettings {
 export interface GameTheme {
   // 主题元数据
   id: string;
-  name: string;                    // 主题名称，如 "计算机操作系统"
-  generatedAt: number;             // 生成时间戳
-  sourceContent: string;           // 原始学习资料摘要
+  name: string; // 主题名称，如 "计算机操作系统"
+  generatedAt: number; // 生成时间戳
+  sourceContent: string; // 原始学习资料摘要
 
   // 页面标题配置
   pageLabels: {
     levelSelect: {
-      title: string;               // 原 "大统一理论演练"
-      subtitle: string;            // 副标题
-      sectorAnalysis: string;      // 原 "扇区分析"
-      missionBriefing: string;     // 原 "任务简报"
-      startButton: string;         // 原 "开始潜渊"
-      backButton: string;          // 原 "中止链接"
-      mindHackButton: string;      // 原 "思维骇入"
+      title: string; // 原 "大统一理论演练"
+      subtitle: string; // 副标题
+      sectorAnalysis: string; // 原 "扇区分析"
+      missionBriefing: string; // 原 "任务简报"
+      startButton: string; // 原 "开始潜渊"
+      backButton: string; // 原 "中止链接"
+      mindHackButton: string; // 原 "思维骇入"
     };
     battle: {
-      constructsLabel: string;     // 原 "逻辑构造体"
-      entropyLabel: string;        // 原 "认知熵实体"
-      battleLogLabel: string;      // 原 "战斗日志"
-      retreatButton: string;       // 原 "撤退"
-      turnLabel: string;           // 原 "回合"
+      constructsLabel: string; // 原 "逻辑构造体"
+      entropyLabel: string; // 原 "认知熵实体"
+      battleLogLabel: string; // 原 "战斗日志"
+      retreatButton: string; // 原 "撤退"
+      turnLabel: string; // 原 "回合"
     };
     mindHack: {
-      title: string;               // 原 "思维骇入"
-      subtitle: string;            // 副标题
-      hackButton: string;          // 原 "启动骇入"
-      hackingText: string;         // 原 "正在穿透量子屏障..."
-      confirmButton: string;       // 原 "确认接收"
-      backButton: string;          // 原 "返回星图"
-      warningText: string;         // 能量消耗警告
+      title: string; // 原 "思维骇入"
+      subtitle: string; // 副标题
+      hackButton: string; // 原 "启动骇入"
+      hackingText: string; // 原 "正在穿透量子屏障..."
+      confirmButton: string; // 原 "确认接收"
+      backButton: string; // 原 "返回星图"
+      warningText: string; // 能量消耗警告
     };
   };
 
@@ -316,45 +335,45 @@ export interface GameTheme {
   constructs: Array<{
     id: string;
     model: ConstructModel;
-    name: string;                  // 原 "裁决者"/"织网者"/"虚构者"
-    title: string;                 // 原 "The Arbiter" 等
-    description: string;           // 角色描述
+    name: string; // 原 "裁决者"/"织网者"/"虚构者"
+    title: string; // 原 "The Arbiter" 等
+    description: string; // 角色描述
     skills: Array<{
       id: string;
-      name: string;                // 技能名称
-      nameEn: string;              // 英文名称
-      description: string;         // 技能描述
+      name: string; // 技能名称
+      nameEn: string; // 英文名称
+      description: string; // 技能描述
     }>;
   }>;
 
   // 铭文配置（抽卡物品）
   inscriptions: Array<{
     id: string;
-    name: string;                  // 原 "银行家算法"
-      rarity: "N" | "R" | "SR" | "SSR";
-    description: string;           // 铭文效果描述
+    name: string; // 原 "银行家算法"
+    rarity: "N" | "R" | "SR" | "SSR";
+    description: string; // 铭文效果描述
   }>;
 
   // 战斗日志模板
   battleLogTemplates: {
-    enterSector: string;           // 进入扇区消息模板
+    enterSector: string; // 进入扇区消息模板
     entropyStatus: {
-      stable: string;              // 稳定状态
-      highEntropy: string;         // 高熵警报
-      locked: string;              // 已锁定
+      stable: string; // 稳定状态
+      highEntropy: string; // 高熵警报
+      locked: string; // 已锁定
     };
     questionSource: {
-      ai: string;                  // AI题目来源
-      builtin: string;             // 内置题库来源
+      ai: string; // AI题目来源
+      builtin: string; // 内置题库来源
     };
-    answerCorrect: string;         // 答对消息
-    answerWrong: string;           // 答错消息
-    skillUsed: string;             // 使用技能消息模板
-    enemyDefeated: string;         // 击败敌人消息
-    victory: string;               // 胜利消息
-    defeat: string;                // 失败消息
+    answerCorrect: string; // 答对消息
+    answerWrong: string; // 答错消息
+    skillUsed: string; // 使用技能消息模板
+    enemyDefeated: string; // 击败敌人消息
+    victory: string; // 胜利消息
+    defeat: string; // 失败消息
   };
 }
 
 // 默认主题ID
-export const DEFAULT_THEME_ID = 'default-cyber-scholar';
+export const DEFAULT_THEME_ID = "default-cyber-scholar";

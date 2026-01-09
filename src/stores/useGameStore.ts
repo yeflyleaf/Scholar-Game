@@ -66,8 +66,9 @@ interface GameState {
     unlockSector: (sectorId: string) => void;
 
     // === 思维骇入 (抽卡) ===
-    performMindHack: () => Inscription | null; // 返回rnull表示点数不足
+    performMindHack: () => Inscription | null; // 返回null表示点数不足
     addHackPoint: () => void; // 通关后增加抽卡点数
+    addExp: (amount: number) => { levelUp: boolean; newLevel: number }; // 增加经验值，返回是否升级
 
     // === 战斗系统 ===
     battleState: BattleState;
@@ -165,7 +166,7 @@ export const useGameStore = create<GameState>()(
                 name: 'Observer',
                 level: 1,
                 exp: 0,
-                maxExp: 1000,
+                maxExp: 200,
                 unlockedConstructs: ['ARBITER', 'WEAVER', 'ARCHITECT'],
                 inventory: [],
                 clearedSectors: [],
@@ -388,6 +389,64 @@ export const useGameStore = create<GameState>()(
                         }
                     };
                 });
+            },
+
+            // 增加经验值并处理升级
+            addExp: (amount) => {
+                const state = get();
+                const MAX_LEVEL = 10; // 满级10级
+                
+                // 如果已满级，不再获得经验
+                if (state.observerProfile.level >= MAX_LEVEL) {
+                    console.log(`[经验获得] 已达满级 Lv.${MAX_LEVEL}，经验不再增加`);
+                    return { levelUp: false, newLevel: MAX_LEVEL };
+                }
+                
+                let currentExp = state.observerProfile.exp + amount;
+                let currentLevel = state.observerProfile.level;
+                let currentMaxExp = state.observerProfile.maxExp;
+                let levelUp = false;
+                
+                // 根据等级计算下一级所需经验
+                // Lv.1->2: 200, Lv.2->3: 300, Lv.3->4: 400, Lv.4->5: 500
+                // Lv.5->6: 1000, Lv.6->7: 2000, Lv.7->8+: 2000
+                const getMaxExpForLevel = (level: number): number => {
+                    if (level <= 1) return 200;
+                    if (level === 2) return 300;
+                    if (level === 3) return 400;
+                    if (level === 4) return 500;
+                    if (level === 5) return 1000;
+                    if (level >= 6) return 2000;
+                    return 2000;
+                };
+                
+                // 处理升级（可能连续升多级，但不超过满级）
+                while (currentExp >= currentMaxExp && currentLevel < MAX_LEVEL) {
+                    currentExp -= currentMaxExp;
+                    currentLevel += 1;
+                    currentMaxExp = getMaxExpForLevel(currentLevel);
+                    levelUp = true;
+                    
+                    if (currentLevel >= MAX_LEVEL) {
+                        currentExp = currentMaxExp; // 满级后经验保持最满状态
+                        console.log(`[等级提升] 恭喜达到满级 Lv.${MAX_LEVEL}！`);
+                    } else {
+                        console.log(`[等级提升] 升至 Lv.${currentLevel}！下一级需要 ${currentMaxExp} EXP`);
+                    }
+                }
+                
+                set({
+                    observerProfile: {
+                        ...state.observerProfile,
+                        exp: currentExp,
+                        level: currentLevel,
+                        maxExp: currentMaxExp
+                    }
+                });
+                
+                console.log(`[经验获得] +${amount} EXP (当前: ${currentExp}/${currentMaxExp})`);
+                
+                return { levelUp, newLevel: currentLevel };
             },
 
             // === 战斗设置 ===
@@ -677,46 +736,79 @@ export const useGameStore = create<GameState>()(
                         return e;
                     });
                     
-                    // === Boss专属技能：熵爆发 ===
+                    // === Boss专属技能：正熵爆发 ===
                     // 每损失10%最大生命值时触发，对全体逻辑构造体造成1.5倍伤害
                     const { inscriptionTriggeredFlags } = get();
                     let currentConstructs = get().constructs;
                     
                     updatedEnemies = updatedEnemies.map(e => {
-                        if (e.id === 'entropy-boss' && !e.isDead && e.skill?.effect.specialEffect === 'scaling_damage_by_hp_lost') {
-                            const currentHpPercent = e.hp / e.maxHp;
-                            const damageMultiplier = e.skill.effect.damageMultiplier || 1.5;
+                        if (e.id === 'entropy-boss' && !e.isDead) {
+                            // 检查正熵爆发技能
+                            const burstSkill = e.skills?.find(s => s.effect.specialEffect === 'scaling_damage_by_hp_lost') || 
+                                              (e.skill?.effect.specialEffect === 'scaling_damage_by_hp_lost' ? e.skill : null);
                             
-                            // 检查各个10%血量阈值是否已触发
-                            const thresholds = [90, 80, 70, 60, 50, 40, 30, 20, 10];
-                            
-                            for (const threshold of thresholds) {
-                                const thresholdKey = `boss-entropy-burst-${threshold}`;
-                                const thresholdRatio = threshold / 100;
+                            if (burstSkill) {
+                                const currentHpPercent = e.hp / e.maxHp;
+                                const damageMultiplier = burstSkill.effect.damageMultiplier || 1.5;
                                 
-                                // 如果血量低于阈值且未触发过
-                                if (currentHpPercent < thresholdRatio && !inscriptionTriggeredFlags.has(thresholdKey)) {
-                                    inscriptionTriggeredFlags.add(thresholdKey);
+                                // 检查各个10%血量阈值是否已触发
+                                const thresholds = [90, 80, 70, 60, 50, 40, 30, 20, 10];
+                                
+                                for (const threshold of thresholds) {
+                                    const thresholdKey = `boss-entropy-burst-${threshold}`;
+                                    const thresholdRatio = threshold / 100;
                                     
-                                    // 计算伤害
-                                    const burstDamage = Math.floor(e.damage * damageMultiplier);
-                                    
-                                    addBattleLog(`⚠️ 【${e.name}】触发【${e.skill.name}】！血量降至 ${threshold}% 以下！`, 'combat');
-                                    addBattleLog(`⭐ 奇点能量爆发！对全体造成 ${burstDamage} 点伤害！`, 'combat');
-                                    
-                                    // 对所有存活的构造体造成伤害
-                                    currentConstructs = currentConstructs.map(c => {
-                                        if (c.isDead) return c;
+                                    // 如果血量低于阈值且未触发过
+                                    if (currentHpPercent < thresholdRatio && !inscriptionTriggeredFlags.has(thresholdKey)) {
+                                        inscriptionTriggeredFlags.add(thresholdKey);
                                         
-                                        const newHp = Math.max(0, c.hp - burstDamage);
-                                        addDamageIndicator({ value: burstDamage, x: 50, y: 50, type: 'critical' });
-                                        addBattleLog(`💥 ${c.name} 受到 ${burstDamage} 点熵爆发伤害！`, 'combat');
+                                        // 计算伤害
+                                        const burstDamage = Math.floor(e.damage * damageMultiplier);
                                         
-                                        return { ...c, hp: newHp, isDead: newHp <= 0 };
-                                    });
+                                        addBattleLog(`⚠️ 【${e.name}】触发【${burstSkill.name}】！血量降至 ${threshold}% 以下！`, 'combat');
+                                        addBattleLog(`⭐ 奇点能量爆发！对全体造成 ${burstDamage} 点伤害！`, 'combat');
+                                        
+                                        // 对所有存活的构造体造成伤害
+                                        currentConstructs = currentConstructs.map(c => {
+                                            if (c.isDead) return c;
+                                            
+                                            const newHp = Math.max(0, c.hp - burstDamage);
+                                            addDamageIndicator({ value: burstDamage, x: 50, y: 50, type: 'critical' });
+                                            addBattleLog(`💥 ${c.name} 受到 ${burstDamage} 点熵爆发伤害！`, 'combat');
+                                            
+                                            return { ...c, hp: newHp, isDead: newHp <= 0 };
+                                        });
+                                        
+                                        // 只触发一次（当前帧），后续阈值在下次受伤时检查
+                                        break;
+                                    }
+                                }
+                            }
+                            
+                            // === Boss专属技能：逆熵回复 ===
+                            // 当前生命值首次低于最大生命值40%时触发，恢复50%已损失血量
+                            const recoverySkill = e.skills?.find(s => s.effect.specialEffect === 'heal_once_on_low_hp');
+                            
+                            if (recoverySkill) {
+                                const currentHpPercent = e.hp / e.maxHp;
+                                const threshold = (recoverySkill.triggerCondition?.value || 40) / 100;
+                                const recoveryKey = 'boss-entropy-recovery-triggered';
+                                
+                                // 如果血量低于40%且未触发过
+                                if (currentHpPercent < threshold && !inscriptionTriggeredFlags.has(recoveryKey)) {
+                                    inscriptionTriggeredFlags.add(recoveryKey);
                                     
-                                    // 只触发一次（当前帧），后续阈值在下次受伤时检查
-                                    break;
+                                    // 计算恢复量：50%已损失血量
+                                    const lostHp = e.maxHp - e.hp;
+                                    const healPercent = recoverySkill.effect.healPercent || 50;
+                                    const healAmount = Math.floor(lostHp * (healPercent / 100));
+                                    const newHp = Math.min(e.maxHp, e.hp + healAmount);
+                                    
+                                    addBattleLog(`⚠️ 【${e.name}】触发【${recoverySkill.name}】！生命值降至 ${Math.round(currentHpPercent * 100)}%！`, 'combat');
+                                    addBattleLog(`🔄 逆熵流动！恢复 ${healAmount} 点生命值！`, 'system');
+                                    addDamageIndicator({ value: healAmount, x: 50, y: 50, type: 'heal' });
+                                    
+                                    return { ...e, hp: newHp };
                                 }
                             }
                         }
@@ -807,26 +899,305 @@ export const useGameStore = create<GameState>()(
                     });
                     set({ constructs: updatedConstructs });
                     
-                    // === 敌人被动技能触发 ===
-                    // 死循环·衔尾蛇 - 无限迭代：攻击后回血
+                    // === 敌人"攻击时触发"技能系统 ===
+                    // 根据文档，大部分敌人技能在敌人攻击时触发（冷却归零时）
+                    let currentConstructsAfterSkill = get().constructs;
                     let updatedEnemiesAfterAttack = [...entropyEntities];
-                    if (attacker.skill?.effect.specialEffect === 'heal_on_attack') {
-                        const healPercent = attacker.skill.effect.healPercent || 10;
-                        const healAmount = Math.floor(attacker.maxHp * (healPercent / 100));
+                    const skill = attacker.skill;
+                    
+                    // 检查敌人是否有技能且技能触发条件为 on_attack
+                    if (skill && skill.triggerCondition?.type === 'on_attack' && skill.currentCooldown === 0) {
+                        addBattleLog(`⚠️ 【${attacker.name}】释放了【${skill.name}】！`, 'combat');
                         
-                        updatedEnemiesAfterAttack = updatedEnemiesAfterAttack.map(e => {
-                            if (e.id === attacker.id && !e.isDead) {
-                                const newHp = Math.min(e.maxHp, e.hp + healAmount);
-                                if (newHp > e.hp) {
-                                    addDamageIndicator({ value: healAmount, x: 50, y: 50, type: 'heal' });
-                                    addBattleLog(`♾️ ${e.name} 触发【${attacker.skill!.name}】，恢复 ${healAmount} 点生命值！`, 'system');
+                        // 根据技能效果类型执行不同逻辑
+                        switch (skill.effect.specialEffect) {
+                            case 'reduce_time_limit':
+                                // 信号干扰：下一道题答题时间减少
+                                currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => ({
+                                    ...c,
+                                    statusEffects: [...c.statusEffects, {
+                                        id: generateId('status'),
+                                        name: '信号干扰',
+                                        duration: 1,
+                                        type: 'debuff' as const,
+                                        effect: 'entropy_erosion' as const,
+                                        value: skill.effect.statusToApply?.value || 5
+                                    }]
+                                }));
+                                addBattleLog(`📡 下一道题的答题时间将减少 ${skill.effect.statusToApply?.value || 5} 秒！`, 'system');
+                                break;
+                                
+                            case 'true_damage':
+                                // 虚空坍缩：真实伤害，无视护盾
+                                {
+                                    const aliveTargets = currentConstructsAfterSkill.filter(c => !c.isDead);
+                                    if (aliveTargets.length > 0) {
+                                        const targetIdx = Math.floor(Math.random() * aliveTargets.length);
+                                        const target = aliveTargets[targetIdx];
+                                        const damage = Math.floor(attacker.damage * (skill.effect.damageMultiplier || 1.5));
+                                        
+                                        currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => {
+                                            if (c.id === target.id) {
+                                                const newHp = Math.max(0, c.hp - damage);
+                                                addDamageIndicator({ value: damage, x: 50, y: 50, type: 'critical' });
+                                                addBattleLog(`💀 ${c.name} 受到 ${damage} 点真实伤害！（无视护盾）`, 'combat');
+                                                return { ...c, hp: newHp, isDead: newHp <= 0 };
+                                            }
+                                            return c;
+                                        });
+                                    }
                                 }
-                                return { ...e, hp: newHp };
+                                break;
+                                
+                            case 'force_cooldown':
+                                // 引用消解：随机使一个技能进入冷却
+                                {
+                                    const aliveTargets = currentConstructsAfterSkill.filter(c => !c.isDead);
+                                    if (aliveTargets.length > 0) {
+                                        const targetIdx = Math.floor(Math.random() * aliveTargets.length);
+                                        const target = aliveTargets[targetIdx];
+                                        const availableSkills = target.skills.filter(s => s.currentCooldown === 0);
+                                        if (availableSkills.length > 0) {
+                                            const skillToLock = availableSkills[Math.floor(Math.random() * availableSkills.length)];
+                                            const cooldownToAdd = skill.effect.statusToApply?.duration || 3;
+                                            
+                                            currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => {
+                                                if (c.id === target.id) {
+                                                    return {
+                                                        ...c,
+                                                        skills: c.skills.map(s => 
+                                                            s.id === skillToLock.id 
+                                                                ? { ...s, currentCooldown: cooldownToAdd }
+                                                                : s
+                                                        )
+                                                    };
+                                                }
+                                                return c;
+                                            });
+                                            addBattleLog(`🔒 ${target.name} 的【${skillToLock.name}】被强制进入 ${cooldownToAdd} 回合冷却！`, 'system');
+                                        }
+                                    }
+                                }
+                                break;
+                                
+                            case 'energy_drain':
+                                // 资源侵蚀：全体每回合损失能量
+                                {
+                                    const duration = skill.effect.statusToApply?.duration || 3;
+                                    const drainValue = skill.effect.statusToApply?.value || 5;
+                                    
+                                    currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => ({
+                                        ...c,
+                                        statusEffects: [...c.statusEffects, {
+                                            id: generateId('status'),
+                                            name: '资源侵蚀',
+                                            duration: duration,
+                                            type: 'debuff' as const,
+                                            effect: 'entropy_erosion' as const,
+                                            value: drainValue
+                                        }]
+                                    }));
+                                    addBattleLog(`💧 全体构造体将在 ${duration} 回合内每回合损失 ${drainValue} 点能量！`, 'system');
+                                }
+                                break;
+                                
+                            case 'stacking_damage':
+                                // 递归压制：敌人攻击力增加
+                                {
+                                    const duration = skill.effect.statusToApply?.duration || 4;
+                                    const boostValue = skill.effect.statusToApply?.value || 10;
+                                    
+                                    updatedEnemiesAfterAttack = updatedEnemiesAfterAttack.map(e => {
+                                        if (e.id === attacker.id) {
+                                            return {
+                                                ...e,
+                                                statusEffects: [...e.statusEffects, {
+                                                    id: generateId('status'),
+                                                    name: '递归压制',
+                                                    duration: duration,
+                                                    type: 'buff' as const,
+                                                    effect: 'damage_boost' as const,
+                                                    value: boostValue
+                                                }]
+                                            };
+                                        }
+                                        return e;
+                                    });
+                                    addBattleLog(`📈 ${attacker.name} 进入失控递归状态，攻击力将增加 ${boostValue}%！`, 'system');
+                                }
+                                break;
+                                
+                            case 'stun_single':
+                                // 资源禁锢：随机眩晕一名玩家
+                                {
+                                    const aliveTargets = currentConstructsAfterSkill.filter(c => !c.isDead);
+                                    if (aliveTargets.length > 0) {
+                                        const targetIdx = Math.floor(Math.random() * aliveTargets.length);
+                                        const target = aliveTargets[targetIdx];
+                                        const stunDuration = skill.effect.statusToApply?.duration || 2;
+                                        
+                                        currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => {
+                                            if (c.id === target.id) {
+                                                return {
+                                                    ...c,
+                                                    statusEffects: [...c.statusEffects, {
+                                                        id: generateId('status'),
+                                                        name: '逻辑死锁',
+                                                        duration: stunDuration,
+                                                        type: 'debuff' as const,
+                                                        effect: 'logic_lock' as const,
+                                                        value: 100
+                                                    }]
+                                                };
+                                            }
+                                            return c;
+                                        });
+                                        addBattleLog(`🔗 ${target.name} 陷入「逻辑死锁」状态，无法行动 ${stunDuration} 回合！`, 'system');
+                                    }
+                                }
+                                break;
+                                
+                            case 'drain_all_energy':
+                                // 时序混乱：清空随机一个玩家的能量
+                                {
+                                    const aliveTargets = currentConstructsAfterSkill.filter(c => !c.isDead && c.energy > 0);
+                                    if (aliveTargets.length > 0) {
+                                        const targetIdx = Math.floor(Math.random() * aliveTargets.length);
+                                        const target = aliveTargets[targetIdx];
+                                        const drainedEnergy = target.energy;
+                                        
+                                        currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => {
+                                            if (c.id === target.id) {
+                                                return { ...c, energy: 0 };
+                                            }
+                                            return c;
+                                        });
+                                        addBattleLog(`⏱️ ${target.name} 的能量被完全清空！（损失 ${drainedEnergy} 点能量）`, 'system');
+                                    }
+                                }
+                                break;
+                                
+                            case 'execute_low_hp':
+                                // 系统崩溃：对低血量目标造成双倍伤害
+                                {
+                                    const threshold = 0.4; // 40%血量
+                                    const lowHpTargets = currentConstructsAfterSkill.filter(c => 
+                                        !c.isDead && (c.hp / c.maxHp) < threshold
+                                    );
+                                    
+                                    if (lowHpTargets.length > 0) {
+                                        const target = lowHpTargets[0];
+                                        const damage = Math.floor(attacker.damage * (skill.effect.damageMultiplier || 2.0));
+                                        
+                                        currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => {
+                                            if (c.id === target.id) {
+                                                const newHp = Math.max(0, c.hp - damage);
+                                                addDamageIndicator({ value: damage, x: 50, y: 50, type: 'critical' });
+                                                addBattleLog(`💀 【处决】${c.name} 血量过低，受到 ${damage} 点致命伤害！`, 'combat');
+                                                return { ...c, hp: newHp, isDead: newHp <= 0 };
+                                            }
+                                            return c;
+                                        });
+                                    }
+                                }
+                                break;
+                                
+                            case 'extend_cooldowns':
+                                // 资源丢失：全体技能冷却+2
+                                {
+                                    const cooldownIncrease = skill.effect.statusToApply?.value || 2;
+                                    
+                                    currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => ({
+                                        ...c,
+                                        skills: c.skills.map(s => ({
+                                            ...s,
+                                            currentCooldown: s.currentCooldown > 0 
+                                                ? s.currentCooldown + cooldownIncrease 
+                                                : s.currentCooldown
+                                        }))
+                                    }));
+                                    addBattleLog(`🔍 404错误！全体冷却中的技能冷却时间 +${cooldownIncrease} 回合！`, 'system');
+                                }
+                                break;
+                                
+                            case 'heal_on_attack':
+                                // 无限迭代：攻击后回血
+                                {
+                                    const healPercent = skill.effect.healPercent || 10;
+                                    const healAmount = Math.floor(attacker.maxHp * (healPercent / 100));
+                                    
+                                    updatedEnemiesAfterAttack = updatedEnemiesAfterAttack.map(e => {
+                                        if (e.id === attacker.id && !e.isDead) {
+                                            const newHp = Math.min(e.maxHp, e.hp + healAmount);
+                                            if (newHp > e.hp) {
+                                                addDamageIndicator({ value: healAmount, x: 50, y: 50, type: 'heal' });
+                                                addBattleLog(`♾️ ${e.name} 恢复 ${healAmount} 点生命值！`, 'system');
+                                            }
+                                            return { ...e, hp: newHp };
+                                        }
+                                        return e;
+                                    });
+                                }
+                                break;
+                                
+                            case 'aoe_stun_chance':
+                                // 内存越界：AOE伤害 + 概率眩晕
+                                {
+                                    const damage = Math.floor(attacker.damage * (skill.effect.damageMultiplier || 0.5));
+                                    const stunChance = (skill.effect.statusToApply?.value || 20) / 100;
+                                    const stunDuration = skill.effect.statusToApply?.duration || 1;
+                                    
+                                    currentConstructsAfterSkill = currentConstructsAfterSkill.map(c => {
+                                        if (c.isDead) return c;
+                                        
+                                        const newHp = Math.max(0, c.hp - damage);
+                                        addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
+                                        
+                                        const newEffects = [...c.statusEffects];
+                                        let stunned = false;
+                                        
+                                        if (Math.random() < stunChance) {
+                                            stunned = true;
+                                            newEffects.push({
+                                                id: generateId('status'),
+                                                name: '眩晕',
+                                                duration: stunDuration,
+                                                type: 'debuff' as const,
+                                                effect: 'stunned' as const,
+                                                value: 100
+                                            });
+                                        }
+                                        
+                                        addBattleLog(`💥 ${c.name} 受到 ${damage} 点伤害！${stunned ? '（陷入眩晕！）' : ''}`, 'combat');
+                                        
+                                        return { 
+                                            ...c, 
+                                            hp: newHp, 
+                                            isDead: newHp <= 0,
+                                            statusEffects: newEffects
+                                        };
+                                    });
+                                }
+                                break;
+                        }
+                        
+                        // 重置技能冷却
+                        updatedEnemiesAfterAttack = updatedEnemiesAfterAttack.map(e => {
+                            if (e.id === attacker.id && e.skill) {
+                                return {
+                                    ...e,
+                                    skill: {
+                                        ...e.skill,
+                                        currentCooldown: e.skill.cooldown
+                                    }
+                                };
                             }
                             return e;
                         });
-                        set({ entropyEntities: updatedEnemiesAfterAttack });
                     }
+                    
+                    // 更新状态
+                    set({ constructs: currentConstructsAfterSkill, entropyEntities: updatedEnemiesAfterAttack });
                     
                     // 触发低血量铭文效果（如：量子锚点）
                     get().triggerInscriptions('on_low_hp');
@@ -840,7 +1211,7 @@ export const useGameStore = create<GameState>()(
             },
 
             nextTurn: () => {
-                const { currentTurn, questionQueue, addBattleLog, addDamageIndicator, entropyEntities, constructs } = get();
+                const { currentTurn, questionQueue, addBattleLog, entropyEntities, constructs } = get();
                 
                 // === 1. 玩家构造体技能冷却减少 ===
                 let updatedConstructs = constructs.map(c => ({
@@ -889,316 +1260,23 @@ export const useGameStore = create<GameState>()(
                     return { ...c, energy: newEnergy, statusEffects: newStatusEffects };
                 });
 
-                // === 4. 敌人技能触发检查 ===
-                for (let i = 0; i < updatedEnemies.length; i++) {
-                    const enemy = updatedEnemies[i];
-                    if (enemy.isDead || !enemy.skill) continue;
+                // === 4. 敌人状态效果处理（递归压制等BUFF过期）===
+                updatedEnemies = updatedEnemies.map(e => {
+                    if (e.isDead) return e;
                     
-                    const skill = enemy.skill;
+                    // 减少敌人状态效果持续时间
+                    const newStatusEffects = e.statusEffects.map(eff => ({
+                        ...eff,
+                        duration: eff.duration - 1
+                    })).filter(eff => eff.duration > 0);
                     
-                    // 检查技能是否可以触发
-                    let canTrigger = false;
-                    const triggerCondition = skill.triggerCondition;
-                    
-                    // 被动技能不在这里触发（在答错时触发）
-                    if (skill.effect.specialEffect === 'heal_on_attack') continue;
-                    
-                    // Boss技能特殊处理（基于血量触发）
-                    if (skill.effect.specialEffect === 'scaling_damage_by_hp_lost') continue;
-                    
-                    if (skill.currentCooldown === 0) {
-                        switch (triggerCondition?.type) {
-                            case 'always':
-                                canTrigger = true;
-                                break;
-                            case 'turn_count':
-                                canTrigger = currentTurn >= (triggerCondition.value || 0);
-                                break;
-                            case 'hp_below': {
-                                // 检查是否有任何玩家血量低于阈值
-                                const threshold = (triggerCondition.value || 40) / 100;
-                                canTrigger = updatedConstructs.some(c => 
-                                    !c.isDead && (c.hp / c.maxHp) < threshold
-                                );
-                                break;
-                            }
-                        }
-                    }
-                    
-                    if (!canTrigger) continue;
-                    
-                    // === 触发技能效果 ===
-                    addBattleLog(`⚠️ 【${enemy.name}】释放了 ${skill.name}！`, 'combat');
-                    
-                    switch (skill.effect.specialEffect) {
-                        case 'reduce_time_limit':
-                            // 信号干扰：减少答题时间（在题目显示时应用）
-                            // 给所有构造体添加一个标记状态
-                            updatedConstructs = updatedConstructs.map(c => ({
-                                ...c,
-                                statusEffects: [...c.statusEffects, {
-                                    id: generateId('status'),
-                                    name: '信号干扰',
-                                    duration: 1,
-                                    type: 'debuff' as const,
-                                    effect: 'entropy_erosion' as const,
-                                    value: skill.effect.statusToApply?.value || 5
-                                }]
-                            }));
-                            addBattleLog(`📡 下一道题目的答题时间将减少 ${skill.effect.statusToApply?.value || 5} 秒！`, 'system');
-                            break;
-                            
-                        case 'true_damage':
-                            // 虚空坍缩：真实伤害，无视护盾
-                            {
-                                const aliveTargets = updatedConstructs.filter(c => !c.isDead);
-                                if (aliveTargets.length > 0) {
-                                    const targetIdx = Math.floor(Math.random() * aliveTargets.length);
-                                    const target = aliveTargets[targetIdx];
-                                    const damage = Math.floor(enemy.damage * (skill.effect.damageMultiplier || 1.5));
-                                    
-                                    updatedConstructs = updatedConstructs.map(c => {
-                                        if (c.id === target.id) {
-                                            const newHp = Math.max(0, c.hp - damage);
-                                            addDamageIndicator({ value: damage, x: 50, y: 50, type: 'critical' });
-                                            addBattleLog(`💀 ${c.name} 受到 ${damage} 点真实伤害！（无视护盾）`, 'combat');
-                                            return { ...c, hp: newHp, isDead: newHp <= 0 };
-                                        }
-                                        return c;
-                                    });
-                                }
-                            }
-                            break;
-                            
-                        case 'force_cooldown':
-                            // 引用消解：随机使一个技能进入冷却
-                            {
-                                const aliveTargets = updatedConstructs.filter(c => !c.isDead);
-                                if (aliveTargets.length > 0) {
-                                    const targetIdx = Math.floor(Math.random() * aliveTargets.length);
-                                    const target = aliveTargets[targetIdx];
-                                    
-                                    // 找到一个可用的技能
-                                    const availableSkills = target.skills.filter(s => s.currentCooldown === 0);
-                                    if (availableSkills.length > 0) {
-                                        const skillToLock = availableSkills[Math.floor(Math.random() * availableSkills.length)];
-                                        const cooldownToAdd = skill.effect.statusToApply?.duration || 3;
-                                        
-                                        updatedConstructs = updatedConstructs.map(c => {
-                                            if (c.id === target.id) {
-                                                return {
-                                                    ...c,
-                                                    skills: c.skills.map(s => 
-                                                        s.id === skillToLock.id 
-                                                            ? { ...s, currentCooldown: cooldownToAdd }
-                                                            : s
-                                                    )
-                                                };
-                                            }
-                                            return c;
-                                        });
-                                        addBattleLog(`🔒 ${target.name} 的【${skillToLock.name}】被强制进入 ${cooldownToAdd} 回合冷却！`, 'system');
-                                    }
-                                }
-                            }
-                            break;
-                            
-                        case 'energy_drain':
-                            // 资源侵蚀：全体每回合损失能量
-                            {
-                                const duration = skill.effect.statusToApply?.duration || 3;
-                                const drainValue = skill.effect.statusToApply?.value || 5;
-                                
-                                updatedConstructs = updatedConstructs.map(c => ({
-                                    ...c,
-                                    statusEffects: [...c.statusEffects, {
-                                        id: generateId('status'),
-                                        name: '资源侵蚀',
-                                        duration: duration,
-                                        type: 'debuff' as const,
-                                        effect: 'entropy_erosion' as const,
-                                        value: drainValue
-                                    }]
-                                }));
-                                addBattleLog(`💧 全体构造体将在 ${duration} 回合内每回合损失 ${drainValue} 点能量！`, 'system');
-                            }
-                            break;
-                            
-                        case 'stacking_damage':
-                            // 递归压制：敌人攻击力增加
-                            {
-                                const duration = skill.effect.statusToApply?.duration || 4;
-                                const boostValue = skill.effect.statusToApply?.value || 10;
-                                
-                                updatedEnemies = updatedEnemies.map(e => {
-                                    if (e.id === enemy.id) {
-                                        return {
-                                            ...e,
-                                            statusEffects: [...e.statusEffects, {
-                                                id: generateId('status'),
-                                                name: '递归压制',
-                                                duration: duration,
-                                                type: 'buff' as const,
-                                                effect: 'damage_boost' as const,
-                                                value: boostValue
-                                            }]
-                                        };
-                                    }
-                                    return e;
-                                });
-                                addBattleLog(`📈 ${enemy.name} 进入失控递归状态，攻击力将在 ${duration} 回合内持续增加！`, 'system');
-                            }
-                            break;
-                            
-                        case 'stun_single':
-                            // 资源禁锢：随机眩晕一名玩家
-                            {
-                                const aliveTargets = updatedConstructs.filter(c => !c.isDead);
-                                if (aliveTargets.length > 0) {
-                                    const targetIdx = Math.floor(Math.random() * aliveTargets.length);
-                                    const target = aliveTargets[targetIdx];
-                                    const stunDuration = skill.effect.statusToApply?.duration || 2;
-                                    
-                                    updatedConstructs = updatedConstructs.map(c => {
-                                        if (c.id === target.id) {
-                                            return {
-                                                ...c,
-                                                statusEffects: [...c.statusEffects, {
-                                                    id: generateId('status'),
-                                                    name: '逻辑死锁',
-                                                    duration: stunDuration,
-                                                    type: 'debuff' as const,
-                                                    effect: 'logic_lock' as const,
-                                                    value: 100
-                                                }]
-                                            };
-                                        }
-                                        return c;
-                                    });
-                                    addBattleLog(`🔗 ${target.name} 陷入「逻辑死锁」状态，无法行动 ${stunDuration} 回合！`, 'system');
-                                }
-                            }
-                            break;
-                            
-                        case 'drain_all_energy':
-                            // 时序混乱：清空随机一个玩家的能量
-                            {
-                                const aliveTargets = updatedConstructs.filter(c => !c.isDead && c.energy > 0);
-                                if (aliveTargets.length > 0) {
-                                    const targetIdx = Math.floor(Math.random() * aliveTargets.length);
-                                    const target = aliveTargets[targetIdx];
-                                    const drainedEnergy = target.energy;
-                                    
-                                    updatedConstructs = updatedConstructs.map(c => {
-                                        if (c.id === target.id) {
-                                            return { ...c, energy: 0 };
-                                        }
-                                        return c;
-                                    });
-                                    addBattleLog(`⏱️ ${target.name} 的能量被完全清空！（损失 ${drainedEnergy} 点能量）`, 'system');
-                                }
-                            }
-                            break;
-                            
-                        case 'execute_low_hp':
-                            // 系统崩溃：对低血量目标造成双倍伤害
-                            {
-                                const threshold = (skill.triggerCondition?.value || 40) / 100;
-                                const lowHpTargets = updatedConstructs.filter(c => 
-                                    !c.isDead && (c.hp / c.maxHp) < threshold
-                                );
-                                
-                                if (lowHpTargets.length > 0) {
-                                    const target = lowHpTargets[0];
-                                    const damage = Math.floor(enemy.damage * (skill.effect.damageMultiplier || 2.0));
-                                    
-                                    updatedConstructs = updatedConstructs.map(c => {
-                                        if (c.id === target.id) {
-                                            const newHp = Math.max(0, c.hp - damage);
-                                            addDamageIndicator({ value: damage, x: 50, y: 50, type: 'critical' });
-                                            addBattleLog(`💀 【处决】${c.name} 血量过低，受到 ${damage} 点致命伤害！`, 'combat');
-                                            return { ...c, hp: newHp, isDead: newHp <= 0 };
-                                        }
-                                        return c;
-                                    });
-                                }
-                            }
-                            break;
-                            
-                        case 'extend_cooldowns':
-                            // 资源丢失：全体技能冷却+2
-                            {
-                                const cooldownIncrease = skill.effect.statusToApply?.value || 2;
-                                
-                                updatedConstructs = updatedConstructs.map(c => ({
-                                    ...c,
-                                    skills: c.skills.map(s => ({
-                                        ...s,
-                                        currentCooldown: s.currentCooldown > 0 
-                                            ? s.currentCooldown + cooldownIncrease 
-                                            : s.currentCooldown
-                                    }))
-                                }));
-                                addBattleLog(`🔍 404错误！全体冷却中的技能冷却时间 +${cooldownIncrease} 回合！`, 'system');
-                            }
-                            break;
-                            
-                        case 'aoe_stun_chance':
-                            // 内存越界：AOE伤害 + 概率眩晕
-                            {
-                                const damage = Math.floor(enemy.damage * (skill.effect.damageMultiplier || 0.5));
-                                const stunChance = (skill.effect.statusToApply?.value || 20) / 100;
-                                const stunDuration = skill.effect.statusToApply?.duration || 1;
-                                
-                                updatedConstructs = updatedConstructs.map(c => {
-                                    if (c.isDead) return c;
-                                    
-                                    const newHp = Math.max(0, c.hp - damage);
-                                    addDamageIndicator({ value: damage, x: 50, y: 50, type: 'damage' });
-                                    
-                                    const newEffects = [...c.statusEffects];
-                                    let stunned = false;
-                                    
-                                    // 概率眩晕
-                                    if (Math.random() < stunChance) {
-                                        stunned = true;
-                                        newEffects.push({
-                                            id: generateId('status'),
-                                            name: '眩晕',
-                                            duration: stunDuration,
-                                            type: 'debuff' as const,
-                                            effect: 'stunned' as const,
-                                            value: 100
-                                        });
-                                    }
-                                    
-                                    addBattleLog(`💥 ${c.name} 受到 ${damage} 点伤害！${stunned ? '（陷入眩晕！）' : ''}`, 'combat');
-                                    
-                                    return { 
-                                        ...c, 
-                                        hp: newHp, 
-                                        isDead: newHp <= 0,
-                                        statusEffects: newEffects
-                                    };
-                                });
-                            }
-                            break;
-                    }
-                    
-                    // 重置技能冷却
-                    updatedEnemies = updatedEnemies.map(e => {
-                        if (e.id === enemy.id && e.skill) {
-                            return {
-                                ...e,
-                                skill: {
-                                    ...e.skill,
-                                    currentCooldown: e.skill.cooldown
-                                }
-                            };
-                        }
-                        return e;
-                    });
-                }
+                    return { ...e, statusEffects: newStatusEffects };
+                });
+                
+                // 注意：敌人技能的 on_attack 触发已移至 answerQuestion 中的敌人攻击逻辑
+                // 此处只处理特殊触发条件（如Boss的血量阈值触发技能）
+                // Boss的正熵爆发（每损失10%血量触发）在 answerQuestion 中的玩家攻击逻辑处理
+                // Boss的逆熵回复（血量首次低于40%触发）也在该处处理
 
                 // === 5. 检查是否全灭 ===
                 if (updatedConstructs.every(c => c.isDead)) {
@@ -1492,13 +1570,42 @@ export const useGameStore = create<GameState>()(
         }),
         {
             name: 'scholar-game-storage',
+            version: 2, // 版本号，用于数据迁移
             storage: createJSONStorage(() => localStorage),
             partialize: (state) => ({
                 observerProfile: state.observerProfile,
                 sectors: state.sectors,
                 currentTheme: state.currentTheme,
                 settings: state.settings
-            })
+            }),
+            // 数据迁移：修复旧版本的 maxExp 值
+            migrate: (persistedState: unknown, version: number) => {
+                const state = persistedState as { observerProfile?: { level: number; exp: number; maxExp: number } };
+                
+                if (version < 2 && state?.observerProfile) {
+                    // 根据等级重新计算正确的 maxExp
+                    const getMaxExpForLevel = (level: number): number => {
+                        if (level <= 1) return 200;
+                        if (level === 2) return 300;
+                        if (level === 3) return 400;
+                        if (level === 4) return 500;
+                        if (level === 5) return 1000;
+                        if (level >= 6) return 2000;
+                        return 2000;
+                    };
+                    
+                    const correctMaxExp = getMaxExpForLevel(state.observerProfile.level);
+                    console.log(`[数据迁移] 修正 maxExp: ${state.observerProfile.maxExp} -> ${correctMaxExp}`);
+                    state.observerProfile.maxExp = correctMaxExp;
+                    
+                    // 确保 exp 不超过 maxExp
+                    if (state.observerProfile.exp > correctMaxExp) {
+                        state.observerProfile.exp = correctMaxExp;
+                    }
+                }
+                
+                return state;
+            }
         }
     )
 );
