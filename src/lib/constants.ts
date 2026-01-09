@@ -55,7 +55,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     // 构造体英文称号，用于装饰性显示
     title: "The Arbiter",
     // 攻击力，决定答题正确时造成的伤害
-    attack: 5,
+    attack: 15,
     // 当前生命值 (Health Points)，降为0时角色无法战斗
     hp: 500,
     // 最大生命值上限
@@ -200,7 +200,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
     // 构造体英文称号
     title: "The Architect",
     // 攻击力
-    attack: 10,
+    attack: 15,
     // 当前生命值
     hp: 400,
     // 最大生命值

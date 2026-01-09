@@ -292,6 +292,7 @@ export interface GameSettings {
   resolution: string; // "1920x1080", etc.
   fullscreen: boolean;
   language: "zh-CN" | "en-US";
+  gameDifficulty: 1 | 2 | 3 | 4 | 5; // 游戏难度等级
 }
 
 // 6. 动态主题配置 - 支持AI生成全部游戏文本

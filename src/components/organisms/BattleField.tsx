@@ -1,10 +1,336 @@
 // 页面：战场 (BattleField) - 核心战斗界面，包含构造体、敌人和答题区域
 import { AnimatePresence, motion } from 'framer-motion';
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
+import ReactDOM from 'react-dom';
 import { useBattleSequence } from '../../hooks/useBattleSequence';
 import { useGameStore } from '../../stores/useGameStore';
-import type { BattleLogEntry, Construct, EntropyEntity, Skill } from '../../types/game';
+import type { BattleLogEntry, Construct, EnemySkill, EntropyEntity, Skill } from '../../types/game';
 import { QuestionCard } from '../molecules/QuestionCard';
+
+// 技能类型映射
+const SKILL_TYPE_LABELS: Record<string, { label: string; color: string }> = {
+    'active': { label: '主动技能', color: 'text-neon-cyan' },
+    'ultimate': { label: '终极技能', color: 'text-holographic-gold' },
+    'passive': { label: '被动技能', color: 'text-stable' },
+    'damage_all': { label: '范围伤害', color: 'text-glitch-red' },
+    'damage_single': { label: '单体伤害', color: 'text-orange-400' },
+    'debuff_player': { label: '玩家减益', color: 'text-purple-400' },
+    'self_buff': { label: '自身增益', color: 'text-green-400' },
+    'heal_self': { label: '自我恢复', color: 'text-emerald-400' },
+    'special': { label: '特殊效果', color: 'text-yellow-400' },
+};
+
+// 计算 tooltip 位置的 hook，确保不超出窗口边界
+const useTooltipPosition = (
+    triggerRef: React.RefObject<HTMLDivElement | null>,
+    isVisible: boolean,
+    preferredWidth: number,
+    estimatedHeight: number = 200
+) => {
+    const [position, setPosition] = useState({ 
+        x: 0, 
+        y: 0, 
+        arrowLeft: preferredWidth / 2,
+        placement: 'top' as 'top' | 'bottom' 
+    });
+
+    useEffect(() => {
+        if (!isVisible || !triggerRef.current) return;
+
+        // 使用 requestAnimationFrame 避免级联渲染
+        const rafId = requestAnimationFrame(() => {
+            if (!triggerRef.current) return;
+            
+            const triggerRect = triggerRef.current.getBoundingClientRect();
+            const padding = 8; // 距离窗口边缘的最小距离
+
+            // 计算水平居中位置
+            let x = triggerRect.left + triggerRect.width / 2 - preferredWidth / 2;
+            
+            // 确保不超出左边界
+            if (x < padding) {
+                x = padding;
+            }
+            // 确保不超出右边界
+            if (x + preferredWidth > window.innerWidth - padding) {
+                x = window.innerWidth - preferredWidth - padding;
+            }
+
+            // 计算垂直位置，优先显示在上方
+            let y = triggerRect.top - estimatedHeight - 8;
+            let placement: 'top' | 'bottom' = 'top';
+
+            // 如果上方空间不足，显示在下方
+            if (y < padding) {
+                y = triggerRect.bottom + 8;
+                placement = 'bottom';
+                
+                // 如果下方也不够，还是显示在上方但调整位置
+                if (y + estimatedHeight > window.innerHeight - padding) {
+                    y = Math.max(padding, window.innerHeight - estimatedHeight - padding);
+                    placement = 'top';
+                }
+            }
+
+            // 计算箭头的相对位置
+            const triggerCenterX = triggerRect.left + triggerRect.width / 2;
+            let arrowLeft = triggerCenterX - x;
+            // 确保箭头不会太靠边
+            arrowLeft = Math.max(16, Math.min(arrowLeft, preferredWidth - 16));
+
+            setPosition({ x, y, arrowLeft, placement });
+        });
+
+        return () => cancelAnimationFrame(rafId);
+    }, [isVisible, triggerRef, preferredWidth, estimatedHeight]);
+
+    return position;
+};
+
+// 技能悬浮提示组件（玩家技能）- 使用 Portal
+const PlayerSkillTooltip: React.FC<{
+    skill: Skill;
+    children: React.ReactNode;
+}> = ({ skill, children }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const triggerRef = useRef<HTMLDivElement>(null);
+    const typeInfo = SKILL_TYPE_LABELS[skill.type] || { label: skill.type, color: 'text-gray-400' };
+    const tooltipWidth = 256; // w-64 = 16rem = 256px
+
+    const position = useTooltipPosition(triggerRef, isHovered, tooltipWidth, 180);
+
+    const tooltipContent = isHovered && (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="fixed pointer-events-none"
+            style={{
+                left: position.x,
+                top: position.y,
+                width: tooltipWidth,
+                zIndex: 99999,
+            }}
+        >
+            <div className="fui-panel p-3 border border-neon-cyan/50 shadow-lg shadow-neon-cyan/20 bg-deep-space">
+                {/* 技能名称 */}
+                <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-neon-cyan font-display font-bold text-sm">{skill.name}</h4>
+                    <span className={`text-[10px] font-mono ${typeInfo.color}`}>{typeInfo.label}</span>
+                </div>
+                {skill.nameEn && (
+                    <div className="text-[10px] text-gray-500 font-mono mb-2">{skill.nameEn}</div>
+                )}
+                
+                {/* 技能属性 */}
+                <div className="flex gap-3 mb-2 text-[11px] font-mono">
+                    <div className="flex items-center gap-1">
+                        <span className="text-gray-500">消耗:</span>
+                        <span className="text-holographic-gold">{skill.cost || 0}</span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <span className="text-gray-500">冷却:</span>
+                        <span className="text-neon-cyan">{skill.cooldown}回合</span>
+                    </div>
+                </div>
+                
+                {/* 技能描述 */}
+                <div className="text-xs text-gray-300 leading-relaxed border-t border-gray-700/50 pt-2">
+                    {skill.description}
+                </div>
+                
+                {/* 当前冷却状态 */}
+                {skill.currentCooldown > 0 && (
+                    <div className="mt-2 text-[10px] font-mono text-glitch-red">
+                        ⏳ 剩余冷却：{skill.currentCooldown} 回合
+                    </div>
+                )}
+            </div>
+            {/* 箭头 */}
+            <div 
+                className={`absolute w-2 h-2 bg-deep-space border-neon-cyan/50 transform rotate-45 ${
+                    position.placement === 'top' 
+                        ? '-bottom-1 border-r border-b' 
+                        : '-top-1 border-l border-t'
+                }`}
+                style={{ left: position.arrowLeft }}
+            />
+        </motion.div>
+    );
+
+    return (
+        <div 
+            ref={triggerRef}
+            className="relative"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {children}
+            {typeof document !== 'undefined' && ReactDOM.createPortal(
+                <AnimatePresence>{tooltipContent}</AnimatePresence>,
+                document.body
+            )}
+        </div>
+    );
+};
+
+// 敌人技能悬浮提示组件 - 使用 Portal
+const EnemySkillTooltip: React.FC<{
+    skill: EnemySkill;
+    enemyDamage: number;
+    children: React.ReactNode;
+}> = ({ skill, enemyDamage, children }) => {
+    const [isHovered, setIsHovered] = useState(false);
+    const triggerRef = useRef<HTMLDivElement>(null);
+    const typeInfo = SKILL_TYPE_LABELS[skill.type] || { label: skill.type, color: 'text-gray-400' };
+    const tooltipWidth = 288; // w-72 = 18rem = 288px
+
+    const position = useTooltipPosition(triggerRef, isHovered, tooltipWidth, 280);
+
+    // 根据技能效果生成效果说明
+    const getEffectDescription = () => {
+        const effects: string[] = [];
+        
+        if (skill.effect.damageMultiplier) {
+            const damage = Math.floor(enemyDamage * skill.effect.damageMultiplier);
+            effects.push(`💥 造成 ${damage} 点伤害 (${skill.effect.damageMultiplier}倍)`);
+        }
+        if (skill.effect.healPercent) {
+            effects.push(`💚 恢复 ${skill.effect.healPercent}% 生命值`);
+        }
+        if (skill.effect.statusToApply) {
+            const status = skill.effect.statusToApply;
+            if (status.effectType === 'entropy_erosion' && skill.effect.specialEffect === 'reduce_time_limit') {
+                effects.push(`⏱️ 减少答题时间 ${status.value} 秒`);
+            } else if (status.effectType === 'entropy_erosion' && skill.effect.specialEffect === 'energy_drain') {
+                effects.push(`💧 每回合损失 ${status.value} 能量，持续 ${status.duration} 回合`);
+            } else if (status.effectType === 'logic_lock') {
+                effects.push(`🔒 逻辑死锁 ${status.duration} 回合`);
+            } else if (status.effectType === 'damage_boost') {
+                effects.push(`📈 攻击力 +${status.value}%，持续 ${status.duration} 回合`);
+            } else if (status.effectType === 'stunned') {
+                effects.push(`💫 ${status.value}% 几率眩晕 ${status.duration} 回合`);
+            }
+        }
+        if (skill.effect.specialEffect === 'true_damage') {
+            effects.push(`💀 真实伤害，无视护盾`);
+        }
+        if (skill.effect.specialEffect === 'force_cooldown') {
+            effects.push(`🔄 强制技能进入冷却`);
+        }
+        if (skill.effect.specialEffect === 'drain_all_energy') {
+            effects.push(`⚡ 清空目标全部能量`);
+        }
+        if (skill.effect.specialEffect === 'execute_low_hp') {
+            effects.push(`☠️ 对低血量目标额外伤害`);
+        }
+        if (skill.effect.specialEffect === 'extend_cooldowns') {
+            effects.push(`📋 延长所有技能冷却`);
+        }
+        
+        return effects;
+    };
+
+    const effectList = getEffectDescription();
+
+    const tooltipContent = isHovered && (
+        <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ duration: 0.15 }}
+            className="fixed pointer-events-none"
+            style={{
+                left: position.x,
+                top: position.y,
+                width: tooltipWidth,
+                zIndex: 99999,
+            }}
+        >
+            <div className="fui-panel p-3 border border-glitch-red/50 shadow-lg shadow-glitch-red/20 bg-deep-space">
+                {/* 技能名称 */}
+                <div className="flex items-center justify-between mb-2">
+                    <h4 className="text-glitch-red font-display font-bold text-sm">{skill.name}</h4>
+                    <span className={`text-[10px] font-mono ${typeInfo.color}`}>{typeInfo.label}</span>
+                </div>
+                {skill.nameEn && (
+                    <div className="text-[10px] text-gray-500 font-mono mb-2">{skill.nameEn}</div>
+                )}
+                
+                {/* 触发条件和冷却 */}
+                <div className="flex gap-3 mb-2 text-[11px] font-mono">
+                    <div className="flex items-center gap-1">
+                        <span className="text-gray-500">触发:</span>
+                        <span className="text-orange-400">
+                            {skill.triggerCondition?.type === 'on_attack' ? '攻击时' :
+                             skill.triggerCondition?.type === 'hp_below' ? `<${skill.triggerCondition.value}%HP` :
+                             skill.triggerCondition?.type === 'on_hp_loss_threshold' ? `每损${skill.triggerCondition.value}%HP` :
+                             '特殊'}
+                        </span>
+                    </div>
+                    <div className="flex items-center gap-1">
+                        <span className="text-gray-500">冷却:</span>
+                        <span className={skill.cooldown === 0 ? 'text-glitch-red' : 'text-neon-cyan'}>
+                            {skill.cooldown === 0 ? '无' : `${skill.cooldown}回合`}
+                        </span>
+                    </div>
+                </div>
+                
+                {/* 技能描述 */}
+                <div className="text-xs text-gray-300 leading-relaxed border-t border-gray-700/50 pt-2 mb-2">
+                    {skill.description}
+                </div>
+                
+                {/* 具体效果列表 */}
+                {effectList.length > 0 && (
+                    <div className="border-t border-gray-700/50 pt-2">
+                        <div className="text-[10px] text-gray-500 mb-1">技能效果:</div>
+                        <div className="space-y-1">
+                            {effectList.map((effect, idx) => (
+                                <div key={idx} className="text-[11px] text-gray-300 font-mono">
+                                    {effect}
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                )}
+                
+                {/* 当前冷却状态 */}
+                {skill.currentCooldown > 0 && (
+                    <div className="mt-2 text-[10px] font-mono text-yellow-500 border-t border-gray-700/50 pt-2">
+                        ⏳ 剩余冷却：{skill.currentCooldown} 回合
+                    </div>
+                )}
+            </div>
+            {/* 箭头 */}
+            <div 
+                className={`absolute w-2 h-2 bg-deep-space border-glitch-red/50 transform rotate-45 ${
+                    position.placement === 'top' 
+                        ? '-bottom-1 border-r border-b' 
+                        : '-top-1 border-l border-t'
+                }`}
+                style={{ left: position.arrowLeft }}
+            />
+        </motion.div>
+    );
+
+    return (
+        <div 
+            ref={triggerRef}
+            className="relative"
+            onMouseEnter={() => setIsHovered(true)}
+            onMouseLeave={() => setIsHovered(false)}
+        >
+            {children}
+            {typeof document !== 'undefined' && ReactDOM.createPortal(
+                <AnimatePresence>{tooltipContent}</AnimatePresence>,
+                document.body
+            )}
+        </div>
+    );
+};
+
 
 // 构造体肖像组件
 const ConstructCard: React.FC<{
@@ -101,28 +427,28 @@ const ConstructCard: React.FC<{
                     const canUse = !construct.isDead && skill.currentCooldown === 0 && construct.energy >= (skill.cost || 0);
                     
                     return (
-                        <motion.button
-                            key={skill.id}
-                            onClick={() => canUse && onUseSkill(construct.id, skill.id)}
-                            disabled={!canUse}
-                            className={`
-                                py-1.5 px-2 text-[14px] font-mono text-center
-                                border transition-all duration-300
-                                ${canUse
-                                    ? 'border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/20 hover:border-neon-cyan'
-                                    : 'border-gray-700 text-gray-600 cursor-not-allowed'
-                                }
-                            `}
-                            title={`${skill.name}: ${skill.description}`}
-                            whileHover={canUse ? { scale: 1.05 } : {}}
-                            whileTap={canUse ? { scale: 0.95 } : {}}
-                        >
-                            {skill.currentCooldown > 0 ? (
-                                <span className="text-gray-500">CD:{skill.currentCooldown}</span>
-                            ) : (
-                                <span className="truncate block">{skill.name}</span>
-                            )}
-                        </motion.button>
+                        <PlayerSkillTooltip key={skill.id} skill={skill}>
+                            <motion.button
+                                onClick={() => canUse && onUseSkill(construct.id, skill.id)}
+                                disabled={!canUse}
+                                className={`
+                                    py-1.5 px-2 text-[14px] font-mono text-center
+                                    border transition-all duration-300 w-full
+                                    ${canUse
+                                        ? 'border-neon-cyan/50 text-neon-cyan hover:bg-neon-cyan/20 hover:border-neon-cyan'
+                                        : 'border-gray-700 text-gray-600 cursor-not-allowed'
+                                    }
+                                `}
+                                whileHover={canUse ? { scale: 1.05 } : {}}
+                                whileTap={canUse ? { scale: 0.95 } : {}}
+                            >
+                                {skill.currentCooldown > 0 ? (
+                                    <span className="text-gray-500">CD:{skill.currentCooldown}</span>
+                                ) : (
+                                    <span className="truncate block">{skill.name}</span>
+                                )}
+                            </motion.button>
+                        </PlayerSkillTooltip>
                     );
                 })}
             </div>
@@ -215,7 +541,7 @@ const EntropyCard: React.FC<{
             </div>
 
             {/* 生命值条 */}
-            <div className="relative">
+            <div className="relative mb-2">
                 <div className="flex justify-between text-xs font-mono mb-1">
                     <span className="text-gray-500">完整性</span>
                     <span className="text-glitch-red">{entity.hp}/{entity.maxHp}</span>
@@ -228,6 +554,86 @@ const EntropyCard: React.FC<{
                     />
                 </div>
             </div>
+
+            {/* 敌人技能显示 */}
+            {entity.skill && (
+                <EnemySkillTooltip skill={entity.skill} enemyDamage={entity.damage}>
+                    <div className="mt-2 pt-2 border-t border-gray-700/50 cursor-help">
+                        <div className="flex items-center justify-between gap-2">
+                            <div className="flex items-center gap-1.5 min-w-0 flex-1">
+                                <span className="text-[10px] text-gray-500 shrink-0">技能</span>
+                                <span 
+                                    className={`text-xs font-mono truncate ${
+                                        entity.skill.currentCooldown === 0 
+                                            ? 'text-glitch-red animate-pulse' 
+                                            : 'text-gray-400'
+                                    }`}
+                                >
+                                    {entity.skill.name}
+                                </span>
+                            </div>
+                            <div className="shrink-0">
+                                {entity.skill.cooldown === 0 ? (
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 bg-glitch-red/20 text-glitch-red border border-glitch-red/30 rounded">
+                                        常驻
+                                    </span>
+                                ) : entity.skill.currentCooldown === 0 ? (
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 bg-glitch-red/20 text-glitch-red border border-glitch-red/30 rounded animate-pulse">
+                                        就绪
+                                    </span>
+                                ) : (
+                                    <span className="text-[10px] font-mono px-1.5 py-0.5 bg-gray-800 text-gray-400 border border-gray-600 rounded">
+                                        CD:{entity.skill.currentCooldown}
+                                    </span>
+                                )}
+                            </div>
+                        </div>
+                        {/* 技能类型标签 */}
+                        <div className="flex gap-1 mt-1">
+                            <span className={`text-[9px] font-mono px-1 py-0.5 rounded ${
+                                entity.skill.type === 'damage_all' ? 'bg-glitch-red/10 text-glitch-red/80' :
+                                entity.skill.type === 'damage_single' ? 'bg-orange-500/10 text-orange-400/80' :
+                                entity.skill.type === 'debuff_player' ? 'bg-purple-500/10 text-purple-400/80' :
+                                entity.skill.type === 'self_buff' ? 'bg-green-500/10 text-green-400/80' :
+                                entity.skill.type === 'heal_self' ? 'bg-emerald-500/10 text-emerald-400/80' :
+                                'bg-gray-600/10 text-gray-400/80'
+                            }`}>
+                                {entity.skill.type === 'damage_all' ? '范围伤害' :
+                                 entity.skill.type === 'damage_single' ? '单体伤害' :
+                                 entity.skill.type === 'debuff_player' ? '玩家减益' :
+                                 entity.skill.type === 'self_buff' ? '自身增益' :
+                                 entity.skill.type === 'heal_self' ? '自我恢复' :
+                                 entity.skill.type === 'special' ? '特殊效果' :
+                                 entity.skill.type}
+                            </span>
+                            <span className="text-[9px] text-gray-600 italic">悬浮查看详情</span>
+                        </div>
+                    </div>
+                </EnemySkillTooltip>
+            )}
+
+            {/* Boss多技能显示 */}
+            {entity.skills && entity.skills.length > 1 && (
+                <div className="mt-1 pt-1 border-t border-gray-700/30">
+                    <div className="text-[9px] text-gray-500 mb-1">额外技能</div>
+                    {entity.skills.slice(1).map((skill, idx) => (
+                        <EnemySkillTooltip key={skill.id || idx} skill={skill} enemyDamage={entity.damage}>
+                            <div className="flex items-center justify-between gap-1 text-[10px] py-0.5 cursor-help hover:bg-gray-800/30 rounded px-1 -mx-1">
+                                <span className="text-gray-400 truncate">
+                                    {skill.name}
+                                </span>
+                                <span className="text-gray-500 shrink-0">
+                                    {skill.triggerCondition?.type === 'hp_below' 
+                                        ? `<${skill.triggerCondition.value}%HP` 
+                                        : skill.triggerCondition?.type === 'on_hp_loss_threshold'
+                                        ? `每损${skill.triggerCondition.value}%HP`
+                                        : '特殊'}
+                                </span>
+                            </div>
+                        </EnemySkillTooltip>
+                    ))}
+                </div>
+            )}
         </motion.div>
     );
 };
@@ -328,7 +734,11 @@ export const BattleField: React.FC = () => {
         statusMessage,
         isProcessing,
         selectedAnswerIndex,
-        isCorrect
+        isCorrect,
+        timeRemaining,
+        isTimedOut,
+        isPaused,
+        togglePause
     } = useBattleSequence();
 
     return (
@@ -336,6 +746,42 @@ export const BattleField: React.FC = () => {
             {/* 背景特效 */}
             <div className="hex-grid-bg opacity-30" />
             <div className="data-stream opacity-20" />
+
+            {/* 暂停遮罩 */}
+            <AnimatePresence>
+                {isPaused && (
+                    <motion.div
+                        className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        exit={{ opacity: 0 }}
+                        transition={{ duration: 0.3 }}
+                    >
+                        <motion.div
+                            className="fui-panel p-8 text-center"
+                            initial={{ scale: 0.8, opacity: 0 }}
+                            animate={{ scale: 1, opacity: 1 }}
+                            exit={{ scale: 0.8, opacity: 0 }}
+                            transition={{ delay: 0.1 }}
+                        >
+                            <div className="text-4xl font-display text-holographic-gold mb-4">
+                                ⏸ 游戏暂停
+                            </div>
+                            <div className="text-gray-400 font-mono text-sm mb-6">
+                                倒计时已暂停，点击继续按钮或按下空格键恢复游戏
+                            </div>
+                            <motion.button
+                                onClick={togglePause}
+                                className="px-8 py-3 bg-holographic-gold/20 border-2 border-holographic-gold text-holographic-gold font-mono text-lg rounded hover:bg-holographic-gold/30 transition-all"
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                            >
+                                ▶ 继续游戏
+                            </motion.button>
+                        </motion.div>
+                    </motion.div>
+                )}
+            </AnimatePresence>
 
             {/* 顶部栏 */}
             <motion.div
@@ -369,8 +815,8 @@ export const BattleField: React.FC = () => {
                     {statusMessage}
                 </motion.div>
 
-                {/* 处理指示器 */}
-                <div className="w-32 flex justify-end">
+                {/* 处理指示器 和 暂停按钮 */}
+                <div className="flex items-center gap-3">
                     {isProcessing && (
                         <motion.div
                             className="flex items-center gap-2"
@@ -381,6 +827,22 @@ export const BattleField: React.FC = () => {
                             <span className="text-xs font-mono text-neon-cyan">处理中</span>
                         </motion.div>
                     )}
+                    
+                    {/* 暂停按钮 */}
+                    <motion.button
+                        onClick={togglePause}
+                        className={`
+                            px-4 py-2 text-sm font-mono rounded border transition-all duration-300
+                            ${isPaused 
+                                ? 'bg-holographic-gold/20 border-holographic-gold text-holographic-gold hover:bg-holographic-gold/30' 
+                                : 'bg-gray-800/50 border-gray-600 text-gray-400 hover:border-neon-cyan hover:text-neon-cyan'
+                            }
+                        `}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                    >
+                        {isPaused ? '▶ 继续' : '⏸ 暂停'}
+                    </motion.button>
                 </div>
             </motion.div>
 
@@ -418,6 +880,8 @@ export const BattleField: React.FC = () => {
                                 disabled={isProcessing}
                                 selectedIndex={selectedAnswerIndex}
                                 isCorrect={isCorrect}
+                                timeRemaining={timeRemaining}
+                                isTimedOut={isTimedOut}
                             />
                         )}
                     </AnimatePresence>

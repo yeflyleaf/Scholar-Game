@@ -9,7 +9,10 @@ interface QuestionCardProps {
     disabled?: boolean;
     selectedIndex?: number | null;
     isCorrect?: boolean | null;
+    timeRemaining?: number;
+    isTimedOut?: boolean;
 }
+
 
 // 错误答案的数据腐蚀特效
 const CorruptionOverlay: React.FC = () => (
@@ -71,9 +74,30 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     onAnswer,
     disabled,
     selectedIndex,
-    isCorrect
+    isCorrect,
+    timeRemaining = 20,
+    isTimedOut = false
 }) => {
     const hasAnswered = selectedIndex !== null && selectedIndex !== undefined;
+    
+    // 根据剩余时间确定颜色
+    const getTimerColor = () => {
+        if (hasAnswered || isTimedOut) return '';
+        if (timeRemaining <= 5) return 'text-glitch-red animate-pulse';
+        if (timeRemaining <= 10) return 'text-holographic-gold';
+        return 'text-neon-cyan';
+    };
+    
+    // 根据剩余时间确定指示器颜色
+    const getIndicatorColor = () => {
+        if (hasAnswered) {
+            return isCorrect === true ? 'bg-stable' : isCorrect === false ? 'bg-glitch-red' : 'bg-neon-cyan';
+        }
+        if (isTimedOut) return 'bg-glitch-red';
+        if (timeRemaining <= 5) return 'bg-glitch-red animate-pulse';
+        if (timeRemaining <= 10) return 'bg-holographic-gold animate-pulse';
+        return 'bg-neon-cyan animate-pulse';
+    };
 
     const typeLabel = question.type === 'Single' ? '单选题' : question.type === 'Multi' ? '多选题' : '判断题';
 
@@ -156,17 +180,27 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     animate={{ opacity: 1, x: 0 }}
                     transition={{ delay: 0.2 }}
                 >
-                    <div className={`w-3 h-3 rounded-full ${
-                        hasAnswered
-                            ? isCorrect === true ? 'bg-stable' : isCorrect === false ? 'bg-glitch-red' : 'bg-neon-cyan'
-                            : 'bg-neon-cyan animate-pulse'
-                    }`} />
-                    <span className="text-sm font-mono text-gray-400">
-                        {hasAnswered
-                            ? isCorrect === true ? '正确' : isCorrect === false ? '错误' : '验证中...'
-                            : '等待输入'
-                        }
-                    </span>
+                    <div className={`w-3 h-3 rounded-full ${getIndicatorColor()}`} />
+                    {hasAnswered ? (
+                        <span className="text-sm font-mono text-gray-400">
+                            {isCorrect === true ? '✓ 正确' : isCorrect === false ? '✕ 错误' : '验证中...'}
+                        </span>
+                    ) : (
+                        <motion.div 
+                            className="flex items-center gap-2"
+                            key={timeRemaining}
+                            initial={{ scale: 1.1 }}
+                            animate={{ scale: 1 }}
+                            transition={{ duration: 0.15 }}
+                        >
+                            <span className={`text-lg font-mono font-bold ${getTimerColor()}`}>
+                                {timeRemaining}s
+                            </span>
+                            <span className="text-xs font-mono text-gray-500">
+                                剩余时间
+                            </span>
+                        </motion.div>
+                    )}
                 </motion.div>
             </div>
 

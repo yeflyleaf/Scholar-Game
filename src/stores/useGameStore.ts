@@ -3,7 +3,6 @@ import { create } from 'zustand';
 import { createJSONStorage, persist } from 'zustand/middleware';
 import {
     DEFAULT_THEME,
-    GAME_CONFIG,
     INITIAL_CONSTRUCTS,
     INSCRIPTIONS,
     SAMPLE_QUESTIONS,
@@ -250,7 +249,8 @@ export const useGameStore = create<GameState>()(
             settings: {
                 resolution: "1920x1080",
                 fullscreen: false,
-                language: "zh-CN"
+                language: "zh-CN",
+                gameDifficulty: 3
             },
 
             updateSettings: (newSettings) => set(state => ({
@@ -513,16 +513,46 @@ export const useGameStore = create<GameState>()(
                 // 判断是否使用AI题目
                 const isAIMode = sector.aiQuestions && sector.aiQuestions.length > 0;
 
-                // 深拷贝并将能量值重置为0
+                // 获取当前难度设置
+                const { gameDifficulty } = get().settings;
+                
+                // 根据难度计算攻击力调整
+                // 难度1: 玩家攻击力25，敌人攻击力-5
+                // 难度2: 玩家攻击力20，敌人攻击力不变
+                // 难度3: 玩家攻击力15，敌人攻击力+5
+                // 难度4: 玩家攻击力10，敌人攻击力+10
+                // 难度5: 玩家攻击力5，敌人攻击力+20
+                const difficultyConfig: Record<number, { playerAttack: number; enemyDamageBonus: number }> = {
+                    1: { playerAttack: 25, enemyDamageBonus: -5 },
+                    2: { playerAttack: 20, enemyDamageBonus: 0 },
+                    3: { playerAttack: 15, enemyDamageBonus: 5 },
+                    4: { playerAttack: 10, enemyDamageBonus: 10 },
+                    5: { playerAttack: 5, enemyDamageBonus: 20 },
+                };
+                const config = difficultyConfig[gameDifficulty] || difficultyConfig[3];
+
+                // 深拷贝并应用难度修正：重置能量为0，统一攻击力
                 const battleConstructs = JSON.parse(JSON.stringify(INITIAL_CONSTRUCTS)).map(
-                    (c: Construct) => ({ ...c, energy: 0 })
+                    (c: Construct) => ({ 
+                        ...c, 
+                        energy: 0,
+                        attack: config.playerAttack // 根据难度设置攻击力
+                    })
+                );
+                
+                // 深拷贝敌人并应用难度修正
+                const battleEnemies = JSON.parse(JSON.stringify(sector.entropyEntities)).map(
+                    (e: EntropyEntity) => ({
+                        ...e,
+                        damage: Math.max(1, e.damage + config.enemyDamageBonus) // 确保至少1点伤害
+                    })
                 );
                 
                 set({
                     currentScreen: 'BATTLE',
                     currentSector: sector,
-                    entropyEntities: JSON.parse(JSON.stringify(sector.entropyEntities)), // 深拷贝
-                    constructs: battleConstructs, // 重置队伍，能量归零
+                    entropyEntities: battleEnemies, // 使用难度调整后的敌人
+                    constructs: battleConstructs, // 重置队伍，能量归零，攻击力按难度调整
                     battleState: 'PLAYER_TURN',
                     currentTurn: 1,
                     battleLog: [],
@@ -676,8 +706,9 @@ export const useGameStore = create<GameState>()(
                     const newComboCount = comboCount + 1;
                     set({ comboCount: newComboCount });
                     
-                    // 连击伤害计算：使用激活角色的攻击力 × 连击倍率
-                    // 公式：伤害 = 激活角色攻击力 × min(连击数, 3)
+                    // 连击伤害计算：使用激活角色的攻击力 + 连击加成
+                    // 公式：伤害 = 激活角色攻击力 + 连击加成
+                    // 连击加成：1连击=0，2连击=+5，3连击及以上=+10
                     const { activeConstructId, constructs } = get();
                     const aliveConstructs = constructs.filter(c => !c.isDead);
                     
@@ -687,12 +718,13 @@ export const useGameStore = create<GameState>()(
                         activeAttacker = aliveConstructs[0];
                     }
                     
-                    const attackPower = activeAttacker?.attack || 5; // 默认攻击力5
-                    const comboMultiplier = Math.min(newComboCount, GAME_CONFIG.comboThreshold); // 最多3倍
-                    const damage = attackPower * comboMultiplier;
+                    const attackPower = activeAttacker?.attack || 15; // 默认攻击力15
+                    // 连击加成：2连击+5，3连击及以上+10
+                    const comboBonus = newComboCount >= 3 ? 10 : (newComboCount === 2 ? 5 : 0);
+                    const damage = attackPower + comboBonus;
                     
                     if (newComboCount >= 2) {
-                        addBattleLog(`⚡ ${newComboCount}连击！逻辑验证成功！熵值降低。`, 'system');
+                        addBattleLog(`⚡ ${newComboCount}连击！逻辑验证成功！连击加成 +${comboBonus} 伤害！`, 'system');
                     } else {
                         addBattleLog('逻辑验证成功！熵值降低。', 'system');
                     }
@@ -902,12 +934,17 @@ export const useGameStore = create<GameState>()(
                     // === 敌人"攻击时触发"技能系统 ===
                     // 根据文档，大部分敌人技能在敌人攻击时触发（冷却归零时）
                     let currentConstructsAfterSkill = get().constructs;
-                    let updatedEnemiesAfterAttack = [...entropyEntities];
-                    const skill = attacker.skill;
+                    
+                    // 从最新状态获取敌人列表，确保使用最新的冷却值
+                    const latestEnemies = get().entropyEntities;
+                    const latestAttacker = latestEnemies.find(e => e.id === attacker.id);
+                    let updatedEnemiesAfterAttack = [...latestEnemies];
+                    const skill = latestAttacker?.skill || attacker.skill;
                     
                     // 检查敌人是否有技能且技能触发条件为 on_attack
-                    if (skill && skill.triggerCondition?.type === 'on_attack' && skill.currentCooldown === 0) {
-                        addBattleLog(`⚠️ 【${attacker.name}】释放了【${skill.name}】！`, 'combat');
+                    if (skill && skill.triggerCondition?.type === 'on_attack') {
+                        if (skill.currentCooldown === 0) {
+                            addBattleLog(`⚠️ 【${attacker.name}】释放了【${skill.name}】！`, 'combat');
                         
                         // 根据技能效果类型执行不同逻辑
                         switch (skill.effect.specialEffect) {
@@ -1194,6 +1231,12 @@ export const useGameStore = create<GameState>()(
                             }
                             return e;
                         });
+                        } else {
+                            // 技能在冷却中，显示剩余冷却回合（对于非无冷却技能）
+                            if (skill.cooldown > 0) {
+                                addBattleLog(`🔄 【${attacker.name}】的【${skill.name}】冷却中（剩余${skill.currentCooldown}回合）`, 'system');
+                            }
+                        }
                     }
                     
                     // 更新状态
