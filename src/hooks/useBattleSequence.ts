@@ -30,7 +30,7 @@ export function useBattleSequence(): BattleSequenceReturn {
 
   // 用于追踪当前问题的ID，检测问题切换
   const currentQuestionIdRef = useRef<string | null>(null);
-  const timerRef = useRef<NodeJS.Timeout | null>(null);
+  const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const { currentQuestion, answerQuestion, battleState } = useGameStore();
 
@@ -92,12 +92,15 @@ export function useBattleSequence(): BattleSequenceReturn {
     // 检测新问题
     const questionId = currentQuestion?.id || null;
 
-    // 如果问题变化或进入玩家回合，重置倒计时
+    // 如果问题变化，重置倒计时（使用 setTimeout 调度更新，避免同步 setState 警告）
     if (questionId !== currentQuestionIdRef.current) {
       currentQuestionIdRef.current = questionId;
       clearTimer();
-      setTimeRemaining(QUESTION_TIME_LIMIT);
-      setIsTimedOut(false);
+      // 使用 queueMicrotask 调度状态更新，避免同步渲染警告
+      queueMicrotask(() => {
+        setTimeRemaining(QUESTION_TIME_LIMIT);
+        setIsTimedOut(false);
+      });
     }
 
     // 只在玩家回合且有问题且未暂停时启动计时器
@@ -116,7 +119,7 @@ export function useBattleSequence(): BattleSequenceReturn {
     }
 
     return () => clearTimer();
-  }, [currentQuestion?.id, battleState, isProcessing, isPaused, clearTimer]);
+  }, [currentQuestion, battleState, isProcessing, isPaused, clearTimer]);
 
   // 监听 timeRemaining 变化，触发超时
   useEffect(() => {
@@ -126,7 +129,10 @@ export function useBattleSequence(): BattleSequenceReturn {
       !isTimedOut &&
       battleState === "PLAYER_TURN"
     ) {
-      handleTimeout();
+      // 使用 queueMicrotask 调度超时处理，避免同步渲染警告
+      queueMicrotask(() => {
+        handleTimeout();
+      });
     }
   }, [timeRemaining, isProcessing, isTimedOut, battleState, handleTimeout]);
 
