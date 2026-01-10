@@ -262,7 +262,7 @@ export interface ObserverProfile {
   exp: number;
   maxExp: number;
   unlockedConstructs: ConstructModel[];
-  inventory: Inscription[];
+  currentInscription: Inscription | null; // 当前装备的铭文（只能有一个，进入战斗后消耗）
   clearedSectors: string[];
   entropyStabilized: number; // 总共降低的熵值 (分数)
   hackPoints: number; // 铭文抽卡点数 (初始1点，通关+1，最多3点)

@@ -95,7 +95,7 @@ const rarityConfig: Record<string, { bg: string; border: string; text: string; g
 };
 
 export const MindHack: React.FC = () => {
-    const { setScreen, performMindHack, currentTheme, observerProfile } = useGameStore();
+    const { setScreen, generateHackPreview, confirmHackResult, currentTheme, observerProfile } = useGameStore();
     const labels = currentTheme.pageLabels.mindHack;
     const [result, setResult] = useState<Inscription | null>(null);
     const [isHacking, setIsHacking] = useState(false);
@@ -115,7 +115,8 @@ export const MindHack: React.FC = () => {
         // 模拟骇入延迟以增强戏剧效果
         await new Promise(resolve => setTimeout(resolve, 2500));
         
-        const item = performMindHack();
+        // 只生成预览，不消耗点数
+        const item = generateHackPreview();
         if (item) {
             setResult(item);
             setPhase('reveal');
@@ -126,9 +127,20 @@ export const MindHack: React.FC = () => {
         setIsHacking(false);
     };
 
+    // 确认接收：将物品存入背包（点数已在启动时消耗）
     const handleConfirm = () => {
+        if (result) {
+            confirmHackResult(result);
+        }
         setResult(null);
         setPhase('idle');
+    };
+    
+    // 返回星图（只在 idle 和 hacking 阶段可用）
+    const handleBack = () => {
+        setResult(null);
+        setPhase('idle');
+        setScreen('GRAND_UNIFICATION_SIM');
     };
 
     const config = result ? (rarityConfig[result.rarity] || rarityConfig.N) : rarityConfig.N;
@@ -204,7 +216,44 @@ export const MindHack: React.FC = () => {
                                 </span>
                             </motion.div>
 
-                            {/* 骇入按钮 */}
+                            {/* 当前铭文显示 */}
+                            <motion.div
+                                className="mb-4 px-6 py-3 rounded-lg border border-gray-600/50 bg-gray-900/50"
+                                initial={{ opacity: 0, y: -10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                <span className="text-xs font-mono text-gray-500 block text-center mb-1">当前装备铭文</span>
+                                {observerProfile.currentInscription ? (
+                                    <div className="flex items-center justify-center gap-2">
+                                        <span className={`text-lg ${
+                                            observerProfile.currentInscription.rarity === 'SSR' ? 'text-holographic-gold' :
+                                            observerProfile.currentInscription.rarity === 'SR' ? 'text-plasma-purple' :
+                                            observerProfile.currentInscription.rarity === 'R' ? 'text-neon-cyan' : 'text-gray-400'
+                                        }`}>⬡</span>
+                                        <span className={`font-display font-bold ${
+                                            observerProfile.currentInscription.rarity === 'SSR' ? 'text-holographic-gold' :
+                                            observerProfile.currentInscription.rarity === 'SR' ? 'text-plasma-purple' :
+                                            observerProfile.currentInscription.rarity === 'R' ? 'text-neon-cyan' : 'text-gray-300'
+                                        }`}>
+                                            {observerProfile.currentInscription.name}
+                                        </span>
+                                        <span className={`text-xs px-1.5 py-0.5 rounded ${
+                                            observerProfile.currentInscription.rarity === 'SSR' ? 'bg-holographic-gold/20 text-holographic-gold' :
+                                            observerProfile.currentInscription.rarity === 'SR' ? 'bg-plasma-purple/20 text-plasma-purple' :
+                                            observerProfile.currentInscription.rarity === 'R' ? 'bg-neon-cyan/20 text-neon-cyan' : 'bg-gray-600/20 text-gray-400'
+                                        }`}>
+                                            {observerProfile.currentInscription.rarity}
+                                        </span>
+                                    </div>
+                                ) : (
+                                    <span className="text-gray-500 font-mono text-sm text-center block">无</span>
+                                )}
+                                <span className="text-[10px] font-mono text-gray-600 block text-center mt-1">
+                                    ※ 新抽取的铭文将替换当前铭文
+                                </span>
+                            </motion.div>
+
                             <motion.button
                                 onClick={handleHack}
                                 disabled={!canHack}
@@ -422,18 +471,20 @@ export const MindHack: React.FC = () => {
                     )}
                 </AnimatePresence>
 
-                {/* 返回按钮 */}
-                <motion.button
-                    onClick={() => setScreen('GRAND_UNIFICATION_SIM')}
-                    className="hex-button z-10 mt-8"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 1 }}
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                >
-                    {labels.backButton}
-                </motion.button>
+                {/* 返回按钮 - 在 reveal 阶段隐藏，必须确认接收 */}
+                {phase !== 'reveal' && (
+                    <motion.button
+                        onClick={handleBack}
+                        className="hex-button z-10 mt-8"
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        transition={{ delay: 1 }}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                    >
+                        {labels.backButton}
+                    </motion.button>
+                )}
             </div>
 
             {/* 角落装饰 */}
