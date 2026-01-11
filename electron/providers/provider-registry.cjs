@@ -256,6 +256,40 @@ const PROVIDER_REGISTRY = {
     note: '使用百度智能云控制台获取的 API Key',
   },
 
+  // 阿里云 (通义千问)
+  aliyun: {
+    id: 'aliyun',
+    name: '阿里云 (通义千问)',
+    type: 'openai-compatible',
+    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    defaultModel: 'qwen-plus',
+    models: [
+      { id: 'qwen3-max', name: 'qwen3-max', description: '通义千问 Max', rateLimits: { rpm: 600, tpm: 1000000 } },
+      { id: 'qwen-plus', name: 'qwen-plus', description: '通义千问 Plus', rateLimits: { rpm: 15000, tpm: 5000000 } },
+      { id: 'qwen-flash', name: 'qwen-flash', description: '通义千问 Flash', rateLimits: { rpm: 15000, tpm: 10000000 } },
+    ],
+    region: 'china',
+    requiresProxy: false,
+    note: '前往阿里云百炼控制台获取 API Key',
+  },
+
+  // Moonshot AI (Kimi)
+  moonshot: {
+    id: 'moonshot',
+    name: 'Moonshot AI (Kimi)',
+    type: 'openai-compatible',
+    baseUrl: 'https://api.moonshot.cn/v1',
+    defaultModel: 'kimi-k2-thinking',
+    models: [
+      { id: 'kimi-k2-turbo-preview', name: 'kimi-k2-turbo-preview', description: 'K2 长思考模型的高速版本 256k', rateLimits: { rpm: 3, tpm: 500000 } },
+      { id: 'kimi-k2-thinking', name: 'kimi-k2-thinking', description: 'K2 长思考模型 256k', rateLimits: { rpm: 3, tpm: 500000 } },
+      { id: 'moonshot-v1-128k', name: 'moonshot-v1-128k', description: '适用于生成长文本 128k', rateLimits: { rpm: 3, tpm: 500000 } },
+    ],
+    region: 'china',
+    requiresProxy: false,
+    note: '前往 Moonshot 开放平台获取 API Key ',
+  },
+
 };
 
 /**

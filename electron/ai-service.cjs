@@ -9,6 +9,7 @@ const fs = require('fs');
 const path = require('path');
 const { app } = require('electron');
 const { createProvider, getAvailableProviders, getProvidersGroupedByRegion } = require('./providers/index.cjs');
+const { getProviderErrorMessage, isQuotaError } = require('./providers/error-codes.cjs');
 
 class AIService {
   constructor() {
@@ -258,176 +259,9 @@ class AIService {
     } catch (error) {
       console.error(`[AIService] 测试失败:`, error.message);
       
-      // 8. 提供更友好的错误信息
-      // 整合七大厂商 (Gemini, SiliconFlow, Groq, X.AI, OpenAI, Zhipu, Baidu) 的错误码
-      let errorMessage = error.message;
-      const msg = errorMessage.toLowerCase();
-      
-      // 辅助函数：检查是否包含关键字
-      const has = (...keywords) => keywords.some(k => msg.includes(k.toLowerCase()));
-
-      // ========================================
-      // 4xx 客户端错误
-      // ========================================
-      
-      // 400 Bad Request - 请求参数不正确
-      if (has('400', 'bad request', 'invalid request', 'invalid_request', 'invalid_argument', '1003', '1214')) {
-        if (has('max_tokens', 'max_total_tokens', 'max_seq_len', 'maxoutputtokens')) {
-          errorMessage = '请求参数错误：max_tokens 设置过高，请减少生成长度';
-        } else if (has('failed_precondition', 'precondition', 'not available in your country', 'billing')) {
-          errorMessage = 'Gemini API 在当前地区不可用，或需要启用 Google Cloud 计费';
-        } else if (has('model', 'invalid_model', 'unsupported model')) {
-          errorMessage = '请求参数错误：模型名称无效或不支持，请检查模型配置';
-        } else if (has('api_key', 'apikey', 'auth')) {
-          errorMessage = 'API 密钥格式错误，请检查密钥是否完整';
-        } else if (has('1214', 'content cannot be empty')) {
-          errorMessage = '智谱AI：输入内容为空或格式错误';
-        } else {
-          errorMessage = '请求参数错误 (400)，请检查 API 配置和参数是否正确';
-        }
-      }
-      
-      // 401 Unauthorized - API Key 无效
-      else if (has('401', 'unauthorized', 'invalid api key', 'invalid_api_key', 'authentication', 'api key not valid', '1000', '1001', '1002', '110', '111')) {
-        if (has('leaked', 'blocked', 'revoked')) {
-          errorMessage = 'API 密钥已被撤销或封禁，请重新生成密钥';
-        } else if (has('endpoint', 'vertex')) {
-          errorMessage = 'API 端点配置错误，请确认使用正确的 API 格式';
-        } else if (has('region', 'country', '地区')) {
-          errorMessage = 'API 在当前地区不可用，请检查是否需要代理';
-        } else if (has('1000', '1001', 'signature')) {
-          errorMessage = '智谱AI：JWT 签名校验失败，请检查 API Key';
-        } else if (has('1002', 'token expired', '111')) {
-          errorMessage = 'API Token 已过期，请重新获取';
-        } else {
-          errorMessage = '鉴权失败 (401)：API 密钥无效，请检查密钥是否正确';
-        }
-      }
-      
-      // 402 Payment Required - 需要付费/余额不足
-      else if (has('402', 'payment required', 'insufficient_quota', 'billing', 'insufficient quota', 'balance')) {
-        errorMessage = '账户余额不足或需要启用付费，请前往平台充值';
-      }
-      
-      // 403 Forbidden - 权限不足
-      else if (has('403', 'forbidden', 'permission_denied', 'permission denied', 'access denied', '权限不足', '6')) {
-        if (has('实名', '认证', 'verify', 'verification', 'identity')) {
-          errorMessage = '硅基流动：账户未实名认证，请先完成实名认证后重试';
-        } else if (has('tuned', 'fine-tune', 'finetune')) {
-          errorMessage = '微调模型权限不足，请检查模型访问权限';
-        } else if (has('terms', 'tos', 'policy', 'violation', 'safety')) {
-          errorMessage = '请求违反服务条款或安全策略，请检查输入内容';
-        } else if (has('region', 'country', '地区', 'location')) {
-          errorMessage = 'API 在当前地区受限，请检查是否需要代理';
-        } else if (has('6', 'access denied')) {
-          errorMessage = '百度千帆：无权限访问该资源，请检查开通状态';
-        } else {
-          errorMessage = '权限不足 (403)，请检查：实名认证、余额、模型权限或代理设置';
-        }
-      }
-      
-      // 404 Not Found - 资源/模型不存在
-      else if (has('404', 'not found', 'model not found', 'does not exist', 'no such model', 'resource not found')) {
-        if (has('file', 'image', 'video', 'audio')) {
-          errorMessage = '引用的文件资源不存在，请检查文件路径';
-        } else if (has('version', 'api version')) {
-          errorMessage = 'API 版本不支持此参数，请检查 API 配置';
-        } else {
-          errorMessage = '模型不存在或已下线 (404)，请选择其他可用模型';
-        }
-      }
-      
-      // 405 Method Not Allowed
-      else if (has('405', 'method not allowed')) {
-        errorMessage = 'API 请求方法错误 (405)，请检查端点配置';
-      }
-      
-      // 413 Payload Too Large
-      else if (has('413', 'payload too large', 'request entity too large', 'too long', 'too large')) {
-        errorMessage = '输入内容过长 (413)，请减少文本长度';
-      }
-      
-      // 415 Unsupported Media Type
-      else if (has('415', 'unsupported media type')) {
-        errorMessage = '不支持的媒体类型 (415)，请检查输入格式';
-      }
-      
-      // 422 Unprocessable Entity
-      else if (has('422', 'unprocessable', 'validation failed', 'validation error')) {
-        errorMessage = '请求无法处理 (422)，通常是语义错误或参数验证失败';
-      }
-      
-      // 429 Too Many Requests - 速率限制
-      else if (has('429', 'too many requests', 'rate limit', 'ratelimit', 'resource_exhausted', 'quota exceeded', '1302', '1303', '1305', '17', '18', '19')) {
-        if (has('tpm', 'tokens per minute')) {
-          errorMessage = '触发 TPM 速率限制 (每分钟 Token 数)，请稍后重试';
-        } else if (has('rpm', 'requests per minute')) {
-          errorMessage = '触发 RPM 速率限制 (每分钟请求数)，请稍后重试';
-        } else if (has('rpd', 'daily', 'per day')) {
-          errorMessage = '触发每日请求限额，请明天再试';
-        } else if (has('free', '免费')) {
-          errorMessage = '免费版配额已用尽，请升级或稍后重试';
-        } else if (has('17', '18', 'qps')) {
-          errorMessage = '百度千帆：QPS 超限，请稍后重试';
-        } else {
-          errorMessage = '请求过于频繁 (429)，已触发限流，请稍后重试';
-        }
-      }
-      
-      // Groq/X.AI 自定义代码
-      else if (has('498', 'capacity exceeded')) {
-         errorMessage = 'Groq/X.AI：Flex Tier 容量已满，请稍后重试';
-      }
-      else if (has('499', 'cancelled')) {
-         errorMessage = '请求被取消 (499)';
-      }
-
-      // ========================================
-      // 5xx 服务器错误
-      // ========================================
-      
-      // 500 Internal Server Error
-      else if (has('500', 'internal server error', 'internal error', 'internal', '服务异常', '336')) {
-        errorMessage = 'AI 服务内部错误 (500)，请稍后重试';
-      }
-      // 502 Bad Gateway
-      else if (has('502', 'bad gateway')) {
-        errorMessage = '网关错误 (502)，上游服务无效，请稍后重试';
-      }
-      // 503 Service Unavailable
-      else if (has('503', 'service unavailable', 'unavailable', 'overloaded', 'capacity', 'maintenance', '1301')) {
-        errorMessage = '服务暂时不可用 (503)，系统过载或维护中，请稍后重试';
-      }
-      // 504 Gateway Timeout
-      else if (has('504', 'gateway timeout', 'deadline_exceeded', 'timed out')) {
-        errorMessage = '服务响应超时 (504)，请减少输入或稍后重试';
-      }
-
-      // ========================================
-      // 网络和其他错误
-      // ========================================
-      else if (has('fetch failed', 'network error', 'enotfound', 'econnrefused', '无法连接')) {
-         if (has('google', 'gemini', 'googleapis')) {
-           errorMessage = '无法连接到 Google 服务器，请检查代理设置';
-         } else {
-           errorMessage = '网络连接失败，请检查网络设置或代理';
-         }
-      }
-      else if (has('timeout', 'etimedout')) {
-         errorMessage = '请求超时，请检查网络连接';
-      }
-      else if (has('context length', 'token limit', 'input too long')) {
-         errorMessage = '输入长度超过模型限制，请减少内容';
-      }
-      else if (has('content filter', 'safety', 'blocked', 'harmful')) {
-         errorMessage = '内容被安全策略拦截，请修改输入';
-      }
-      else if (has('empty response', 'no response')) {
-         errorMessage = '服务返回空响应，请重试';
-      }
-      else if (has('json', 'parse error', '解析')) {
-         errorMessage = '响应格式错误，请稍后重试';
-      }
+      // 使用按厂商分开的错误码处理
+      // 根据当前选择的 providerId 返回对应厂商的特定错误消息
+      const errorMessage = getProviderErrorMessage(this.providerId, error.message);
 
       return {
         success: false,
@@ -471,7 +305,7 @@ class AIService {
       return await this.provider.complete(prompt, systemInstruction, options);
     } catch (error) {
       // 在 complete 层面也检测配额错误，设置标志
-      if (error.message && (error.message.includes('配额') || error.message.includes('Quota') || error.message.includes('quota'))) {
+      if (isQuotaError(this.providerId, error.message)) {
         this.setQuotaExhausted();
       }
       throw error;
@@ -550,10 +384,11 @@ class AIService {
           }
         } catch (error) {
           retryCount++;
-          console.error(`[AIService] 批次 ${batch + 1} 第 ${retryCount} 次尝试失败:`, error.message);
+          const friendlyError = getProviderErrorMessage(this.providerId, error.message);
+          console.error(`[AIService] 批次 ${batch + 1} 第 ${retryCount} 次尝试失败: ${friendlyError} (${error.message})`);
           
           // 检查是否是配额错误，配额错误直接停止所有生成并设置全局标志
-          if (error.message && (error.message.includes('配额') || error.message.includes('Quota') || error.message.includes('quota'))) {
+          if (isQuotaError(this.providerId, error.message)) {
             console.error('[AIService] ⛔ 检测到配额限制，强制停止所有生成并阻止后续请求');
             this.setQuotaExhausted();  // 设置全局配额耗尽标志
             return allQuestions.slice(0, count);
