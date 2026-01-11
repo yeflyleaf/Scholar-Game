@@ -364,19 +364,19 @@ export const SettingsScreen: React.FC = () => {
                             {/* 难度说明 */}
                             <div className="text-sm font-mono text-gray-400 space-y-1 bg-gray-800/50 p-3 rounded border border-gray-700">
                                 {settings.gameDifficulty === 1 && (
-                                    <p>✨ <span className="text-stable">新手模式</span> - 我方攻击力: <span className="text-neon-cyan">25</span> | 敌方攻击力: <span className="text-stable">-5</span></p>
+                                    <p>✨ <span className="text-stable">新手模式</span> - 我方攻击力: <span className="text-neon-cyan">25</span> | 敌方攻击力: <span className="text-stable">-5</span> | 敌方生命: <span className="text-glitch-red">+100</span></p>
                                 )}
                                 {settings.gameDifficulty === 2 && (
-                                    <p>🌟 <span className="text-neon-cyan">简单模式</span> - 我方攻击力: <span className="text-neon-cyan">20</span> | 敌方攻击力: <span className="text-gray-400">不变</span></p>
+                                    <p>🌟 <span className="text-neon-cyan">简单模式</span> - 我方攻击力: <span className="text-neon-cyan">20</span> | 敌方攻击力: <span className="text-gray-400">不变</span> | 敌方生命: <span className="text-glitch-red">+200</span></p>
                                 )}
                                 {settings.gameDifficulty === 3 && (
-                                    <p>⚔️ <span className="text-holographic-gold">标准模式</span> - 我方攻击力: <span className="text-neon-cyan">15</span> | 敌方攻击力: <span className="text-glitch-red">+5</span></p>
+                                    <p>⚔️ <span className="text-holographic-gold">标准模式</span> - 我方攻击力: <span className="text-neon-cyan">15</span> | 敌方攻击力: <span className="text-glitch-red">+5</span> | 敌方生命: <span className="text-glitch-red">+300</span></p>
                                 )}
                                 {settings.gameDifficulty === 4 && (
-                                    <p>🔥 <span className="text-orange-400">困难模式</span> - 我方攻击力: <span className="text-neon-cyan">10</span> | 敌方攻击力: <span className="text-glitch-red">+10</span></p>
+                                    <p>🔥 <span className="text-orange-400">困难模式</span> - 我方攻击力: <span className="text-neon-cyan">10</span> | 敌方攻击力: <span className="text-glitch-red">+10</span> | 敌方生命: <span className="text-glitch-red">+500</span></p>
                                 )}
                                 {settings.gameDifficulty === 5 && (
-                                    <p>💀 <span className="text-glitch-red">地狱模式</span> - 我方攻击力: <span className="text-neon-cyan">5</span> | 敌方攻击力: <span className="text-glitch-red">+20</span></p>
+                                    <p>💀 <span className="text-glitch-red">地狱模式</span> - 我方攻击力: <span className="text-neon-cyan">5</span> | 敌方攻击力: <span className="text-glitch-red">+20</span> | 敌方生命: <span className="text-glitch-red">+1000</span></p>
                                 )}
                             </div>
                         </div>

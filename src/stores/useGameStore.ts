@@ -2,28 +2,28 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
-  DEFAULT_THEME,
-  INITIAL_CONSTRUCTS,
-  INSCRIPTIONS,
-  SAMPLE_QUESTIONS,
-  STAR_SECTORS,
+    DEFAULT_THEME,
+    INITIAL_CONSTRUCTS,
+    INSCRIPTIONS,
+    SAMPLE_QUESTIONS,
+    STAR_SECTORS,
 } from "../lib/constants";
 import { generateId, shuffleArray } from "../lib/utils";
 import type {
-  BattleLogEntry,
-  BattleState,
-  Construct,
-  DamageIndicator,
-  EntropyEntity,
-  GameScreen,
-  GameSettings,
-  GameTheme,
-  Inscription,
-  InscriptionEffectContext,
-  InscriptionTrigger,
-  ObserverProfile,
-  Question,
-  StarSector,
+    BattleLogEntry,
+    BattleState,
+    Construct,
+    DamageIndicator,
+    EntropyEntity,
+    GameScreen,
+    GameSettings,
+    GameTheme,
+    Inscription,
+    InscriptionEffectContext,
+    InscriptionTrigger,
+    ObserverProfile,
+    Question,
+    StarSector,
 } from "../types/game";
 
 // 辅助函数：随机打乱题目选项
@@ -604,20 +604,20 @@ export const useGameStore = create<GameState>()(
         const { gameDifficulty } = get().settings;
 
         // 根据难度计算攻击力调整
-        // 难度1: 玩家攻击力25，敌人攻击力-5
-        // 难度2: 玩家攻击力20，敌人攻击力不变
-        // 难度3: 玩家攻击力15，敌人攻击力+5
-        // 难度4: 玩家攻击力10，敌人攻击力+10
-        // 难度5: 玩家攻击力5，敌人攻击力+20
+        // 难度1: 玩家攻击力25，敌人攻击力-5，敌人生命+100
+        // 难度2: 玩家攻击力20，敌人攻击力不变，敌人生命+200
+        // 难度3: 玩家攻击力15，敌人攻击力+5，敌人生命+300
+        // 难度4: 玩家攻击力10，敌人攻击力+10，敌人生命+500
+        // 难度5: 玩家攻击力5，敌人攻击力+20，敌人生命+1000
         const difficultyConfig: Record<
           number,
-          { playerAttack: number; enemyDamageBonus: number }
+          { playerAttack: number; enemyDamageBonus: number; enemyHpBonus: number }
         > = {
-          1: { playerAttack: 25, enemyDamageBonus: -5 },
-          2: { playerAttack: 20, enemyDamageBonus: 0 },
-          3: { playerAttack: 15, enemyDamageBonus: 5 },
-          4: { playerAttack: 10, enemyDamageBonus: 10 },
-          5: { playerAttack: 5, enemyDamageBonus: 20 },
+          1: { playerAttack: 25, enemyDamageBonus: -5, enemyHpBonus: 100 },
+          2: { playerAttack: 20, enemyDamageBonus: 0, enemyHpBonus: 200 },
+          3: { playerAttack: 15, enemyDamageBonus: 5, enemyHpBonus: 300 },
+          4: { playerAttack: 10, enemyDamageBonus: 10, enemyHpBonus: 500 },
+          5: { playerAttack: 5, enemyDamageBonus: 20, enemyHpBonus: 1000 },
         };
         const config = difficultyConfig[gameDifficulty] || difficultyConfig[3];
 
@@ -636,6 +636,8 @@ export const useGameStore = create<GameState>()(
         ).map((e: EntropyEntity) => ({
           ...e,
           damage: Math.max(1, e.damage + config.enemyDamageBonus), // 确保至少1点伤害
+          hp: e.hp + config.enemyHpBonus, // 增加生命值
+          maxHp: e.maxHp + config.enemyHpBonus, // 增加最大生命值
         }));
 
         set({

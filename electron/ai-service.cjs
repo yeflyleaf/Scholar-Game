@@ -5,11 +5,18 @@
  * @link https://github.com/yeflyleaf
  */
 
-const fs = require('fs');
-const path = require('path');
-const { app } = require('electron');
-const { createProvider, getAvailableProviders, getProvidersGroupedByRegion } = require('./providers/index.cjs');
-const { getProviderErrorMessage, isQuotaError } = require('./providers/error-codes.cjs');
+const fs = require("fs");
+const path = require("path");
+const { app } = require("electron");
+const {
+  createProvider,
+  getAvailableProviders,
+  getProvidersGroupedByRegion,
+} = require("./providers/index.cjs");
+const {
+  getProviderErrorMessage,
+  isQuotaError,
+} = require("./providers/error-codes.cjs");
 
 class AIService {
   constructor() {
@@ -17,14 +24,14 @@ class AIService {
     this.providerId = null;
     this.apiKey = null;
     this.model = null;
-    
+
     // 配额耗尽状态 Map <providerId, timestamp>
     // 记录每个提供商的配额耗尽时间
     this.quotaStatus = new Map();
-    
+
     // 加载保存的配置
     this.loadConfig();
-    
+
     // 如果存在配置，初始化提供商
     if (this.providerId && this.apiKey) {
       this.initProvider();
@@ -35,46 +42,52 @@ class AIService {
    * 获取当前提供商的配额耗尽时间
    */
   get quotaExhaustedTime() {
-    return this.providerId ? (this.quotaStatus.get(this.providerId) || null) : null;
+    return this.providerId
+      ? this.quotaStatus.get(this.providerId) || null
+      : null;
   }
-  
+
   /**
    * 检查当前提供商配额是否耗尽
    * 如果配额已耗尽超过5分钟，自动重置标志
    */
   isQuotaExhausted() {
     if (!this.providerId) return false;
-    
+
     const exhaustedTime = this.quotaStatus.get(this.providerId);
     if (!exhaustedTime) return false;
-    
+
     // 如果配额耗尽超过5分钟，自动重置（允许用户再次尝试）
     const QUOTA_RESET_TIME = 5 * 60 * 1000; // 5分钟
-    if ((Date.now() - exhaustedTime) > QUOTA_RESET_TIME) {
-      console.log(`[AIService] 配额耗尽标志已自动重置（超过5分钟）: ${this.providerId}`);
+    if (Date.now() - exhaustedTime > QUOTA_RESET_TIME) {
+      console.log(
+        `[AIService] 配额耗尽标志已自动重置（超过5分钟）: ${this.providerId}`
+      );
       this.resetQuotaFlag();
       return false;
     }
-    
+
     return true;
   }
-  
+
   /**
    * 设置当前提供商配额耗尽标志
    */
   setQuotaExhausted() {
     if (!this.providerId) return;
-    
+
     this.quotaStatus.set(this.providerId, Date.now());
-    console.error(`[AIService] ⛔ 配额耗尽标志已设置: ${this.providerId}，后续请求将被阻止`);
+    console.error(
+      `[AIService] ⛔ 配额耗尽标志已设置: ${this.providerId}，后续请求将被阻止`
+    );
   }
-  
+
   /**
    * 重置当前提供商配额耗尽标志
    */
   resetQuotaFlag() {
     if (!this.providerId) return;
-    
+
     this.quotaStatus.delete(this.providerId);
     console.log(`[AIService] ✓ 配额耗尽标志已重置: ${this.providerId}`);
   }
@@ -84,25 +97,25 @@ class AIService {
   // ============================================
 
   getConfigPath() {
-    const appDataFolder = app.getPath('userData');
+    const appDataFolder = app.getPath("userData");
     if (!fs.existsSync(appDataFolder)) {
       fs.mkdirSync(appDataFolder, { recursive: true });
     }
-    return path.join(appDataFolder, 'ai-config.json');
+    return path.join(appDataFolder, "ai-config.json");
   }
 
   loadConfig() {
     const configPath = this.getConfigPath();
     if (fs.existsSync(configPath)) {
       try {
-        const data = fs.readFileSync(configPath, 'utf-8');
+        const data = fs.readFileSync(configPath, "utf-8");
         const config = JSON.parse(data);
-        this.providerId = config.providerId || 'gemini';
+        this.providerId = config.providerId || "gemini";
         this.apiKey = config.apiKey || null;
         this.model = config.model || null;
         return config;
       } catch (e) {
-        console.error('[AIService] Failed to load config:', e);
+        console.error("[AIService] Failed to load config:", e);
         return {};
       }
     }
@@ -121,7 +134,7 @@ class AIService {
 
   initProvider() {
     if (!this.providerId) {
-      console.error('[AIService] No provider ID set');
+      console.error("[AIService] No provider ID set");
       return false;
     }
 
@@ -133,7 +146,7 @@ class AIService {
       console.log(`[AIService] Initialized provider: ${this.providerId}`);
       return true;
     } catch (e) {
-      console.error('[AIService] Failed to initialize provider:', e);
+      console.error("[AIService] Failed to initialize provider:", e);
       return false;
     }
   }
@@ -146,7 +159,7 @@ class AIService {
     this.providerId = providerId;
     // 切换提供商时重置模型
     const providers = getAvailableProviders();
-    const providerInfo = providers.find(p => p.id === providerId);
+    const providerInfo = providers.find((p) => p.id === providerId);
     if (providerInfo) {
       this.model = providerInfo.defaultModel;
     }
@@ -198,7 +211,7 @@ class AIService {
   // ============================================
 
   async sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   /**
@@ -208,17 +221,17 @@ class AIService {
   async testConnection() {
     // 1. 检查基本配置
     if (!this.providerId) {
-      return { success: false, message: 'AI 提供商未选择' };
+      return { success: false, message: "AI 提供商未选择" };
     }
 
     if (!this.apiKey) {
-      return { success: false, message: 'API 密钥未设置' };
+      return { success: false, message: "API 密钥未设置" };
     }
 
     // 2. 确保提供商已初始化
     if (!this.provider) {
       if (!this.initProvider()) {
-        return { success: false, message: 'AI 提供商初始化失败' };
+        return { success: false, message: "AI 提供商初始化失败" };
       }
     }
 
@@ -235,54 +248,58 @@ class AIService {
     const startTime = Date.now();
     try {
       console.log(`[AIService] 测试连接: ${this.providerId} / ${this.model}`);
-      
+
       // 6. 发送一个简单的测试请求
       const response = await this.provider.complete(
         '请回复"OK"两个字母。',
         null,
-        { maxTokens: 20 }  // 进一步限制输出长度，节省配额
+        { maxTokens: 20 } // 进一步限制输出长度，节省配额
       );
-      
+
       const responseTime = Date.now() - startTime;
-      
+
       // 7. 验证响应
       if (response && response.length > 0) {
         console.log(`[AIService] 测试成功: ${responseTime}ms`);
         return {
           success: true,
           message: `${this.provider.displayName} 连接正常`,
-          responseTime
+          responseTime,
         };
       } else {
-        return { success: false, message: '收到空响应，请检查 API 配置' };
+        return { success: false, message: "收到空响应，请检查 API 配置" };
       }
     } catch (error) {
       console.error(`[AIService] 测试失败:`, error.message);
-      
+
       // 使用按厂商分开的错误码处理
       // 根据当前选择的 providerId 返回对应厂商的特定错误消息
-      const errorMessage = getProviderErrorMessage(this.providerId, error.message);
+      const errorMessage = getProviderErrorMessage(
+        this.providerId,
+        error.message
+      );
 
       return {
         success: false,
-        message: errorMessage
+        message: errorMessage,
       };
     }
   }
 
   extractJson(text) {
-    const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/) || 
-                      text.match(/(\[[\s\S]*\])/) || 
-                      text.match(/(\{[\s\S]*\})/);
-    
+    const jsonMatch =
+      text.match(/```(?:json)?\s*([\s\S]*?)```/) ||
+      text.match(/(\[[\s\S]*\])/) ||
+      text.match(/(\{[\s\S]*\})/);
+
     if (jsonMatch) {
       try {
         return JSON.parse(jsonMatch[1].trim());
       } catch (e) {
-        throw new Error('Failed to parse JSON from AI response');
+        throw new Error("Failed to parse JSON from AI response");
       }
     }
-    throw new Error('No valid JSON found in response');
+    throw new Error("No valid JSON found in response");
   }
 
   // ============================================
@@ -292,15 +309,15 @@ class AIService {
   async complete(prompt, systemInstruction = null, options = {}) {
     // 检查配额是否耗尽
     if (this.isQuotaExhausted()) {
-      throw new Error('AI配额已耗尽，请等待5分钟后重试或检查API密钥配额。');
+      throw new Error("AI配额已耗尽，请等待5分钟后重试或检查API密钥配额。");
     }
-    
+
     if (!this.provider) {
       if (!this.initProvider()) {
-        throw new Error('AI provider not configured');
+        throw new Error("AI provider not configured");
       }
     }
-    
+
     try {
       return await this.provider.complete(prompt, systemInstruction, options);
     } catch (error) {
@@ -314,48 +331,49 @@ class AIService {
 
   /**
    * 根据学习内容生成题目
-   * 
+   *
    * 生成策略：
    * - 每批次生成30道题目（BATCH_SIZE = 30）
-   * - 总共最多4个批次（MAX_BATCHES = 4），最多生成120道题目
+   * - 总共最多6个批次（MAX_BATCHES = 6），最多生成180道题目
    * - 每批次失败时，间隔15秒后重试，最多重试3次（MAX_RETRIES = 3）
    * - 3次重试都失败后，强制停止当前批次，继续下一批次或结束
    * - 避免程序因AI超时而卡死
    */
   async generateQuestions(content, options = {}) {
-    let {
-      count = 120,
-      types = ['Single', 'Multi', 'TrueFalse'],
-    } = options;
+    let { count = 150, types = ["Single", "Multi", "TrueFalse"] } = options;
 
     // 注意：difficulty参数已移除，1-5难度现在用于游戏机制（怪物血量、伤害），不影响题目生成
 
-    // 确保最少生成120道题目
-    if (count < 120) {
-      count = 120;
+    // 确保最少生成150道题目
+    if (count < 150) {
+      count = 150;
     }
 
     // 配置参数
-    const BATCH_SIZE = 30;           // 每批次生成30道题目
-    const MAX_BATCHES = 4;           // 最多4个批次（30 x 4 = 120题）
-    const MAX_RETRIES = 3;           // 每批次最多重试3次
-    const RETRY_DELAY_MS = 15000;    // 失败后等待15秒再重试
-    const BATCH_DELAY_MS = 3000;     // 批次之间等待3秒
+    const BATCH_SIZE = 30; // 每批次生成30道题目
+    const MAX_BATCHES = 6; // 最多6个批次（30 x 6 = 180题）
+    const MAX_RETRIES = 3; // 每批次最多重试3次
+    const RETRY_DELAY_MS = 15000; // 失败后等待15秒再重试
+    const BATCH_DELAY_MS = 3000; // 批次之间等待3秒
 
     let allQuestions = [];
 
     for (let batch = 0; batch < MAX_BATCHES; batch++) {
       // 批次之间等待
       if (batch > 0) {
-        console.log(`[AIService] 等待 ${BATCH_DELAY_MS / 1000}s 后开始第 ${batch + 1} 批次...`);
+        console.log(
+          `[AIService] 等待 ${BATCH_DELAY_MS / 1000}s 后开始第 ${
+            batch + 1
+          } 批次...`
+        );
         await this.sleep(BATCH_DELAY_MS);
       }
 
       const batchCount = Math.min(BATCH_SIZE, count - allQuestions.length);
-      
+
       // 如果已经生成够了，直接停止
       if (batchCount <= 0) {
-        console.log('[AIService] 已达到目标数量，停止生成');
+        console.log("[AIService] 已达到目标数量，停止生成");
         break;
       }
 
@@ -365,38 +383,59 @@ class AIService {
       // 重试循环：最多重试3次
       while (!batchSuccess && retryCount < MAX_RETRIES) {
         try {
-          console.log(`[AIService] 批次 ${batch + 1}/${MAX_BATCHES}，尝试 ${retryCount + 1}/${MAX_RETRIES}，生成 ${batchCount} 道题目...`);
-          
+          console.log(
+            `[AIService] 批次 ${batch + 1}/${MAX_BATCHES}，尝试 ${
+              retryCount + 1
+            }/${MAX_RETRIES}，生成 ${batchCount} 道题目...`
+          );
+
           const batchQuestions = await this._generateQuestionBatch(content, {
             count: batchCount,
             types,
             batchIndex: batch,
             existingCount: allQuestions.length,
-            previousQuestions: allQuestions.map(q => q.text),
+            previousQuestions: allQuestions.map((q) => q.text),
           });
-          
+
           if (batchQuestions && batchQuestions.length > 0) {
             allQuestions = allQuestions.concat(batchQuestions);
-            console.log(`[AIService] 批次 ${batch + 1} 成功，生成了 ${batchQuestions.length} 道题目，总计 ${allQuestions.length} 道`);
+            console.log(
+              `[AIService] 批次 ${batch + 1} 成功，生成了 ${
+                batchQuestions.length
+              } 道题目，总计 ${allQuestions.length} 道`
+            );
             batchSuccess = true;
           } else {
-            throw new Error('AI返回的题目数组为空');
+            throw new Error("AI返回的题目数组为空");
           }
         } catch (error) {
           retryCount++;
-          const friendlyError = getProviderErrorMessage(this.providerId, error.message);
-          console.error(`[AIService] 批次 ${batch + 1} 第 ${retryCount} 次尝试失败: ${friendlyError} (${error.message})`);
-          
+          const friendlyError = getProviderErrorMessage(
+            this.providerId,
+            error.message
+          );
+          console.error(
+            `[AIService] 批次 ${
+              batch + 1
+            } 第 ${retryCount} 次尝试失败: ${friendlyError} (${error.message})`
+          );
+
           // 检查是否是配额错误，配额错误直接停止所有生成并设置全局标志
           if (isQuotaError(this.providerId, error.message)) {
-            console.error('[AIService] ⛔ 检测到配额限制，强制停止所有生成并阻止后续请求');
-            this.setQuotaExhausted();  // 设置全局配额耗尽标志
+            console.error(
+              "[AIService] ⛔ 检测到配额限制，强制停止所有生成并阻止后续请求"
+            );
+            this.setQuotaExhausted(); // 设置全局配额耗尽标志
             return allQuestions.slice(0, count);
           }
-          
+
           // 如果还有重试机会，等待15秒后重试
           if (retryCount < MAX_RETRIES) {
-            console.log(`[AIService] 等待 ${RETRY_DELAY_MS / 1000}s 后进行第 ${retryCount + 1} 次重试...`);
+            console.log(
+              `[AIService] 等待 ${RETRY_DELAY_MS / 1000}s 后进行第 ${
+                retryCount + 1
+              } 次重试...`
+            );
             await this.sleep(RETRY_DELAY_MS);
           }
         }
@@ -404,23 +443,37 @@ class AIService {
 
       // 如果该批次重试3次都失败了
       if (!batchSuccess) {
-        console.error(`[AIService] 批次 ${batch + 1} 重试 ${MAX_RETRIES} 次均失败，强制停止所有生成`);
+        console.error(
+          `[AIService] 批次 ${
+            batch + 1
+          } 重试 ${MAX_RETRIES} 次均失败，强制停止所有生成`
+        );
         break;
       }
-      
+
       // 如果已经生成够了，直接停止
       if (allQuestions.length >= count) {
-        console.log(`[AIService] 已生成 ${allQuestions.length} 道题目，达到目标，停止生成`);
+        console.log(
+          `[AIService] 已生成 ${allQuestions.length} 道题目，达到目标，停止生成`
+        );
         break;
       }
     }
 
-    console.log(`[AIService] 题目生成完成，最终生成 ${allQuestions.length} 道题目`);
+    console.log(
+      `[AIService] 题目生成完成，最终生成 ${allQuestions.length} 道题目`
+    );
     return allQuestions.slice(0, count);
   }
 
   async _generateQuestionBatch(content, options) {
-    const { count, types, batchIndex, existingCount, previousQuestions = [] } = options;
+    const {
+      count,
+      types,
+      batchIndex,
+      existingCount,
+      previousQuestions = [],
+    } = options;
 
     const systemInstruction = `你是《智者计划：学习飞升》的首席知识架构师。
 【世界观背景】
@@ -443,10 +496,16 @@ class AIService {
 
     const prompt = `【逻辑重构请求 - 第${batchIndex + 1}批次】
 
-首席智者，请生成 ${count} 道"真理验证"挑战（这是第${batchIndex + 1}批，之前已生成${existingCount}道）。
+首席智者，请生成 ${count} 道"真理验证"挑战（这是第${
+      batchIndex + 1
+    }批，之前已生成${existingCount}道）。
 
 【已生成题目列表（禁止重复）】
-${previousQuestions.length > 0 ? previousQuestions.map((q, i) => `${i+1}. ${q}`).join('\n') : '无'}
+${
+  previousQuestions.length > 0
+    ? previousQuestions.map((q, i) => `${i + 1}. ${q}`).join("\n")
+    : "无"
+}
 
 【知识碎片数据流（仅限使用以下内容，但需自动分析正确答案）】
 ${content}
@@ -473,23 +532,31 @@ ${content}
 - **核心要求**：如果输入是题目，请务必**做题**，选出正确答案。如果输入是知识点，请据此出题。
 - 绝对不要重复已有的题目
 - difficulty字段统一设为1
-- 题型配比：${types.join(', ')}
+- 题型配比：${types.join(", ")}
 
 立即输出包含 ${count} 道题目的JSON数组：`;
 
     // 根据提供商调整 maxTokens
     // Gemini 支持超长上下文，可以设置很大
     // 其他提供商（如 SiliconFlow）通常限制在 32k 或 64k，设置过大会导致 "max_total_tokens > max_seq_len" 错误
-    const maxTokens = this.providerId === 'gemini' ? 100000 : 8192;
-    const response = await this.complete(prompt, systemInstruction, { maxTokens });
+    const maxTokens = this.providerId === "gemini" ? 100000 : 8192;
+    const response = await this.complete(prompt, systemInstruction, {
+      maxTokens,
+    });
     const questions = this.extractJson(response);
-    
+
     if (!Array.isArray(questions)) {
-      console.warn('[AIService] Invalid question format, returning empty array');
+      console.warn(
+        "[AIService] Invalid question format, returning empty array"
+      );
       return [];
     }
-    
-    console.log(`[AIService] Batch ${batchIndex + 1}: requested ${count}, generated ${questions.length}`);
+
+    console.log(
+      `[AIService] Batch ${batchIndex + 1}: requested ${count}, generated ${
+        questions.length
+      }`
+    );
     return questions;
   }
 
@@ -620,7 +687,7 @@ ${content}
     "name": "${title}",
     "description": "扇区描述（科幻风格）",
     "difficulty": ${difficulty},
-    "status": "${difficulty >= 3 ? 'HIGH_ENTROPY' : 'STABLE'}",
+    "status": "${difficulty >= 3 ? "HIGH_ENTROPY" : "STABLE"}",
     "totalQuestions": ${difficulty * 10}
   },
   "entropyEntities": [
@@ -655,8 +722,10 @@ ${content}
 生成${Math.max(3, difficulty)}个敌人和${difficulty * 10}道题目。
 请只返回JSON，不要其他内容。`;
 
-    const maxTokens = this.providerId === 'gemini' ? 100000 : 8192;
-    const response = await this.complete(prompt, systemInstruction, { maxTokens });
+    const maxTokens = this.providerId === "gemini" ? 100000 : 8192;
+    const response = await this.complete(prompt, systemInstruction, {
+      maxTokens,
+    });
     return this.extractJson(response);
   }
 
@@ -876,15 +945,17 @@ ${content.substring(0, 6000)}
 确保所有内容都与"${themeName}"主题相关。
 请只返回JSON，不要其他内容。`;
 
-    const maxTokens = this.providerId === 'gemini' ? 100000 : 8192;
-    const response = await this.complete(prompt, systemInstruction, { maxTokens });
+    const maxTokens = this.providerId === "gemini" ? 100000 : 8192;
+    const response = await this.complete(prompt, systemInstruction, {
+      maxTokens,
+    });
     const theme = this.extractJson(response);
-    
+
     if (theme) {
       theme.id = `theme-${Date.now()}`;
       theme.generatedAt = Date.now();
     }
-    
+
     return theme;
   }
 
@@ -924,7 +995,9 @@ ${content.substring(0, 6000)}
 
 请为每个扇区生成一条简报。`;
 
-    const sectorsText = sectors.map((s, i) => `扇区${i+1} [ID:${s.id}]: ${s.name} - ${s.description}`).join('\n');
+    const sectorsText = sectors
+      .map((s, i) => `扇区${i + 1} [ID:${s.id}]: ${s.name} - ${s.description}`)
+      .join("\n");
 
     const prompt = `【批量生成任务简报】
 请为以下扇区生成任务简报：
@@ -947,12 +1020,14 @@ ${sectorsText}
    */
   async parseDocument(filePath) {
     const ext = path.extname(filePath).toLowerCase();
-    
-    if (ext === '.txt' || ext === '.md') {
-      return fs.readFileSync(filePath, 'utf-8');
+
+    if (ext === ".txt" || ext === ".md") {
+      return fs.readFileSync(filePath, "utf-8");
     }
-    
-    throw new Error(`Unsupported file format: ${ext}. Currently supported: .txt, .md`);
+
+    throw new Error(
+      `Unsupported file format: ${ext}. Currently supported: .txt, .md`
+    );
   }
 }
 
