@@ -312,7 +312,12 @@ const GeometricNode: React.FC<{
                 {/* 中央内容区 */}
                 <div className="absolute inset-0 flex flex-col items-center justify-center">
                     {isLocked ? (
-                        <span className="text-3xl opacity-50">🔒</span>
+                        <div className="flex flex-col items-center justify-center">
+                            <span className="text-3xl opacity-50 mb-1">🔒</span>
+                            <span className="text-[10px] font-mono opacity-60 tracking-widest text-gray-400">
+                                Lv.{sector.difficulty}
+                            </span>
+                        </div>
                     ) : sector.difficulty === 6 ? (
                         // BOSS关卡特殊显示 - 使用骷髅图标
                         <motion.span 
@@ -570,16 +575,16 @@ const DataPanel: React.FC<{ sector: StarSector | null; onStart: () => void }> = 
 // 主组件
 export const GrandUnificationSim: React.FC = () => {
 
-    // const { sectors, currentSector, selectSector, startBattle, setScreen, currentTheme, observerProfile: _realProfile } = useGameStore();
-    
-    // yeflyleafTODO: 临时硬编码满级测试，测试完记得删除这行，改回 observerProfile
-    // const observerProfile = { ..._realProfile, level: 2, exp: 1900, maxExp: 2000 };
-
-    const { sectors, currentSector, selectSector, startBattle, setScreen, currentTheme, observerProfile } = useGameStore();
+    const { sectors, currentSector, selectSector, startBattle, setScreen, currentTheme, observerProfile, syncGameState } = useGameStore();
 
     const labels = currentTheme.pageLabels.levelSelect;
     // Fix: Force update label if it's the old default
     const missionBriefingLabel = labels.missionBriefing === '任务简报' ? DEFAULT_THEME.pageLabels.levelSelect.missionBriefing : labels.missionBriefing;
+
+    // 确保关卡解锁状态与等级同步
+    React.useEffect(() => {
+        syncGameState();
+    }, [observerProfile.level, syncGameState]);
 
     const handleSectorClick = (sector: StarSector) => {
         if (sector.status !== 'LOCKED') {

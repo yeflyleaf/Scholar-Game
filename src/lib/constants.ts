@@ -872,7 +872,7 @@ export const STAR_SECTORS: StarSector[] = [
       INITIAL_ENTROPY_ENTITIES[7], // entropy-8 蓝屏·恐惧
       INITIAL_ENTROPY_ENTITIES[4], // entropy-5 栈溢出·巨像 (新增)
     ],
-    rewards: { exp: 250 },
+    rewards: { exp: 500 },
     missionBriefing:
       "传输层协议握手序列被熵噪声干扰。任务：重建连接状态机，确保数据包可靠传输。",
   },
@@ -891,7 +891,7 @@ export const STAR_SECTORS: StarSector[] = [
       INITIAL_ENTROPY_ENTITIES[6],  // entropy-7 竞态·幻影 (新增)
       INITIAL_ENTROPY_ENTITIES[2],  // entropy-3 空指针·虚空 (新增)
     ],
-    rewards: { exp: 250 },
+    rewards: { exp: 700 },
     missionBriefing:
       "检测到无限递归循环，堆栈空间即将耗尽。任务：优化递归算法，引入尾递归或迭代方案，防止栈溢出。",
   },
@@ -909,7 +909,7 @@ export const STAR_SECTORS: StarSector[] = [
       INITIAL_ENTROPY_ENTITIES[1],  // entropy-2 虚数·崩坏体 (新增)
       INITIAL_ENTROPY_ENTITIES[8],  // entropy-9 404·虚无 (新增)
     ],
-    rewards: { exp: 250 },
+    rewards: { exp: 1000 },
     missionBriefing:
       "系统核心逻辑正在发生剧烈抖动，资源调度完全失效。任务：直面奇点，重构底层调度算法，恢复系统秩序。",
   },

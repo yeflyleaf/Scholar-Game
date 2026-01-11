@@ -2,28 +2,29 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
-    DEFAULT_THEME,
-    INITIAL_CONSTRUCTS,
-    INSCRIPTIONS,
-    SAMPLE_QUESTIONS,
-    STAR_SECTORS,
+  DEFAULT_THEME,
+  INITIAL_CONSTRUCTS,
+  INSCRIPTIONS,
+  SAMPLE_QUESTIONS,
+  STAR_SECTORS,
 } from "../lib/constants";
 import { generateId, shuffleArray } from "../lib/utils";
 import type {
-    BattleLogEntry,
-    BattleState,
-    Construct,
-    DamageIndicator,
-    EntropyEntity,
-    GameScreen,
-    GameSettings,
-    GameTheme,
-    Inscription,
-    InscriptionEffectContext,
-    InscriptionTrigger,
-    ObserverProfile,
-    Question,
-    StarSector,
+  BattleLogEntry,
+  BattleState,
+  Construct,
+  DamageIndicator,
+  EntropyEntity,
+  GameScreen,
+  GameSettings,
+  GameTheme,
+  Inscription,
+  InscriptionEffectContext,
+  InscriptionTrigger,
+  NodeStatus,
+  ObserverProfile,
+  Question,
+  StarSector,
 } from "../types/game";
 
 // 辅助函数：随机打乱题目选项
@@ -168,6 +169,9 @@ interface GameState {
   applyAITheme: (theme: Partial<GameTheme>) => void;
   // 重置为默认主题
   resetTheme: () => void;
+
+  // 同步游戏状态（关卡解锁 + 经验上限）
+  syncGameState: () => void;
 }
 
 export const useGameStore = create<GameState>()(
@@ -188,7 +192,9 @@ export const useGameStore = create<GameState>()(
         hackPoints: 1, // 初始1个抽卡点数
       },
 
-      sectors: STAR_SECTORS,
+      sectors: STAR_SECTORS.map((s) =>
+        1 >= s.difficulty ? s : { ...s, status: "LOCKED" as NodeStatus }
+      ),
       currentSector: null,
       currentTheme: DEFAULT_THEME,
 
@@ -291,14 +297,16 @@ export const useGameStore = create<GameState>()(
             name: "Observer",
             level: 1,
             exp: 0,
-            maxExp: 1000,
+            maxExp: 200,
             unlockedConstructs: ["ARBITER", "WEAVER", "ARCHITECT"],
             currentInscription: null,
             clearedSectors: [],
             entropyStabilized: 0,
             hackPoints: 1, // 重置时也是1个点数
           },
-          sectors: STAR_SECTORS,
+          sectors: STAR_SECTORS.map((s) =>
+            1 >= s.difficulty ? s : { ...s, status: "LOCKED" as NodeStatus }
+          ),
           currentTheme: DEFAULT_THEME, // 同时也重置主题
           currentSector: null,
           battleState: "PLAYER_TURN",
@@ -468,14 +476,14 @@ export const useGameStore = create<GameState>()(
         let levelUp = false;
 
         // 根据等级计算下一级所需经验
-        // Lv.1->2: 200, Lv.2->3: 300, Lv.3->4: 400, Lv.4->5: 500
-        // Lv.5->6: 1000, Lv.6->7: 2000, Lv.7->8+: 2000
+        // Lv.1->2: 200, Lv.2->3: 400, Lv.3->4: 800, Lv.4->5: 1000
+        // Lv.5->6: 1500, Lv.6->7: 2000, Lv.7->8+: 2000
         const getMaxExpForLevel = (level: number): number => {
           if (level <= 1) return 200;
-          if (level === 2) return 300;
-          if (level === 3) return 400;
-          if (level === 4) return 500;
-          if (level === 5) return 1000;
+          if (level === 2) return 400;
+          if (level === 3) return 800;
+          if (level === 4) return 1000;
+          if (level === 5) return 1500;
           if (level >= 6) return 2000;
           return 2000;
         };
@@ -504,6 +512,23 @@ export const useGameStore = create<GameState>()(
             level: currentLevel,
             maxExp: currentMaxExp,
           },
+          // 升级时检查解锁新关卡
+          sectors: state.sectors.map((s) => {
+            // 如果已经解锁，保持原样
+            if (s.status !== "LOCKED") return s;
+            
+            // 检查是否达到解锁等级
+            if (currentLevel >= s.difficulty) {
+              // 获取原始配置中的状态 (STABLE 或 HIGH_ENTROPY)
+              const originalSector = STAR_SECTORS.find((os) => os.id === s.id);
+              const targetStatus = originalSector?.status || "HIGH_ENTROPY";
+              
+              console.log(`[系统] 等级提升至 Lv.${currentLevel}，解锁扇区: ${s.name}`);
+              return { ...s, status: targetStatus };
+            }
+            
+            return s;
+          }),
         });
 
         console.log(
@@ -511,6 +536,61 @@ export const useGameStore = create<GameState>()(
         );
 
         return { levelUp, newLevel: currentLevel };
+      },
+
+      // 根据等级同步游戏状态（关卡解锁 + 经验上限）
+      syncGameState: () => {
+        const { observerProfile, sectors } = get();
+        const currentLevel = observerProfile.level;
+        
+        // 1. 同步经验上限 (修复旧存档数值不一致问题)
+        // Lv.1->2: 200, Lv.2->3: 400, Lv.3->4: 800, Lv.4->5: 1000
+        // Lv.5->6: 1500, Lv.6->7: 2000, Lv.7->8+: 2000
+        const getMaxExp = (level: number): number => {
+          if (level <= 1) return 200;
+          if (level === 2) return 400;
+          if (level === 3) return 800;
+          if (level === 4) return 1000;
+          if (level === 5) return 1500;
+          if (level >= 6) return 2000;
+          return 2000;
+        };
+
+        const correctMaxExp = getMaxExp(currentLevel);
+        if (observerProfile.maxExp !== correctMaxExp) {
+            set({
+                observerProfile: {
+                    ...observerProfile,
+                    maxExp: correctMaxExp
+                }
+            });
+            console.log(`[系统] 已修正经验上限: ${observerProfile.maxExp} -> ${correctMaxExp}`);
+        }
+
+        // 2. 同步关卡解锁状态
+        const updatedSectors: StarSector[] = sectors.map((s) => {
+           // 查找原始配置以获取正确的解锁状态 (STABLE 或 HIGH_ENTROPY)
+           const originalConfig = STAR_SECTORS.find(os => os.id === s.id);
+           const unlockedStatus = (originalConfig?.status || "HIGH_ENTROPY") as NodeStatus;
+           
+           // 检查是否达到解锁等级
+           if (currentLevel >= s.difficulty) {
+             // 如果当前是锁定状态，则解锁
+             // 如果已经是解锁状态（STABLE/HIGH_ENTROPY），保持原样
+             return s.status === "LOCKED" ? { ...s, status: unlockedStatus } : s;
+           } else {
+             // 等级不足，强制锁定
+             return { ...s, status: "LOCKED" as NodeStatus };
+           }
+        });
+        
+        // 检查是否有变化，避免不必要的更新
+        const hasChanges = updatedSectors.some((s, i) => s.status !== sectors[i].status);
+        
+        if (hasChanges) {
+          set({ sectors: updatedSectors });
+          console.log(`[系统] 已根据当前等级(Lv.${currentLevel})同步关卡解锁状态`);
+        }
       },
 
       // === 战斗设置 ===
