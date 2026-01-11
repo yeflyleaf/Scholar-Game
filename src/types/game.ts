@@ -374,6 +374,17 @@ export interface GameTheme {
     victory: string; // 胜利消息
     defeat: string; // 失败消息
   };
+
+  // 敌人配置 (AI动态生成)
+  entropyEntities?: Array<{
+    id: string; // 对应 EntropyEntity.id
+    name: string; // 敌人名称
+    skills?: Array<{
+      id: string; // 对应 EnemySkill.id
+      name: string; // 技能名称
+      description: string; // 技能描述
+    }>;
+  }>;
 }
 
 // 默认主题ID

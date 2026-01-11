@@ -361,10 +361,21 @@ export const useGameStore = create<GameState>()(
         };
 
         // 创建带权重的物品列表
-        const weightedItems = INSCRIPTIONS.map((item) => ({
-          item,
-          weight: weights[item.rarity] || 0,
-        }));
+        const weightedItems = INSCRIPTIONS.map((item) => {
+          // 应用主题文本
+          const currentTheme = get().currentTheme;
+          const themeItem = currentTheme.inscriptions.find(
+            (i) => i.id === item.id
+          );
+          const finalItem = themeItem
+            ? { ...item, name: themeItem.name, description: themeItem.description }
+            : item;
+
+          return {
+            item: finalItem,
+            weight: weights[item.rarity] || 0,
+          };
+        });
 
         // 计算总权重
         const totalWeight = weightedItems.reduce(
@@ -2078,6 +2089,8 @@ export const useGameStore = create<GameState>()(
           },
           constructs: partialTheme.constructs || currentTheme.constructs,
           inscriptions: partialTheme.inscriptions || currentTheme.inscriptions,
+          entropyEntities:
+            partialTheme.entropyEntities || currentTheme.entropyEntities,
           battleLogTemplates: {
             ...currentTheme.battleLogTemplates,
             ...(partialTheme.battleLogTemplates || {}),
@@ -2091,7 +2104,112 @@ export const useGameStore = create<GameState>()(
             },
           },
         };
-        set({ currentTheme: newTheme });
+
+        // 更新当前游戏状态中的文本（不修改数值）
+        
+        // 1. 更新玩家构造体文本
+        const updatedConstructs = get().constructs.map((c) => {
+          const themeConstruct = newTheme.constructs.find((tc) => tc.id === c.id);
+          if (themeConstruct) {
+            return {
+              ...c,
+              name: themeConstruct.name,
+              title: themeConstruct.title,
+              description: themeConstruct.description,
+              skills: c.skills.map((s) => {
+                const themeSkill = themeConstruct.skills.find(
+                  (ts) => ts.id === s.id
+                );
+                return themeSkill
+                  ? {
+                      ...s,
+                      name: themeSkill.name,
+                      nameEn: themeSkill.nameEn,
+                      description: themeSkill.description,
+                    }
+                  : s;
+              }),
+            };
+          }
+          return c;
+        });
+
+        // 2. 更新当前战场敌人文本
+        const updateEntropyEntityText = (e: EntropyEntity) => {
+          const themeEntity = newTheme.entropyEntities?.find(
+            (te) => te.id === e.id
+          );
+          if (themeEntity) {
+            return {
+              ...e,
+              name: themeEntity.name,
+              skill: e.skill
+                ? (() => {
+                    const themeSkill = themeEntity.skills?.find(
+                      (ts) => ts.id === e.skill!.id
+                    );
+                    return themeSkill
+                      ? {
+                          ...e.skill,
+                          name: themeSkill.name,
+                          description: themeSkill.description,
+                        }
+                      : e.skill;
+                  })()
+                : e.skill,
+              skills: e.skills?.map((s) => {
+                const themeSkill = themeEntity.skills?.find(
+                  (ts) => ts.id === s.id
+                );
+                return themeSkill
+                  ? {
+                      ...s,
+                      name: themeSkill.name,
+                      description: themeSkill.description,
+                    }
+                  : s;
+              }),
+            };
+          }
+          return e;
+        };
+
+        const updatedEntropyEntities = get().entropyEntities.map(
+          updateEntropyEntityText
+        );
+
+        // 3. 更新所有扇区中的敌人预设文本
+        const updatedSectors = get().sectors.map((s) => ({
+          ...s,
+          entropyEntities: s.entropyEntities.map(updateEntropyEntityText),
+        }));
+
+        // 4. 更新当前装备的铭文文本
+        let updatedObserverProfile = get().observerProfile;
+        const currentInscription = updatedObserverProfile.currentInscription;
+        if (currentInscription) {
+          const themeItem = newTheme.inscriptions.find(
+            (i) => i.id === currentInscription.id
+          );
+          if (themeItem) {
+            updatedObserverProfile = {
+              ...updatedObserverProfile,
+              currentInscription: {
+                ...currentInscription,
+                name: themeItem.name,
+                description: themeItem.description,
+              },
+            };
+          }
+        }
+
+        set({
+          currentTheme: newTheme,
+          constructs: updatedConstructs,
+          entropyEntities: updatedEntropyEntities,
+          sectors: updatedSectors,
+          observerProfile: updatedObserverProfile,
+        });
         console.log(`[主题] 已应用AI主题: ${newTheme.name || "未命名"}`);
       },
 

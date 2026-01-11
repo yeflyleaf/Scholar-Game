@@ -688,6 +688,11 @@ ${content.substring(0, 6000)}
 【重要】主题名称（name字段）需要你根据学习资料内容创造一个富有意境的、符合赛博朋克/科幻风格的名称，不要直接使用用户输入的"${themeName}"这个直白的名称。
 例如：如果用户输入"计算机网络"，你可以生成"数据洪流·节点觉醒"或"协议圣殿"这样有意境的名称。
 
+【关键规则 - 必须严格遵守】
+1. **ID必须完全匹配**：构造体、技能、铭文、敌人的ID必须与下方模板中的ID完全一致，否则游戏无法正确加载。
+2. **只修改文本**：你只需要修改名称(name)、称号(title)、描述(description)等文本内容，使其符合你生成的主题。
+3. **保留原有机制暗示**：在修改描述时，尽量保留对原有机制的暗示（例如原技能是"造成伤害并眩晕"，新描述也要体现"眩晕"或"停止行动"的概念）。
+
 返回JSON格式：
 {
   "name": "由AI生成的有意境的主题名称",
@@ -723,26 +728,95 @@ ${content.substring(0, 6000)}
     {
       "id": "construct-01",
       "model": "ARBITER",
-      "name": "根据主题起名",
+      "name": "输出型角色名",
       "title": "英文称号",
       "description": "角色描述",
       "skills": [
-        {
-          "id": "skill-1",
-          "name": "技能名",
-          "nameEn": "英文名",
-          "description": "技能效果描述"
-        }
+        { "id": "skill-arbiter-1", "name": "单体伤害技能名", "nameEn": "英文名", "description": "描述" },
+        { "id": "skill-arbiter-ult", "name": "群体终极技能名", "nameEn": "英文名", "description": "描述" }
       ]
     },
-    // WEAVER 和 ARCHITECT 类似
+    {
+      "id": "construct-02",
+      "model": "WEAVER",
+      "name": "控制型角色名",
+      "title": "英文称号",
+      "description": "角色描述",
+      "skills": [
+        { "id": "skill-weaver-1", "name": "群体控制技能名", "nameEn": "英文名", "description": "描述" },
+        { "id": "skill-weaver-ult", "name": "群体减益技能名", "nameEn": "英文名", "description": "描述" }
+      ]
+    },
+    {
+      "id": "construct-03",
+      "model": "ARCHITECT",
+      "name": "辅助型角色名",
+      "title": "英文称号",
+      "description": "角色描述",
+      "skills": [
+        { "id": "skill-architect-1", "name": "护盾治疗技能名", "nameEn": "英文名", "description": "描述" },
+        { "id": "skill-architect-ult", "name": "群体回复技能名", "nameEn": "英文名", "description": "描述" }
+      ]
+    }
   ],
   "inscriptions": [
+    { "id": "inscription-genesis-compiler", "name": "SSR级成长型道具名", "rarity": "SSR", "description": "描述" },
+    { "id": "inscription-quantum-anchor", "name": "SR级保命道具名", "rarity": "SR", "description": "描述" },
+    { "id": "inscription-entropy-siphon", "name": "R级回能道具名", "rarity": "R", "description": "描述" },
+    { "id": "inscription-null-shield", "name": "N级护盾道具名", "rarity": "N", "description": "描述" },
+    { "id": "inscription-logic-residue", "name": "N级减CD道具名", "rarity": "N", "description": "描述" }
+  ],
+  "entropyEntities": [
     {
-      "id": "inscription-1",
-      "name": "铭文名称（与学习内容相关的概念）",
-      "rarity": "SSR|SR|R",
-      "description": "铭文效果描述"
+      "id": "entropy-1", "name": "低级干扰怪名",
+      "skills": [{ "id": "skill-white-noise", "name": "干扰技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-2", "name": "中级高伤怪名",
+      "skills": [{ "id": "skill-imaginary-collapse", "name": "高伤技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-3", "name": "中级封印怪名",
+      "skills": [{ "id": "skill-null-pointer", "name": "封印技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-4", "name": "中级吸能怪名",
+      "skills": [{ "id": "skill-memory-leak", "name": "吸能技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-5", "name": "高级成长怪名",
+      "skills": [{ "id": "skill-stack-overflow", "name": "成长技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-6", "name": "高级死锁怪名",
+      "skills": [{ "id": "skill-deadlock", "name": "死锁技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-7", "name": "高级清空怪名",
+      "skills": [{ "id": "skill-race-condition", "name": "清空技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-8", "name": "高级斩杀怪名",
+      "skills": [{ "id": "skill-bsod-terror", "name": "斩杀技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-9", "name": "精英加CD怪名",
+      "skills": [{ "id": "skill-not-found", "name": "加CD技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-10", "name": "精英回血怪名",
+      "skills": [{ "id": "skill-infinite-loop", "name": "回血技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-11", "name": "精英眩晕怪名",
+      "skills": [{ "id": "skill-segfault", "name": "眩晕技能名", "description": "描述" }]
+    },
+    {
+      "id": "entropy-boss", "name": "最终Boss名",
+      "skills": [
+        { "id": "skill-singularity", "name": "爆发技能名", "description": "描述" },
+        { "id": "skill-singularity-recovery", "name": "回复技能名", "description": "描述" }
+      ]
     }
   ],
   "battleLogTemplates": {
@@ -797,7 +871,7 @@ ${content.substring(0, 6000)}
   ]
 }
 
-请生成3个构造体（ARBITER、WEAVER、ARCHITECT各一个）和至少3个铭文。
+请生成完整的JSON配置。
 【重要】sectors数组中的6个扇区名称和描述必须与"${themeName}"学习主题相关，体现从简单到困难的递进。
 确保所有内容都与"${themeName}"主题相关。
 请只返回JSON，不要其他内容。`;

@@ -14,13 +14,13 @@ export const APP_META = {
 } as const;
 
 import type {
-    Construct,
-    EnemySkill,
-    EntropyEntity,
-    GameTheme,
-    Inscription,
-    Question,
-    StarSector,
+  Construct,
+  EnemySkill,
+  EntropyEntity,
+  GameTheme,
+  Inscription,
+  Question,
+  StarSector,
 } from "../types/game";
 
 // 1. 视觉美学
@@ -1282,4 +1282,144 @@ export const DEFAULT_THEME: GameTheme = {
     victory: "所有题目已完成！逻辑框架重建成功！",
     defeat: "逻辑构造体全灭，撤退失败...",
   },
+
+  entropyEntities: [
+    {
+      id: "entropy-1",
+      name: "白噪·干扰者",
+      skills: [
+        {
+          id: "skill-white-noise",
+          name: "信号干扰",
+          description: "释放高频噪声，干扰逻辑构造体的信息接收，下一道题目的答题时间减少5秒。",
+        },
+      ],
+    },
+    {
+      id: "entropy-2",
+      name: "虚数·崩坏体",
+      skills: [
+        {
+          id: "skill-imaginary-collapse",
+          name: "虚空坍缩",
+          description: "引发虚数空间坍缩，造成1.5倍基础伤害的真实伤害，无视所有护盾和减伤效果。",
+        },
+      ],
+    },
+    {
+      id: "entropy-3",
+      name: "空指针·虚空",
+      skills: [
+        {
+          id: "skill-null-pointer",
+          name: "引用消解",
+          description: "消解逻辑链接，随机使一名逻辑构造体的一个已就绪技能进入3回合冷却。",
+        },
+      ],
+    },
+    {
+      id: "entropy-4",
+      name: "内存·泄露者",
+      skills: [
+        {
+          id: "skill-memory-leak",
+          name: "资源侵蚀",
+          description: "悄然吞噬系统资源，全体逻辑构造体在3回合内每回合损失5点能量。",
+        },
+      ],
+    },
+    {
+      id: "entropy-5",
+      name: "栈溢出·巨像",
+      skills: [
+        {
+          id: "skill-stack-overflow",
+          name: "递归压制",
+          description: "进入失控递归状态，攻击力每回合增加10%，持续4回合（最高40%加成）。",
+        },
+      ],
+    },
+    {
+      id: "entropy-6",
+      name: "死锁·幽灵",
+      skills: [
+        {
+          id: "skill-deadlock",
+          name: "资源禁锢",
+          description: "形成逻辑死锁，随机使一名逻辑构造体陷入「逻辑死锁」状态，无法行动2回合。",
+        },
+      ],
+    },
+    {
+      id: "entropy-7",
+      name: "竞态·幻影",
+      skills: [
+        {
+          id: "skill-race-condition",
+          name: "时序混乱",
+          description: "扰乱时间线，使随机一个逻辑构造体的能量清空！",
+        },
+      ],
+    },
+    {
+      id: "entropy-8",
+      name: "蓝屏·恐惧",
+      skills: [
+        {
+          id: "skill-bsod-terror",
+          name: "系统崩溃",
+          description: "引发严重系统错误！若任意逻辑构造体血量低于40%，对其造成2倍伤害。",
+        },
+      ],
+    },
+    {
+      id: "entropy-9",
+      name: "404·虚无",
+      skills: [
+        {
+          id: "skill-not-found",
+          name: "资源丢失",
+          description: "请求的资源不存在！全体逻辑构造体所有技能冷却时间+2回合。",
+        },
+      ],
+    },
+    {
+      id: "entropy-10",
+      name: "死循环·衔尾蛇",
+      skills: [
+        {
+          id: "skill-infinite-loop",
+          name: "无限迭代",
+          description: "进入无穷循环，每次攻击后恢复自身最大生命值的10%。",
+        },
+      ],
+    },
+    {
+      id: "entropy-11",
+      name: "段错误·粉碎者",
+      skills: [
+        {
+          id: "skill-segfault",
+          name: "内存越界",
+          description: "突破内存边界，对全体逻辑构造体造成0.5倍基础伤害，并有20%几率使其陷入「眩晕」1回合。",
+        },
+      ],
+    },
+    {
+      id: "entropy-boss",
+      name: "奇点·抖动",
+      skills: [
+        {
+          id: "skill-singularity",
+          name: "正熵爆发",
+          description: "释放奇点蕴含的毁灭性能量！每损失10%最大生命值时自动触发，对全体逻辑构造体造成1.5倍伤害。",
+        },
+        {
+          id: "skill-singularity-recovery",
+          name: "逆熵回复",
+          description: "扭转熵增定律，当生命值首次低于40%时恢复自身50%已损失血量。",
+        },
+      ],
+    },
+  ],
 };
