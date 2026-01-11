@@ -211,7 +211,7 @@ const EnemySkillTooltip: React.FC<{
   const getEffectDescription = () => {
     const effects: string[] = [];
 
-    if (skill.effect.damageMultiplier) {
+    if (skill.effect.damageMultiplier && skill.effect.damageMultiplier > 0) {
       const damage = Math.floor(enemyDamage * skill.effect.damageMultiplier);
       effects.push(
         `💥 造成 ${damage} 点伤害 (${skill.effect.damageMultiplier}倍)`
@@ -226,7 +226,7 @@ const EnemySkillTooltip: React.FC<{
         status.effectType === "entropy_erosion" &&
         skill.effect.specialEffect === "reduce_time_limit"
       ) {
-        effects.push(`⏱️ 减少答题时间 ${status.value} 秒`);
+        effects.push(`⚡ 损失 ${status.value} 点能量`);
       } else if (
         status.effectType === "entropy_erosion" &&
         skill.effect.specialEffect === "energy_drain"
@@ -238,7 +238,7 @@ const EnemySkillTooltip: React.FC<{
         effects.push(`🔒 逻辑死锁 ${status.duration} 回合`);
       } else if (status.effectType === "damage_boost") {
         effects.push(
-          `📈 攻击力 +${status.value}%，持续 ${status.duration} 回合`
+          `📈 攻击力 +${status.value}，持续 ${status.duration} 回合`
         );
       } else if (status.effectType === "stunned") {
         effects.push(`💫 ${status.value}% 几率眩晕 ${status.duration} 回合`);
@@ -258,6 +258,12 @@ const EnemySkillTooltip: React.FC<{
     }
     if (skill.effect.specialEffect === "extend_cooldowns") {
       effects.push(`📋 延长所有技能冷却`);
+    }
+    if (skill.effect.specialEffect === "aoe_stun_chance") {
+       effects.push(`💥 造成 40 点伤害`);
+    }
+    if (skill.effect.specialEffect === "scaling_damage_by_hp_lost") {
+       effects.push(`💥 造成 50 点伤害`);
     }
 
     return effects;

@@ -643,7 +643,7 @@ ${content}
     "visualGlitchIntensity": 0-1的故障特效强度,
     "specialAbility": {
       "name": "技能名称",
-      "description": "技能描述",
+      "description": "技能描述（必须包含具体数值效果，例如：'造成20点伤害'、'眩晕1回合'，不要只写背景故事）",
       "triggerCondition": "触发条件"
     }
   }
@@ -801,8 +801,8 @@ ${content.substring(0, 6000)}
       "title": "英文称号",
       "description": "角色描述",
       "skills": [
-        { "id": "skill-arbiter-1", "name": "单体伤害技能名", "nameEn": "英文名", "description": "描述" },
-        { "id": "skill-arbiter-ult", "name": "群体终极技能名", "nameEn": "英文名", "description": "描述" }
+        { "id": "skill-arbiter-1", "name": "单体伤害技能名", "nameEn": "英文名", "description": "描述（需包含数值效果）" },
+        { "id": "skill-arbiter-ult", "name": "群体终极技能名", "nameEn": "英文名", "description": "描述（需包含数值效果）" }
       ]
     },
     {
@@ -812,8 +812,8 @@ ${content.substring(0, 6000)}
       "title": "英文称号",
       "description": "角色描述",
       "skills": [
-        { "id": "skill-weaver-1", "name": "群体控制技能名", "nameEn": "英文名", "description": "描述" },
-        { "id": "skill-weaver-ult", "name": "群体减益技能名", "nameEn": "英文名", "description": "描述" }
+        { "id": "skill-weaver-1", "name": "群体控制技能名", "nameEn": "英文名", "description": "描述（需包含数值效果）" },
+        { "id": "skill-weaver-ult", "name": "群体减益技能名", "nameEn": "英文名", "description": "描述（需包含数值效果）" }
       ]
     },
     {
@@ -823,68 +823,68 @@ ${content.substring(0, 6000)}
       "title": "英文称号",
       "description": "角色描述",
       "skills": [
-        { "id": "skill-architect-1", "name": "护盾治疗技能名", "nameEn": "英文名", "description": "描述" },
-        { "id": "skill-architect-ult", "name": "群体回复技能名", "nameEn": "英文名", "description": "描述" }
+        { "id": "skill-architect-1", "name": "护盾治疗技能名", "nameEn": "英文名", "description": "描述（需包含数值效果）" },
+        { "id": "skill-architect-ult", "name": "群体回复技能名", "nameEn": "英文名", "description": "描述（需包含数值效果）" }
       ]
     }
   ],
   "inscriptions": [
-    { "id": "inscription-genesis-compiler", "name": "SSR级成长型道具名", "rarity": "SSR", "description": "描述" },
-    { "id": "inscription-quantum-anchor", "name": "SR级保命道具名", "rarity": "SR", "description": "描述" },
-    { "id": "inscription-entropy-siphon", "name": "R级回能道具名", "rarity": "R", "description": "描述" },
-    { "id": "inscription-null-shield", "name": "N级护盾道具名", "rarity": "N", "description": "描述" },
-    { "id": "inscription-logic-residue", "name": "N级减CD道具名", "rarity": "N", "description": "描述" }
+    { "id": "inscription-genesis-compiler", "name": "SSR级成长型道具名", "rarity": "SSR", "description": "描述（需包含数值效果）" },
+    { "id": "inscription-quantum-anchor", "name": "SR级保命道具名", "rarity": "SR", "description": "描述（需包含数值效果）" },
+    { "id": "inscription-entropy-siphon", "name": "R级回能道具名", "rarity": "R", "description": "描述（需包含数值效果）" },
+    { "id": "inscription-null-shield", "name": "N级护盾道具名", "rarity": "N", "description": "描述（需包含数值效果）" },
+    { "id": "inscription-logic-residue", "name": "N级减CD道具名", "rarity": "N", "description": "描述（需包含数值效果）" }
   ],
   "entropyEntities": [
     {
       "id": "entropy-1", "name": "低级干扰怪名",
-      "skills": [{ "id": "skill-white-noise", "name": "干扰技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-white-noise", "name": "干扰技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-2", "name": "中级高伤怪名",
-      "skills": [{ "id": "skill-imaginary-collapse", "name": "高伤技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-imaginary-collapse", "name": "高伤技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-3", "name": "中级封印怪名",
-      "skills": [{ "id": "skill-null-pointer", "name": "封印技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-null-pointer", "name": "封印技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-4", "name": "中级吸能怪名",
-      "skills": [{ "id": "skill-memory-leak", "name": "吸能技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-memory-leak", "name": "吸能技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-5", "name": "高级成长怪名",
-      "skills": [{ "id": "skill-stack-overflow", "name": "成长技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-stack-overflow", "name": "成长技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-6", "name": "高级死锁怪名",
-      "skills": [{ "id": "skill-deadlock", "name": "死锁技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-deadlock", "name": "死锁技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-7", "name": "高级清空怪名",
-      "skills": [{ "id": "skill-race-condition", "name": "清空技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-race-condition", "name": "清空技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-8", "name": "高级斩杀怪名",
-      "skills": [{ "id": "skill-bsod-terror", "name": "斩杀技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-bsod-terror", "name": "斩杀技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-9", "name": "精英加CD怪名",
-      "skills": [{ "id": "skill-not-found", "name": "加CD技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-not-found", "name": "加CD技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-10", "name": "精英回血怪名",
-      "skills": [{ "id": "skill-infinite-loop", "name": "回血技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-infinite-loop", "name": "回血技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-11", "name": "精英眩晕怪名",
-      "skills": [{ "id": "skill-segfault", "name": "眩晕技能名", "description": "描述" }]
+      "skills": [{ "id": "skill-segfault", "name": "眩晕技能名", "description": "描述（需包含数值效果）" }]
     },
     {
       "id": "entropy-boss", "name": "最终Boss名",
       "skills": [
-        { "id": "skill-singularity", "name": "爆发技能名", "description": "描述" },
-        { "id": "skill-singularity-recovery", "name": "回复技能名", "description": "描述" }
+        { "id": "skill-singularity", "name": "爆发技能名", "description": "描述（需包含数值效果）" },
+        { "id": "skill-singularity-recovery", "name": "回复技能名", "description": "描述（需包含数值效果）" }
       ]
     }
   ],

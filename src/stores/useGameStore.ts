@@ -801,6 +801,7 @@ export const useGameStore = create<GameState>()(
           addBattleLog,
           addDamageIndicator,
           triggerInscriptions,
+          selectedTargetId,
         } = get();
         const construct = constructs.find((c) => c.id === constructId);
         const skill = construct?.skills.find((s) => s.id === skillId);
@@ -813,6 +814,19 @@ export const useGameStore = create<GameState>()(
         if (construct.energy < (skill.cost || 0)) {
           addBattleLog(`能量不足，无法使用 ${skill.name}！`, "system");
           return;
+        }
+
+        // 自动选择目标逻辑 (如果未指定目标且技能为单体)
+        let finalTargetId = targetId;
+        if (!finalTargetId && skill.targetType === "single_enemy") {
+          finalTargetId = selectedTargetId || undefined;
+          // 如果当前选中的目标无效（不存在或已死亡），则选择第一个存活的敌人
+          if (
+            !finalTargetId ||
+            !entropyEntities.find((e) => e.id === finalTargetId && !e.isDead)
+          ) {
+            finalTargetId = entropyEntities.find((e) => !e.isDead)?.id;
+          }
         }
 
         // 扣除消耗
@@ -828,40 +842,44 @@ export const useGameStore = create<GameState>()(
           (e) => e.isDead
         ).length;
 
-        // 伤害倍率 (终极技能伤害更高)
-        const damageMultiplier = skill.type === "ultimate" ? 2.5 : 1;
+        // === 技能具体实现 ===
+        if (skillId === "skill-arbiter-1") {
+          // **强制中断** (Force Interrupt)
+          // 目标: 单体敌人 | 效果: 30点伤害
+          if (finalTargetId) {
+            const baseDamage = 30;
+            const finalDamage =
+              (triggerInscriptions("on_damage", {
+                type: "skill",
+                baseDamage,
+              }) as number) ?? baseDamage;
 
-        if (skill.targetType === "single_enemy" && targetId) {
-          // 计算基础伤害
-          const baseDamage = Math.floor(50 * damageMultiplier);
-          // 触发on_damage铭文效果（如：创世编译器），可能返回增强后的伤害
-          const finalDamage =
-            (triggerInscriptions("on_damage", {
-              type: "skill",
-              baseDamage,
-            }) as number) ?? baseDamage;
-
-          updatedEnemies = updatedEnemies.map((e) => {
-            if (e.id === targetId) {
-              const newHp = Math.max(0, e.hp - finalDamage);
-              addDamageIndicator({
-                value: finalDamage,
-                x: 50,
-                y: 50,
-                type: "damage",
-              });
-              return { ...e, hp: newHp, isDead: newHp <= 0 };
-            }
-            return e;
-          });
-          addBattleLog(
-            `${construct.name} 对目标使用了 ${skill.name}！`,
-            "combat"
-          );
-        } else if (skill.targetType === "all_enemies") {
-          // 计算基础伤害
-          const baseDamage = Math.floor(30 * damageMultiplier);
-          // 触发on_damage铭文效果
+            updatedEnemies = updatedEnemies.map((e) => {
+              if (e.id === finalTargetId) {
+                const newHp = Math.max(0, e.hp - finalDamage);
+                addDamageIndicator({
+                  value: finalDamage,
+                  x: 50,
+                  y: 50,
+                  type: "damage",
+                });
+                return { ...e, hp: newHp, isDead: newHp <= 0 };
+              }
+              return e;
+            });
+            addBattleLog(
+              `${construct.name} 对目标使用了 ${skill.name}！造成 ${finalDamage} 点伤害。`,
+              "combat"
+            );
+          } else {
+             addBattleLog(`${skill.name} 释放失败：没有有效的目标！`, "system");
+             return; // 目标不存在，取消技能释放（不扣消耗？这里已经扣了，可能需要回滚，但简化处理先不回滚或假设总有目标）
+             // 实际上如果没目标，上面逻辑应该已经处理了，除非全死光了
+          }
+        } else if (skillId === "skill-arbiter-ult") {
+          // **最终裁定** (Final Verdict)
+          // 目标: 全体敌人 | 效果: 30点伤害
+          const baseDamage = 30;
           const finalDamage =
             (triggerInscriptions("on_damage", {
               type: "skill",
@@ -882,28 +900,184 @@ export const useGameStore = create<GameState>()(
             return e;
           });
           addBattleLog(
-            `${construct.name} 对所有敌人使用了 ${skill.name}！`,
+            `${construct.name} 释放 ${skill.name}！对全体造成 ${finalDamage} 点伤害。`,
             "combat"
           );
-        } else if (skill.targetType === "ally") {
-          // 治疗/护盾逻辑
-          const healAmount = skill.type === "ultimate" ? 100 : 30;
-          currentConstructsState = currentConstructsState.map((c) => {
-            const newHp = Math.min(c.maxHp, c.hp + healAmount);
-            if (newHp > c.hp) {
-              addDamageIndicator({
-                value: newHp - c.hp,
-                x: 50,
-                y: 50,
-                type: "heal",
-              });
+        } else if (skillId === "skill-weaver-1") {
+          // **链路封锁** (Link Blockade)
+          // 目标: 全体敌人 | 效果: 施加'逻辑死锁'（无法行动一回合）
+          // 注意：duration设置为2，因为nextTurn会立即减少1
+          updatedEnemies = updatedEnemies.map((e) => {
+            if (!e.isDead) {
+              return {
+                ...e,
+                statusEffects: [
+                  ...e.statusEffects,
+                  {
+                    id: generateId("status"),
+                    name: "逻辑死锁",
+                    duration: 2, 
+                    type: "debuff",
+                    effect: "logic_lock",
+                    value: 100,
+                  },
+                ],
+              };
             }
-            return { ...c, hp: newHp };
+            return e;
           });
           addBattleLog(
-            `${construct.name} 对全体队友使用了 ${skill.name}！`,
+            `${construct.name} 释放 ${skill.name}！全体敌人陷入逻辑死锁。`,
             "combat"
           );
+        } else if (skillId === "skill-weaver-ult") {
+          // **广播风暴** (Broadcast Storm)
+          // 目标: 全体敌人 | 效果: 高频伤害20点，降低攻击力20点持续3回合
+          // 注意：duration设置为4，因为nextTurn会立即减少1
+          const baseDamage = 20;
+          const finalDamage =
+            (triggerInscriptions("on_damage", {
+              type: "skill",
+              baseDamage,
+            }) as number) ?? baseDamage;
+
+          updatedEnemies = updatedEnemies.map((e) => {
+            if (!e.isDead) {
+              const newHp = Math.max(0, e.hp - finalDamage);
+              addDamageIndicator({
+                value: finalDamage,
+                x: 50,
+                y: 50,
+                type: "damage",
+              });
+              return {
+                ...e,
+                hp: newHp,
+                isDead: newHp <= 0,
+                statusEffects: [
+                  ...e.statusEffects,
+                  {
+                    id: generateId("status"),
+                    name: "信号干扰",
+                    duration: 4,
+                    type: "debuff",
+                    effect: "attack_reduction",
+                    value: 20, // 降低20点攻击力
+                  },
+                ],
+              };
+            }
+            return e;
+          });
+          addBattleLog(
+            `${construct.name} 释放 ${skill.name}！造成伤害并降低敌人攻击力。`,
+            "combat"
+          );
+        } else if (skillId === "skill-architect-1") {
+          // **哈希重构** (Hash Rebuild)
+          // 目标: 自身(实际影响全体) | 效果: 全体护盾(减伤20点)，自身回复20生命值
+          // 注意：duration设置为3，因为nextTurn会立即减少1
+          
+          // 1. 全体护盾
+          currentConstructsState = currentConstructsState.map((c) => ({
+            ...c,
+            statusEffects: [
+              ...c.statusEffects,
+              {
+                id: generateId("status"),
+                name: "哈希护盾",
+                duration: 3,
+                type: "buff",
+                effect: "shield",
+                value: 20, // 减伤20点
+              },
+            ],
+          }));
+
+          // 2. 自身回血
+          currentConstructsState = currentConstructsState.map((c) => {
+            if (c.id === constructId) {
+              const healAmount = 20;
+              const newHp = Math.min(c.maxHp, c.hp + healAmount);
+              if (healAmount > 0) {
+                addDamageIndicator({
+                  value: healAmount,
+                  x: 50,
+                  y: 50,
+                  type: "heal",
+                });
+              }
+              return { ...c, hp: newHp };
+            }
+            return c;
+          });
+          addBattleLog(
+            `${construct.name} 释放 ${skill.name}！全体获得护盾，自身修复受损扇区。`,
+            "combat"
+          );
+        } else if (skillId === "skill-architect-ult") {
+          // **系统还原** (System Restore)
+          // 目标: 全体队友 | 效果: 回复最大生命25% 和 最大能量25%
+          currentConstructsState = currentConstructsState.map((c) => {
+            if (!c.isDead) {
+              const hpHeal = Math.floor(c.maxHp * 0.25);
+              const energyHeal = Math.floor(c.maxEnergy * 0.25);
+              
+              const newHp = Math.min(c.maxHp, c.hp + hpHeal);
+              const newEnergy = Math.min(c.maxEnergy, c.energy + energyHeal);
+
+              if (newHp > c.hp) {
+                addDamageIndicator({
+                  value: newHp - c.hp,
+                  x: 50,
+                  y: 50,
+                  type: "heal",
+                });
+              }
+              return { ...c, hp: newHp, energy: newEnergy };
+            }
+            return c;
+          });
+          addBattleLog(
+            `${construct.name} 释放 ${skill.name}！系统状态回滚，全员状态恢复。`,
+            "combat"
+          );
+        } else {
+          // === 通用兜底逻辑 ===
+          const damageMultiplier = skill.type === "ultimate" ? 2.5 : 1;
+          if (skill.targetType === "single_enemy" && finalTargetId) {
+             const baseDamage = Math.floor(50 * damageMultiplier);
+             const finalDamage = (triggerInscriptions("on_damage", { type: "skill", baseDamage }) as number) ?? baseDamage;
+             updatedEnemies = updatedEnemies.map((e) => {
+                if (e.id === finalTargetId) {
+                   const newHp = Math.max(0, e.hp - finalDamage);
+                   addDamageIndicator({ value: finalDamage, x: 50, y: 50, type: "damage" });
+                   return { ...e, hp: newHp, isDead: newHp <= 0 };
+                }
+                return e;
+             });
+             addBattleLog(`${construct.name} 对目标使用了 ${skill.name}！`, "combat");
+          } else if (skill.targetType === "all_enemies") {
+             const baseDamage = Math.floor(30 * damageMultiplier);
+             const finalDamage = (triggerInscriptions("on_damage", { type: "skill", baseDamage }) as number) ?? baseDamage;
+             updatedEnemies = updatedEnemies.map((e) => {
+                if (!e.isDead) {
+                   const newHp = Math.max(0, e.hp - finalDamage);
+                   addDamageIndicator({ value: finalDamage, x: 50, y: 50, type: "damage" });
+                   return { ...e, hp: newHp, isDead: newHp <= 0 };
+                }
+                return e;
+             });
+             addBattleLog(`${construct.name} 对所有敌人使用了 ${skill.name}！`, "combat");
+          } else if (skill.targetType === "ally" || skill.targetType === "self") {
+             const healAmount = skill.type === "ultimate" ? 100 : 30;
+             currentConstructsState = currentConstructsState.map((c) => {
+                const newHp = Math.min(c.maxHp, c.hp + healAmount);
+                if (newHp > c.hp) addDamageIndicator({ value: newHp - c.hp, x: 50, y: 50, type: "heal" });
+                return { ...c, hp: newHp };
+             });
+             addBattleLog(`${construct.name} 使用了 ${skill.name}！`, "combat");
+          }
         }
 
         // 设置冷却
@@ -1071,11 +1245,11 @@ export const useGameStore = create<GameState>()(
 
               if (burstSkill) {
                 const currentHpPercent = e.hp / e.maxHp;
-                const damageMultiplier =
-                  burstSkill.effect.damageMultiplier || 1.5;
+                // 固定伤害50点
+                const burstDamage = 50;
 
-                // 检查各个10%血量阈值是否已触发
-                const thresholds = [90, 80, 70, 60, 50, 40, 30, 20, 10];
+                // 检查各个20%血量阈值是否已触发 (80%, 60%, 40%, 20%)
+                const thresholds = [80, 60, 40, 20];
 
                 for (const threshold of thresholds) {
                   const thresholdKey = `boss-entropy-burst-${threshold}`;
@@ -1087,9 +1261,6 @@ export const useGameStore = create<GameState>()(
                     !inscriptionTriggeredFlags.has(thresholdKey)
                   ) {
                     inscriptionTriggeredFlags.add(thresholdKey);
-
-                    // 计算伤害
-                    const burstDamage = Math.floor(e.damage * damageMultiplier);
 
                     addBattleLog(
                       `⚠️ 【${e.name}】触发【${burstSkill.name}】！血量降至 ${threshold}% 以下！`,
@@ -1221,10 +1392,16 @@ export const useGameStore = create<GameState>()(
           set({ glitchIntensity: Math.min(1, get().glitchIntensity + 0.2) });
 
           // 随机选择一个存活的敌人进行攻击
+          // 过滤掉被眩晕(logic_lock/stunned)的敌人
           const aliveEnemiesForAttack = entropyEntities.filter(
-            (e) => !e.isDead
+            (e) => !e.isDead && !e.statusEffects.some(s => s.effect === "logic_lock" || s.effect === "stunned")
           );
-          if (aliveEnemiesForAttack.length === 0) return;
+          
+          if (aliveEnemiesForAttack.length === 0) {
+             addBattleLog("所有敌人都被控制，无法行动！", "system");
+             get().nextTurn(); // 即使没有敌人攻击，也要进入下一回合
+             return;
+          }
 
           const attackerIndex = Math.floor(
             Math.random() * aliveEnemiesForAttack.length
@@ -1233,18 +1410,18 @@ export const useGameStore = create<GameState>()(
 
           // 计算敌人攻击力（包含状态效果加成）
           let baseDamage = attacker.damage;
-          const damageBoostEffect = attacker.statusEffects.find(
-            (e) => e.effect === "damage_boost"
+          const attackReductionEffect = attacker.statusEffects.find(
+            (e) => e.effect === "attack_reduction"
           );
-          if (damageBoostEffect) {
-            // 递归压制效果：每层增加10%伤害
-            const boostPercent = damageBoostEffect.value / 100;
-            const boostedDamage = Math.floor(baseDamage * (1 + boostPercent));
-            addBattleLog(
-              `📈 ${attacker.name} 处于【递归压制】状态，攻击力增加 ${damageBoostEffect.value}%！`,
-              "system"
-            );
-            baseDamage = boostedDamage;
+          if (attackReductionEffect) {
+             // 攻击力降低：固定数值减少
+             const reduceValue = attackReductionEffect.value;
+             const reducedDamage = Math.max(0, baseDamage - reduceValue);
+             addBattleLog(
+                `📉 ${attacker.name} 受到【信号干扰】，攻击力降低 ${reduceValue} 点！`,
+                "system"
+             );
+             baseDamage = reducedDamage;
           }
 
           // 随机选择一个存活的构造体受到伤害
@@ -1270,12 +1447,12 @@ export const useGameStore = create<GameState>()(
             let newStatusEffects = c.statusEffects;
 
             if (shieldEffect) {
-              // 应用护盾减伤
-              actualDamage = Math.floor(
-                baseDamage * (1 - shieldEffect.value / 100)
-              );
+              // 应用护盾减伤：固定数值减少
+              const reduceValue = shieldEffect.value;
+              actualDamage = Math.max(0, baseDamage - reduceValue);
+              
               addBattleLog(
-                `【空指针护盾】抵挡了 ${
+                `【${shieldEffect.name}】抵挡了 ${
                   baseDamage - actualDamage
                 } 点伤害！护盾消散。`,
                 "system"
@@ -1326,29 +1503,32 @@ export const useGameStore = create<GameState>()(
               // 根据技能效果类型执行不同逻辑
               switch (skill.effect.specialEffect) {
                 case "reduce_time_limit":
-                  // 信号干扰：下一道题答题时间减少
-                  currentConstructsAfterSkill = currentConstructsAfterSkill.map(
-                    (c) => ({
-                      ...c,
-                      statusEffects: [
-                        ...c.statusEffects,
-                        {
-                          id: generateId("status"),
-                          name: "信号干扰",
-                          duration: 1,
-                          type: "debuff" as const,
-                          effect: "entropy_erosion" as const,
-                          value: skill.effect.statusToApply?.value || 5,
-                        },
-                      ],
-                    })
-                  );
-                  addBattleLog(
-                    `📡 下一道题的答题时间将减少 ${
-                      skill.effect.statusToApply?.value || 5
-                    } 秒！`,
-                    "system"
-                  );
+                  // 信号干扰：随机使一个逻辑构造体损失10点能量
+                  {
+                    const aliveTargets = currentConstructsAfterSkill.filter(
+                      (c) => !c.isDead && c.energy > 0
+                    );
+                    if (aliveTargets.length > 0) {
+                      const targetIdx = Math.floor(
+                        Math.random() * aliveTargets.length
+                      );
+                      const target = aliveTargets[targetIdx];
+                      const drainValue = 10;
+                      
+                      currentConstructsAfterSkill = currentConstructsAfterSkill.map(
+                        (c) => {
+                          if (c.id === target.id) {
+                            return { ...c, energy: Math.max(0, c.energy - drainValue) };
+                          }
+                          return c;
+                        }
+                      );
+                      addBattleLog(
+                        `📡 信号干扰！${target.name} 损失了 ${drainValue} 点能量！`,
+                        "system"
+                      );
+                    }
+                  }
                   break;
 
                 case "true_damage":
@@ -1363,7 +1543,7 @@ export const useGameStore = create<GameState>()(
                       );
                       const target = aliveTargets[targetIdx];
                       const damage = Math.floor(
-                        attacker.damage * (skill.effect.damageMultiplier || 1.5)
+                        attacker.damage * (skill.effect.damageMultiplier || 2.0)
                       );
 
                       currentConstructsAfterSkill =
@@ -1437,7 +1617,7 @@ export const useGameStore = create<GameState>()(
                   // 资源侵蚀：全体每回合损失能量
                   {
                     const duration = skill.effect.statusToApply?.duration || 3;
-                    const drainValue = skill.effect.statusToApply?.value || 5;
+                    const drainValue = 10;
 
                     currentConstructsAfterSkill =
                       currentConstructsAfterSkill.map((c) => ({
@@ -1465,7 +1645,7 @@ export const useGameStore = create<GameState>()(
                   // 递归压制：敌人攻击力增加
                   {
                     const duration = skill.effect.statusToApply?.duration || 4;
-                    const boostValue = skill.effect.statusToApply?.value || 10;
+                    const boostValue = 10;
 
                     updatedEnemiesAfterAttack = updatedEnemiesAfterAttack.map(
                       (e) => {
@@ -1489,7 +1669,7 @@ export const useGameStore = create<GameState>()(
                       }
                     );
                     addBattleLog(
-                      `📈 ${attacker.name} 进入失控递归状态，攻击力将增加 ${boostValue}%！`,
+                      `📈 ${attacker.name} 进入失控递归状态，攻击力将增加 ${boostValue} 点！`,
                       "system"
                     );
                   }
@@ -1660,9 +1840,7 @@ export const useGameStore = create<GameState>()(
                 case "aoe_stun_chance":
                   // 内存越界：AOE伤害 + 概率眩晕
                   {
-                    const damage = Math.floor(
-                      attacker.damage * (skill.effect.damageMultiplier || 0.5)
-                    );
+                    const damage = 40;
                     const stunChance =
                       (skill.effect.statusToApply?.value || 20) / 100;
                     const stunDuration =

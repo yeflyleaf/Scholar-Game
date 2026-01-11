@@ -63,7 +63,8 @@ export type StatusEffectType =
   | "stunned"
   | "logic_lock" // 逻辑死锁 (相当于眩晕)
   | "flow_state" // 心流状态
-  | "entropy_erosion"; // 熵侵蚀
+  | "entropy_erosion" // 熵侵蚀
+  | "attack_reduction"; // 攻击力降低
 
 export interface StatusEffect {
   id: string;

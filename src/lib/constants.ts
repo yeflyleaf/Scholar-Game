@@ -174,7 +174,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         nameEn: "Broadcast Storm",
         // 技能描述
         description:
-          "消耗所有能量，引发网络风暴，对全体敌人造成多段高频伤害，并降低其攻击力50%，持续三回合。",
+          "消耗所有能量，引发网络风暴，对全体敌人造成高频伤害20点，并使其攻击力降低20，持续三回合。",
         // 技能冷却时间
         cooldown: 20,
         // 当前剩余冷却时间
@@ -223,7 +223,7 @@ export const INITIAL_CONSTRUCTS: Construct[] = [
         // 技能英文名称
         nameEn: "Hash Rebuild",
         // 技能描述
-        description: "为我方全体施加护盾 (使下一次受到的伤害降低50%)，并修复自身受损的逻辑扇区（回血）。",
+        description: "为我方全体施加护盾 (使下一次受到的伤害降低20点)，并修复自身受损的逻辑扇区（自身回复20生命值）。",
         // 技能冷却时间
         cooldown: 15,
         // 当前剩余冷却时间
@@ -358,7 +358,7 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
     id: "skill-white-noise",
     name: "信号干扰",
     nameEn: "Signal Interference",
-    description: "释放高频噪声，干扰逻辑构造体的信息接收，下一道题目的答题时间减少5秒。",
+    description: "释放高频噪声，干扰逻辑构造体的信息接收，使随机一个逻辑构造体损失10点能量。",
     type: "debuff_player",
     cooldown: 5, // 冷却5回合
     currentCooldown: 0,
@@ -368,7 +368,7 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
       statusToApply: {
         effectType: "entropy_erosion",
         duration: 1,
-        value: 5, // 减少5秒答题时间
+        value: 10, // 损失10能量
       },
     },
     visualEffect: "static_noise",
@@ -380,13 +380,13 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
     id: "skill-imaginary-collapse",
     name: "虚空坍缩",
     nameEn: "Void Collapse",
-    description: "引发虚数空间坍缩，造成1.5倍基础伤害的真实伤害，无视所有护盾和减伤效果。",
+    description: "引发虚数空间坍缩，造成2倍基础伤害的真实伤害，无视所有护盾和减伤效果。",
     type: "damage_single",
     cooldown: 15, // 冷却15回合
     currentCooldown: 0,
     triggerCondition: { type: "on_attack" }, // 攻击时触发
     effect: {
-      damageMultiplier: 1.5,
+      damageMultiplier: 2.0,
       specialEffect: "true_damage", // 真实伤害，无视护盾
     },
     visualEffect: "void_implosion",
@@ -420,7 +420,7 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
     id: "skill-memory-leak",
     name: "资源侵蚀",
     nameEn: "Resource Erosion",
-    description: "悄然吞噬系统资源，全体逻辑构造体在3回合内每回合损失5点能量。",
+    description: "悄然吞噬系统资源，全体逻辑构造体在3回合内每回合损失10点能量。",
     type: "debuff_player",
     cooldown: 10, // 冷却10回合
     currentCooldown: 0,
@@ -430,7 +430,7 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
       statusToApply: {
         effectType: "entropy_erosion",
         duration: 3, // 持续3回合
-        value: 5, // 每回合损失5能量
+        value: 10, // 每回合损失10能量
       },
     },
     visualEffect: "data_leak",
@@ -442,7 +442,7 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
     id: "skill-stack-overflow",
     name: "递归压制",
     nameEn: "Recursive Oppression",
-    description: "进入失控递归状态，攻击力每回合增加10%，持续4回合（最高40%加成）。",
+    description: "进入失控递归状态，攻击力每回合增加10点，持续4回合（最高40点加成）。",
     type: "self_buff",
     cooldown: 12, // 冷却12回合
     currentCooldown: 0,
@@ -452,7 +452,7 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
       statusToApply: {
         effectType: "damage_boost",
         duration: 4, // 持续4回合
-        value: 10, // 每回合+10%伤害
+        value: 10, // 每回合+10点伤害
       },
     },
     visualEffect: "stack_explosion",
@@ -503,7 +503,7 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
     id: "skill-bsod-terror",
     name: "系统崩溃",
     nameEn: "System Crash",
-    description: "引发严重系统错误！若任意逻辑构造体血量低于40%，对其造成2倍伤害。",
+    description: "引发严重系统错误！若逻辑构造体血量低于40%，对其造成2倍伤害。",
     type: "damage_single",
     cooldown: 15, // 冷却15回合
     currentCooldown: 0,
@@ -561,13 +561,13 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
     id: "skill-segfault",
     name: "内存越界",
     nameEn: "Memory Boundary Breach",
-    description: "突破内存边界，对全体逻辑构造体造成0.5倍基础伤害，并有20%几率使其陷入「眩晕」1回合。",
+    description: "突破内存边界，对全体逻辑构造体造成40点伤害，并有20%几率使其陷入「眩晕」1回合。",
     type: "damage_all",
     cooldown: 8, // 冷却8回合
     currentCooldown: 0,
     triggerCondition: { type: "on_attack" }, // 攻击时触发
     effect: {
-      damageMultiplier: 0.5, // 0.5倍伤害
+      damageMultiplier: 0, // 固定伤害40
       specialEffect: "aoe_stun_chance",
       statusToApply: {
         effectType: "stunned",
@@ -584,13 +584,13 @@ export const ENEMY_SKILLS: Record<string, EnemySkill> = {
     id: "skill-singularity",
     name: "正熵爆发",
     nameEn: "Entropy Burst",
-    description: "释放奇点蕴含的毁灭性能量！每损失10%最大生命值时自动触发，对全体逻辑构造体造成1.5倍伤害。",
+    description: "释放奇点蕴含的毁灭性能量！每损失20%最大生命值时自动触发，对全体逻辑构造体造成50点伤害。",
     type: "damage_all",
     cooldown: 0, // 基于生命值触发，非冷却机制
     currentCooldown: 0,
-    triggerCondition: { type: "on_hp_loss_threshold", value: 10 }, // 每损失10%血量触发
+    triggerCondition: { type: "on_hp_loss_threshold", value: 20 }, // 每损失20%血量触发
     effect: {
-      damageMultiplier: 1.5,
+      damageMultiplier: 0, // 固定伤害50
       specialEffect: "scaling_damage_by_hp_lost",
     },
     visualEffect: "singularity_explosion",
@@ -1291,7 +1291,7 @@ export const DEFAULT_THEME: GameTheme = {
         {
           id: "skill-white-noise",
           name: "信号干扰",
-          description: "释放高频噪声，干扰逻辑构造体的信息接收，下一道题目的答题时间减少5秒。",
+          description: "释放高频噪声，干扰逻辑构造体的信息接收，使随机一个逻辑构造体损失10点能量。",
         },
       ],
     },
@@ -1302,7 +1302,7 @@ export const DEFAULT_THEME: GameTheme = {
         {
           id: "skill-imaginary-collapse",
           name: "虚空坍缩",
-          description: "引发虚数空间坍缩，造成1.5倍基础伤害的真实伤害，无视所有护盾和减伤效果。",
+          description: "引发虚数空间坍缩，造成2倍基础伤害的真实伤害，无视所有护盾和减伤效果。",
         },
       ],
     },
@@ -1324,7 +1324,7 @@ export const DEFAULT_THEME: GameTheme = {
         {
           id: "skill-memory-leak",
           name: "资源侵蚀",
-          description: "悄然吞噬系统资源，全体逻辑构造体在3回合内每回合损失5点能量。",
+          description: "悄然吞噬系统资源，全体逻辑构造体在3回合内每回合损失10点能量。",
         },
       ],
     },
@@ -1335,7 +1335,7 @@ export const DEFAULT_THEME: GameTheme = {
         {
           id: "skill-stack-overflow",
           name: "递归压制",
-          description: "进入失控递归状态，攻击力每回合增加10%，持续4回合（最高40%加成）。",
+          description: "进入失控递归状态，攻击力每回合增加10点，持续4回合（最高40点加成）。",
         },
       ],
     },
@@ -1368,7 +1368,7 @@ export const DEFAULT_THEME: GameTheme = {
         {
           id: "skill-bsod-terror",
           name: "系统崩溃",
-          description: "引发严重系统错误！若任意逻辑构造体血量低于40%，对其造成2倍伤害。",
+          description: "引发严重系统错误！若逻辑构造体血量低于40%，对其造成2倍伤害。",
         },
       ],
     },
@@ -1401,7 +1401,7 @@ export const DEFAULT_THEME: GameTheme = {
         {
           id: "skill-segfault",
           name: "内存越界",
-          description: "突破内存边界，对全体逻辑构造体造成0.5倍基础伤害，并有20%几率使其陷入「眩晕」1回合。",
+          description: "突破内存边界，对全体逻辑构造体造成40点伤害，并有20%几率使其陷入「眩晕」1回合。",
         },
       ],
     },
@@ -1412,12 +1412,12 @@ export const DEFAULT_THEME: GameTheme = {
         {
           id: "skill-singularity",
           name: "正熵爆发",
-          description: "释放奇点蕴含的毁灭性能量！每损失10%最大生命值时自动触发，对全体逻辑构造体造成1.5倍伤害。",
+          description: "释放奇点蕴含的毁灭性能量！每损失20%最大生命值时自动触发，对全体逻辑构造体造成50点伤害。",
         },
         {
           id: "skill-singularity-recovery",
           name: "逆熵回复",
-          description: "扭转熵增定律，当生命值首次低于40%时恢复自身50%已损失血量。",
+          description: "扭转熵增定律，当生命值首次低于40%时恢复自身最大生命值的25%。",
         },
       ],
     },
