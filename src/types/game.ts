@@ -183,6 +183,13 @@ export interface Question {
   tags?: string[];
 }
 
+export interface AnsweredQuestion {
+  question: Question;
+  userAnswer: number | number[];
+  isCorrect: boolean;
+  timestamp: number;
+}
+
 // 3. Progression System - 进度系统
 
 // 铭文效果上下文 - 传递给铭文效果函数的战斗信息

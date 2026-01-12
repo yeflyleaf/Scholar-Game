@@ -168,7 +168,7 @@ export function useBattleSequence(): BattleSequenceReturn {
         setIsCorrect(null);
         setTimeRemaining(QUESTION_TIME_LIMIT);
         setStatusMessage("等待输入...");
-      }, 1000);
+      }, 1500);
     },
     [isProcessing, currentQuestion, battleState, answerQuestion, clearTimer]
   );

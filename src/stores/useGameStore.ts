@@ -10,6 +10,7 @@ import {
 } from "../lib/constants";
 import { generateId, shuffleArray } from "../lib/utils";
 import type {
+  AnsweredQuestion,
   BattleLogEntry,
   BattleState,
   Construct,
@@ -89,6 +90,7 @@ interface GameState {
   allBattleQuestions: Question[]; // 存储本场战斗所有已抽取的题目，用于循环
   usedQuestionIds: Set<string>;
   remainingQuestionCount: number;
+  answeredQuestions: AnsweredQuestion[]; // 已回答的题目记录
 
   // 连击系统
   comboCount: number; // 当前连击数
@@ -211,6 +213,7 @@ export const useGameStore = create<GameState>()(
       allBattleQuestions: [], // 本场战斗所有题目
       usedQuestionIds: new Set<string>(),
       remainingQuestionCount: 0,
+      answeredQuestions: [],
       comboCount: 0, // 连击计数器初始化
 
       battleLog: [],
@@ -320,6 +323,7 @@ export const useGameStore = create<GameState>()(
           allBattleQuestions: [],
           usedQuestionIds: new Set<string>(),
           remainingQuestionCount: 0,
+          answeredQuestions: [],
           comboCount: 0,
           battleLog: [],
           damageIndicators: [],
@@ -733,6 +737,7 @@ export const useGameStore = create<GameState>()(
           currentQuestion: shuffleQuestion(firstQuestion),
           usedQuestionIds: usedIds,
           remainingQuestionCount: selectedQuestions.length,
+          answeredQuestions: [],
           glitchIntensity: 0,
           comboCount: 0, // 重置连击计数
           inscriptionTriggeredFlags: new Set<string>(), // 重置铭文触发标记
@@ -1140,6 +1145,18 @@ export const useGameStore = create<GameState>()(
         const isCorrect =
           userAnswers.length === correctAnswers.length &&
           userAnswers.every((a) => correctAnswers.includes(a));
+
+        // 记录答题结果
+        const answeredQuestion: AnsweredQuestion = {
+          question: currentQuestion,
+          userAnswer: optionIndex,
+          isCorrect,
+          timestamp: Date.now(),
+        };
+        
+        set((state) => ({
+          answeredQuestions: [...state.answeredQuestions, answeredQuestion],
+        }));
 
         if (isCorrect) {
           // 更新连击计数

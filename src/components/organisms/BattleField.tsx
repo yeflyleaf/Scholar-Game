@@ -5,6 +5,7 @@ import ReactDOM from "react-dom";
 import { useBattleSequence } from "../../hooks/useBattleSequence";
 import { useGameStore } from "../../stores/useGameStore";
 import type {
+  AnsweredQuestion,
   BattleLogEntry,
   Construct,
   EnemySkill,
@@ -756,9 +757,16 @@ const EntropyCard: React.FC<{
 };
 
 // 战斗日志组件 - 使用固定高度，不使用绝对定位避免重叠
-const BattleLog: React.FC<{ logs: BattleLogEntry[] }> = ({ logs }) => {
+const BattleLog: React.FC<{ logs: BattleLogEntry[]; showAll?: boolean }> = ({
+  logs,
+  showAll = false,
+}) => {
   const { currentTheme } = useGameStore();
   const labels = currentTheme.pageLabels.battle;
+
+  const displayLogs = showAll
+    ? logs.slice().reverse()
+    : logs.slice().reverse().slice(0, 8);
 
   return (
     <motion.div
@@ -773,24 +781,111 @@ const BattleLog: React.FC<{ logs: BattleLogEntry[] }> = ({ logs }) => {
           {labels.battleLogLabel}
         </span>
       </div>
-      <div className="flex-1 overflow-y-auto space-y-1">
-        {logs
-          .slice()
-          .reverse()
-          .slice(0, 8)
-          .map((log) => (
-            <motion.div
-              key={log.id}
-              className="text-sm font-mono"
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-            >
-              <span className="text-neon-cyan/60 mr-2 text-xs">
-                [{new Date(log.timestamp).toLocaleTimeString()}]
-              </span>
-              <span className="text-gray-300">{log.message}</span>
-            </motion.div>
-          ))}
+      <div className="flex-1 overflow-y-auto space-y-1 pr-1">
+        {displayLogs.map((log) => (
+          <motion.div
+            key={log.id}
+            className="text-sm font-mono"
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+          >
+            <span className="text-neon-cyan/60 mr-2 text-xs">
+              [{new Date(log.timestamp).toLocaleTimeString()}]
+            </span>
+            <span className="text-gray-300">{log.message}</span>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  );
+};
+
+// 错题本组件
+const MistakesBook: React.FC<{ answeredQuestions: AnsweredQuestion[] }> = ({
+  answeredQuestions,
+}) => {
+  // 辅助函数：获取选项文本
+  const getOptionText = (
+    options: string[],
+    indexOrIndices: number | number[]
+  ): string => {
+    if (Array.isArray(indexOrIndices)) {
+      return indexOrIndices
+        .map((i) => `${String.fromCharCode(65 + i)}. ${options[i]}`)
+        .join("\n");
+    }
+    return `${String.fromCharCode(65 + indexOrIndices)}. ${
+      options[indexOrIndices]
+    }`;
+  };
+
+  return (
+    <motion.div
+      className="fui-panel p-3 h-full overflow-hidden flex flex-col"
+      initial={{ x: 50, opacity: 0 }}
+      animate={{ x: 0, opacity: 1 }}
+      transition={{ delay: 0.4 }}
+    >
+      <div className="flex items-center gap-2 mb-2 pb-2 border-b border-gray-700/50 shrink-0">
+        <div className="w-2 h-2 bg-glitch-red animate-pulse rounded-full" />
+        <span className="text-xs font-mono text-glitch-red">
+          错题本 / 答题记录
+        </span>
+      </div>
+      <div className="flex-1 overflow-y-auto space-y-2 pr-1">
+        {answeredQuestions.length === 0 ? (
+          <div className="text-gray-500 text-xs text-center mt-10 font-mono">
+            暂无答题记录
+          </div>
+        ) : (
+          answeredQuestions
+            .slice()
+            .reverse()
+            .map((record, idx) => (
+              <div
+                key={idx}
+                className={`p-3 rounded border ${
+                  record.isCorrect
+                    ? "border-green-500/30 bg-green-500/5"
+                    : "border-glitch-red/30 bg-glitch-red/5"
+                }`}
+              >
+                <div className="text-xs text-gray-200 mb-2 font-bold font-display leading-relaxed">
+                  {record.question.text}
+                </div>
+                
+                <div className="space-y-1.5">
+                  {/* 如果答错了，显示用户的错误选择 */}
+                  {!record.isCorrect && (
+                    <div className="text-[11px] font-mono border-l-2 border-glitch-red pl-2 py-0.5 bg-glitch-red/10">
+                      <div className="text-glitch-red font-bold mb-0.5">您的选择:</div>
+                      <div className="text-gray-300 whitespace-pre-wrap">
+                        {getOptionText(record.question.options, record.userAnswer)}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* 显示正确答案 (无论对错都显示，或者只在错的时候显示？通常错题本只关注错题，但这里是答题记录，所以对的也可以显示) */}
+                  {/* 如果答对了，只显示"回答正确"，如果答错了，显示正确答案 */}
+                  {record.isCorrect ? (
+                     <div className="text-[11px] font-mono text-green-400 flex items-center gap-1">
+                        <span>✔</span> 回答正确
+                     </div>
+                  ) : (
+                    <div className="text-[11px] font-mono border-l-2 border-green-500 pl-2 py-0.5 bg-green-500/10">
+                      <div className="text-green-400 font-bold mb-0.5">正确答案:</div>
+                      <div className="text-gray-300 whitespace-pre-wrap">
+                        {getOptionText(
+                          record.question.options,
+                          record.question.correctOptionIndex
+                        )}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </div>
+            ))
+        )}
       </div>
     </motion.div>
   );
@@ -811,6 +906,7 @@ export const BattleField: React.FC = () => {
     setSelectedTarget,
     activeConstructId,
     setActiveConstruct,
+    answeredQuestions,
   } = useGameStore();
   const labels = currentTheme.pageLabels.battle;
 
@@ -878,14 +974,20 @@ export const BattleField: React.FC = () => {
       <AnimatePresence>
         {isPaused && (
           <motion.div
-            className="absolute inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+            className="absolute inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md p-8 gap-8"
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             transition={{ duration: 0.3 }}
           >
+            {/* 左侧：战斗日志 */}
+            <div className="w-1/4 h-3/4 min-w-[300px] max-w-[400px]">
+              <BattleLog logs={battleLog} showAll={true} />
+            </div>
+
+            {/* 中间：暂停菜单 */}
             <motion.div
-              className="fui-panel p-8 text-center"
+              className="fui-panel p-8 text-center min-w-[300px]"
               initial={{ scale: 0.8, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.8, opacity: 0 }}
@@ -895,17 +997,25 @@ export const BattleField: React.FC = () => {
                 ⏸ 游戏暂停
               </div>
               <div className="text-gray-400 font-mono text-sm mb-6">
-                倒计时已暂停，点击继续按钮或按下空格键恢复游戏
+                倒计时已暂停
               </div>
               <motion.button
                 onClick={togglePause}
-                className="px-8 py-3 bg-holographic-gold/20 border-2 border-holographic-gold text-holographic-gold font-mono text-lg rounded hover:bg-holographic-gold/30 transition-all"
+                className="px-8 py-3 bg-holographic-gold/20 border-2 border-holographic-gold text-holographic-gold font-mono text-lg rounded hover:bg-holographic-gold/30 transition-all w-full"
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
                 ▶ 继续游戏
               </motion.button>
+              <div className="mt-4 text-xs text-gray-600 font-mono">
+                按空格键也可以继续
+              </div>
             </motion.div>
+
+            {/* 右侧：错题本 */}
+            <div className="w-1/4 h-3/4 min-w-[300px] max-w-[400px]">
+              <MistakesBook answeredQuestions={answeredQuestions} />
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
@@ -979,10 +1089,10 @@ export const BattleField: React.FC = () => {
       </motion.div>
 
       {/* 主战斗区域 - 使用 Grid 布局确保各区域不重叠 */}
-      <div className="flex-1 grid grid-cols-[350px_1fr_350px] grid-rows-[1fr_140px] gap-3 p-4 overflow-hidden">
+      <div className="flex-1 grid grid-cols-[350px_1fr_350px] grid-rows-[1fr] gap-3 p-4 overflow-hidden">
         {/* 左侧：构造体 - 跨两行 */}
         <motion.div
-          className="row-span-2 flex flex-col gap-1 overflow-y-auto pr-2"
+          className="flex flex-col gap-1 overflow-y-auto pr-2"
           initial={{ x: -100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -1021,7 +1131,7 @@ export const BattleField: React.FC = () => {
 
         {/* 右侧：熵实体 - 跨两行 */}
         <motion.div
-          className="row-span-2 flex flex-col gap-3 overflow-y-auto pl-2"
+          className="flex flex-col gap-3 overflow-y-auto pl-2"
           initial={{ x: 100, opacity: 0 }}
           animate={{ x: 0, opacity: 1 }}
           transition={{ delay: 0.2 }}
@@ -1043,10 +1153,7 @@ export const BattleField: React.FC = () => {
           </AnimatePresence>
         </motion.div>
 
-        {/* 中间下方：战斗日志区域 - 独立区域避免重叠 */}
-        <div className="col-start-2">
-          <BattleLog logs={battleLog} />
-        </div>
+
       </div>
 
       {/* 角落装饰 */}
