@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     checkStatus: () => ipcRenderer.invoke('ai:check-status'),
     checkQuotaStatus: () => ipcRenderer.invoke('ai:check-quota-status'),
     resetQuota: () => ipcRenderer.invoke('ai:reset-quota'),
+    resetConfig: () => ipcRenderer.invoke('ai:reset-config'),
     testConnection: () => ipcRenderer.invoke('ai:test-connection'),
     
     // 内容生成

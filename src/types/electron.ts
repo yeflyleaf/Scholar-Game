@@ -118,6 +118,7 @@ export interface AIAPI {
   checkStatus: () => Promise<AIStatus>;
   checkQuotaStatus: () => Promise<QuotaStatus>;
   resetQuota: () => Promise<APIResponse<void>>;
+  resetConfig: () => Promise<APIResponse<void>>;
   testConnection: () => Promise<ConnectionTestResult>;
   
   // 内容生成

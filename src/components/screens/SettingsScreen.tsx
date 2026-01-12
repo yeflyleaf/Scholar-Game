@@ -115,6 +115,7 @@ export const SettingsScreen: React.FC = () => {
         generateTheme,
         generateAllMissionBriefings,
         testConnection,
+        resetConfig,
         clearError
     } = useAI();
 
@@ -780,10 +781,13 @@ export const SettingsScreen: React.FC = () => {
                             重置所有游戏进度，包括解锁的扇区、获得的铭文和经验值。此操作不可逆。
                         </p>
                         <motion.button
-                            onClick={() => {
+                            onClick={async () => {
                                 if (confirm('确定要重置所有进度吗？此操作无法撤销。')) {
                                     resetProgress();
-                                    alert('进度已重置。');
+                                    if (isElectronEnv) {
+                                        await resetConfig();
+                                    }
+                                    alert('进度已重置，AI 配置已清除。');
                                 }
                             }}
                             className="hex-button border-glitch-red text-glitch-red hover:bg-glitch-red/10 w-full py-3"

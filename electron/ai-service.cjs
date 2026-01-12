@@ -7,7 +7,7 @@
 
 const fs = require("fs");
 const path = require("path");
-const { app } = require("electron");
+const { app, safeStorage } = require("electron");
 const {
   createProvider,
   getAvailableProviders,
@@ -104,6 +104,33 @@ class AIService {
     return path.join(appDataFolder, "ai-config.json");
   }
 
+  encrypt(text) {
+    if (!text) return null;
+    if (safeStorage && safeStorage.isEncryptionAvailable()) {
+      try {
+        return safeStorage.encryptString(text).toString("hex");
+      } catch (e) {
+        console.error("[AIService] Encryption failed:", e);
+        return null;
+      }
+    }
+    return null;
+  }
+
+  decrypt(encryptedHex) {
+    if (!encryptedHex) return null;
+    if (safeStorage && safeStorage.isEncryptionAvailable()) {
+      try {
+        const buffer = Buffer.from(encryptedHex, "hex");
+        return safeStorage.decryptString(buffer);
+      } catch (e) {
+        console.error("[AIService] Decryption failed:", e);
+        return null;
+      }
+    }
+    return null;
+  }
+
   loadConfig() {
     const configPath = this.getConfigPath();
     if (fs.existsSync(configPath)) {
@@ -111,7 +138,21 @@ class AIService {
         const data = fs.readFileSync(configPath, "utf-8");
         const config = JSON.parse(data);
         this.providerId = config.providerId || "gemini";
-        this.apiKey = config.apiKey || null;
+        
+        // 尝试加载加密的 API Key
+        if (config.encryptedApiKey) {
+          this.apiKey = this.decrypt(config.encryptedApiKey);
+        } else {
+          // 兼容旧版：加载明文 API Key
+          this.apiKey = config.apiKey || null;
+          
+          // 如果有明文 Key 且支持加密，自动迁移（保存一次即可）
+          if (this.apiKey && safeStorage && safeStorage.isEncryptionAvailable()) {
+            console.log("[AIService] Migrating plain text API key to encrypted storage...");
+            this.saveConfig();
+          }
+        }
+        
         this.model = config.model || null;
         return config;
       } catch (e) {
@@ -126,10 +167,44 @@ class AIService {
     const configPath = this.getConfigPath();
     const config = {
       providerId: this.providerId,
-      apiKey: this.apiKey,
       model: this.model,
     };
+
+    // 尝试加密 API Key
+    if (this.apiKey) {
+      const encrypted = this.encrypt(this.apiKey);
+      if (encrypted) {
+        config.encryptedApiKey = encrypted;
+      } else {
+        // 如果加密不可用或失败，回退到明文（或者根据需求决定是否允许明文）
+        // 这里为了保证可用性，回退到明文，但实际生产中可能需要警告
+        config.apiKey = this.apiKey;
+      }
+    }
+
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
+  }
+
+  resetConfig() {
+    const configPath = this.getConfigPath();
+    if (fs.existsSync(configPath)) {
+      try {
+        fs.unlinkSync(configPath);
+        console.log("[AIService] Config file deleted");
+      } catch (e) {
+        console.error("[AIService] Failed to delete config file:", e);
+        return false;
+      }
+    }
+    
+    // Reset internal state
+    this.providerId = null;
+    this.apiKey = null;
+    this.model = null;
+    this.provider = null;
+    this.quotaStatus.clear();
+    
+    return true;
   }
 
   initProvider() {

@@ -35,6 +35,7 @@ interface UseAIReturn {
   setApiKey: (key: string) => Promise<boolean>;
   setModel: (model: string) => Promise<boolean>;
   checkStatus: () => Promise<AIStatus | null>;
+  resetConfig: () => Promise<boolean>;
   testConnection: () => Promise<ConnectionTestResult>;
   
   // 动作 - 生成
@@ -407,6 +408,31 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
+  // 重置配置
+  const resetConfig = useCallback(async (): Promise<boolean> => {
+    if (!electronAPI?.ai) {
+      setError('AI API only available in Electron');
+      return false;
+    }
+
+    try {
+      const result = await electronAPI.ai.resetConfig();
+      if (result.success) {
+        setIsConfigured(false);
+        setProviderId(null);
+        setProviderName(null);
+        setModelState(null);
+        return true;
+      } else {
+        setError(result.error || 'Failed to reset config');
+        return false;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+      return false;
+    }
+  }, [electronAPI]);
+
   // 挂载时加载提供商并检查状态
   useEffect(() => {
     if (electronAPI?.ai) {
@@ -437,6 +463,7 @@ export function useAI(): UseAIReturn {
     generateMissionBriefing,
     generateAllMissionBriefings,
     testConnection,
+    resetConfig,
     clearError,
   };
 }

@@ -18,7 +18,7 @@ const userDataPath = app.isPackaged
 app.setPath("userData", userDataPath);
 
 // 初始化 AI 服务 (替代 GeminiService)
-const aiService = new AIService();
+let aiService;
 
 let mainWindow;
 
@@ -82,7 +82,10 @@ function createWindow() {
 }
 
 // 应用生命周期
-app.whenReady().then(createWindow);
+app.whenReady().then(() => {
+  aiService = new AIService();
+  createWindow();
+});
 
 app.on("window-all-closed", () => {
   if (process.platform !== "darwin") {
@@ -149,7 +152,7 @@ ipcMain.handle("ai:check-status", async () => {
 ipcMain.handle("ai:check-quota-status", async () => {
   return {
     quotaExhausted: aiService.isQuotaExhausted(),
-    quotaExhaustedTime: aiService.quotaExhaustedTime
+    quotaExhaustedTime: aiService.quotaExhaustedTime,
   };
 });
 
@@ -157,6 +160,16 @@ ipcMain.handle("ai:check-quota-status", async () => {
 ipcMain.handle("ai:reset-quota", async () => {
   aiService.resetQuotaFlag();
   return { success: true };
+});
+
+// 重置所有配置（包括删除配置文件）
+ipcMain.handle("ai:reset-config", async () => {
+  try {
+    const success = aiService.resetConfig();
+    return { success: success };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });
 
 // 测试 API 连接
