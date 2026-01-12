@@ -868,8 +868,13 @@ const MistakesBook: React.FC<{ answeredQuestions: AnsweredQuestion[] }> = ({
                   {/* 显示正确答案 (无论对错都显示，或者只在错的时候显示？通常错题本只关注错题，但这里是答题记录，所以对的也可以显示) */}
                   {/* 如果答对了，只显示"回答正确"，如果答错了，显示正确答案 */}
                   {record.isCorrect ? (
-                     <div className="text-[11px] font-mono text-green-400 flex items-center gap-1">
-                        <span>✔</span> 回答正确
+                     <div className="text-[11px] font-mono border-l-2 border-green-500 pl-2 py-0.5 bg-green-500/10">
+                        <div className="text-green-400 font-bold mb-0.5 flex items-center gap-1">
+                            <span>✔</span> 回答正确
+                        </div>
+                        <div className="text-gray-300 whitespace-pre-wrap">
+                            {getOptionText(record.question.options, record.userAnswer)}
+                        </div>
                      </div>
                   ) : (
                     <div className="text-[11px] font-mono border-l-2 border-green-500 pl-2 py-0.5 bg-green-500/10">
