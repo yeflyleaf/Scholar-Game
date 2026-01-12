@@ -389,7 +389,9 @@ const ConstructCard: React.FC<{
   onUseSkill: (constructId: string, skillId: string) => void;
   isActive: boolean;
   onSelect: (id: string) => void;
-}> = ({ construct, onUseSkill, isActive, onSelect }) => {
+  isHighlighted?: boolean;
+  isShaking?: boolean;
+}> = ({ construct, onUseSkill, isActive, onSelect, isHighlighted, isShaking }) => {
   const hpPercent = (construct.hp / construct.maxHp) * 100;
   const energyPercent = (construct.energy / construct.maxEnergy) * 100;
 
@@ -399,7 +401,7 @@ const ConstructCard: React.FC<{
         construct.isDead
           ? "opacity-40 grayscale cursor-not-allowed"
           : "cursor-pointer"
-      }`}
+      } ${isShaking ? "shake-effect" : ""} ${isHighlighted ? "highlight-effect" : ""}`}
       initial={{ x: -50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       onClick={() => !construct.isDead && onSelect(construct.id)}
@@ -545,7 +547,9 @@ const EntropyCard: React.FC<{
   isSelected: boolean;
   onSelect: (id: string) => void;
   hasMultipleEnemies: boolean;
-}> = ({ entity, isSelected, onSelect, hasMultipleEnemies }) => {
+  isHighlighted?: boolean;
+  isShaking?: boolean;
+}> = ({ entity, isSelected, onSelect, hasMultipleEnemies, isHighlighted, isShaking }) => {
   const hpPercent = (entity.hp / entity.maxHp) * 100;
 
   if (entity.isDead) {
@@ -573,7 +577,7 @@ const EntropyCard: React.FC<{
           : "border-glitch-red/50"
       } ${
         hasMultipleEnemies ? "cursor-pointer hover:border-neon-cyan/70" : ""
-      }`}
+      } ${isShaking ? "shake-effect" : ""} ${isHighlighted ? "highlight-effect" : ""}`}
       initial={{ x: 50, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
       onClick={() => hasMultipleEnemies && onSelect(entity.id)}
@@ -912,6 +916,8 @@ export const BattleField: React.FC = () => {
     activeConstructId,
     setActiveConstruct,
     answeredQuestions,
+    highlightedEntityId,
+    shakingEntityIds,
   } = useGameStore();
   const labels = currentTheme.pageLabels.battle;
 
@@ -1113,6 +1119,8 @@ export const BattleField: React.FC = () => {
               onUseSkill={useSkill}
               isActive={activeConstructId === construct.id}
               onSelect={setActiveConstruct}
+              isHighlighted={highlightedEntityId === construct.id}
+              isShaking={shakingEntityIds.includes(construct.id)}
             />
           ))}
         </motion.div>
@@ -1153,6 +1161,8 @@ export const BattleField: React.FC = () => {
                 isSelected={selectedTargetId === entity.id}
                 onSelect={(id) => setSelectedTarget(id)}
                 hasMultipleEnemies={hasMultipleEnemies}
+                isHighlighted={highlightedEntityId === entity.id}
+                isShaking={shakingEntityIds.includes(entity.id)}
               />
             ))}
           </AnimatePresence>

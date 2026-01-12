@@ -100,6 +100,9 @@ interface GameState {
   damageIndicators: DamageIndicator[];
   isScreenShaking: boolean;
   glitchIntensity: number; // 0-1
+  highlightedEntityId: string | null;
+  shakingEntityIds: string[];
+  triggerVisualEffect: (type: 'shake' | 'highlight', entityId: string, duration?: number) => void;
 
   // 铭文系统
   inscriptionTriggeredFlags: Set<string>; // 铭文触发标记（用于追踪一次性效果）
@@ -220,6 +223,24 @@ export const useGameStore = create<GameState>()(
       damageIndicators: [],
       isScreenShaking: false,
       glitchIntensity: 0,
+      highlightedEntityId: null,
+      shakingEntityIds: [],
+
+      triggerVisualEffect: (type, entityId, duration = 1000) => {
+        if (type === 'highlight') {
+          set({ highlightedEntityId: entityId });
+          setTimeout(() => {
+            if (get().highlightedEntityId === entityId) {
+              set({ highlightedEntityId: null });
+            }
+          }, duration);
+        } else if (type === 'shake') {
+          set((state) => ({ shakingEntityIds: [...state.shakingEntityIds, entityId] }));
+          setTimeout(() => {
+             set((state) => ({ shakingEntityIds: state.shakingEntityIds.filter(id => id !== entityId) }));
+          }, duration);
+        }
+      },
 
       // 铭文系统初始状态
       inscriptionTriggeredFlags: new Set<string>(),
@@ -286,7 +307,7 @@ export const useGameStore = create<GameState>()(
         resolution: "1920x1080",
         fullscreen: false,
         language: "zh-CN",
-        gameDifficulty: 3,
+        difficulty: 3,
       },
 
       updateSettings: (newSettings) =>
@@ -685,7 +706,7 @@ export const useGameStore = create<GameState>()(
         const isAIMode = sector.aiQuestions && sector.aiQuestions.length > 0;
 
         // 获取当前难度设置
-        const { gameDifficulty } = get().settings;
+        const { difficulty } = get().settings;
 
         // 根据难度计算攻击力调整
         // 难度1: 玩家攻击力25，敌人攻击力-5，敌人生命+100
@@ -703,7 +724,7 @@ export const useGameStore = create<GameState>()(
           4: { playerAttack: 10, enemyDamageBonus: 10, enemyHpBonus: 500 },
           5: { playerAttack: 5, enemyDamageBonus: 20, enemyHpBonus: 1000 },
         };
-        const config = difficultyConfig[gameDifficulty] || difficultyConfig[3];
+        const config = difficultyConfig[difficulty] || difficultyConfig[3];
 
         // 深拷贝并应用难度修正：重置能量为0，统一攻击力
         const battleConstructs = JSON.parse(
@@ -834,6 +855,9 @@ export const useGameStore = create<GameState>()(
           }
         }
 
+        // 触发角色高亮
+        get().triggerVisualEffect('highlight', constructId);
+
         // 扣除消耗
         let currentConstructsState = constructs.map((c) =>
           c.id === constructId
@@ -861,6 +885,7 @@ export const useGameStore = create<GameState>()(
 
             updatedEnemies = updatedEnemies.map((e) => {
               if (e.id === finalTargetId) {
+                get().triggerVisualEffect('shake', e.id);
                 const newHp = Math.max(0, e.hp - finalDamage);
                 addDamageIndicator({
                   value: finalDamage,
@@ -893,6 +918,7 @@ export const useGameStore = create<GameState>()(
 
           updatedEnemies = updatedEnemies.map((e) => {
             if (!e.isDead) {
+              get().triggerVisualEffect('shake', e.id);
               const newHp = Math.max(0, e.hp - finalDamage);
               addDamageIndicator({
                 value: finalDamage,
@@ -948,6 +974,7 @@ export const useGameStore = create<GameState>()(
 
           updatedEnemies = updatedEnemies.map((e) => {
             if (!e.isDead) {
+              get().triggerVisualEffect('shake', e.id);
               const newHp = Math.max(0, e.hp - finalDamage);
               addDamageIndicator({
                 value: finalDamage,
@@ -1055,6 +1082,7 @@ export const useGameStore = create<GameState>()(
              const finalDamage = (triggerInscriptions("on_damage", { type: "skill", baseDamage }) as number) ?? baseDamage;
              updatedEnemies = updatedEnemies.map((e) => {
                 if (e.id === finalTargetId) {
+                   get().triggerVisualEffect('shake', e.id);
                    const newHp = Math.max(0, e.hp - finalDamage);
                    addDamageIndicator({ value: finalDamage, x: 50, y: 50, type: "damage" });
                    return { ...e, hp: newHp, isDead: newHp <= 0 };
@@ -1067,6 +1095,7 @@ export const useGameStore = create<GameState>()(
              const finalDamage = (triggerInscriptions("on_damage", { type: "skill", baseDamage }) as number) ?? baseDamage;
              updatedEnemies = updatedEnemies.map((e) => {
                 if (!e.isDead) {
+                   get().triggerVisualEffect('shake', e.id);
                    const newHp = Math.max(0, e.hp - finalDamage);
                    addDamageIndicator({ value: finalDamage, x: 50, y: 50, type: "damage" });
                    return { ...e, hp: newHp, isDead: newHp <= 0 };
@@ -1183,6 +1212,11 @@ export const useGameStore = create<GameState>()(
             newComboCount >= 3 ? 10 : newComboCount === 2 ? 5 : 0;
           const damage = attackPower + comboBonus;
 
+          // 触发攻击者高亮
+          if (activeAttacker) {
+             get().triggerVisualEffect('highlight', activeAttacker.id);
+          }
+
           if (newComboCount >= 2) {
             addBattleLog(
               `⚡ ${newComboCount}连击！逻辑验证成功！连击加成 +${comboBonus} 伤害！`,
@@ -1220,6 +1254,7 @@ export const useGameStore = create<GameState>()(
           let updatedEnemies = entropyEntities.map((e) => {
             // 只攻击锁定的目标
             if (e.id === targetId && !e.isDead) {
+              get().triggerVisualEffect('shake', e.id);
               const newHp = Math.max(0, e.hp - damage);
               addDamageIndicator({
                 value: damage,
@@ -1451,6 +1486,7 @@ export const useGameStore = create<GameState>()(
           const targetConstruct = aliveConstructs[randomIndex];
 
           addBattleLog(`${attacker.name} 发动攻击！`, "combat");
+          get().triggerVisualEffect('highlight', attacker.id);
 
           const updatedConstructs = get().constructs.map((c) => {
             // 只对随机选中的目标造成伤害
@@ -1480,6 +1516,7 @@ export const useGameStore = create<GameState>()(
               );
             }
 
+            get().triggerVisualEffect('shake', c.id);
             const newHp = Math.max(0, c.hp - actualDamage);
             addDamageIndicator({
               value: actualDamage,

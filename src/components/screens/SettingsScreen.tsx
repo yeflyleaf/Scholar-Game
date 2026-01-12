@@ -217,7 +217,7 @@ export const SettingsScreen: React.FC = () => {
             
             const questions = await generateQuestions(textContent, {
                 count: 60,
-                difficulty: settings.gameDifficulty as 1 | 2 | 3 | 4 | 5 | 'mixed'
+                difficulty: settings.difficulty as 1 | 2 | 3 | 4 | 5 | 'mixed'
             });
             
             if (questions && questions.length > 0) {
@@ -359,11 +359,11 @@ export const SettingsScreen: React.FC = () => {
                                 {([1, 2, 3, 4, 5] as const).map((lvl) => (
                                     <motion.button
                                         key={lvl}
-                                        onClick={() => updateSettings({ gameDifficulty: lvl })}
+                                        onClick={() => updateSettings({ difficulty: lvl })}
                                         className={`
                                             w-12 h-12 font-display font-bold text-lg
                                             border-2 transition-all duration-300
-                                            ${settings.gameDifficulty === lvl
+                                            ${settings.difficulty === lvl
                                                 ? 'border-holographic-gold bg-holographic-gold/20 text-holographic-gold shadow-[0_0_10px_rgba(255,215,0,0.3)]'
                                                 : 'border-gray-600 text-gray-500 hover:border-gray-500'
                                             }
@@ -378,20 +378,20 @@ export const SettingsScreen: React.FC = () => {
                             </div>
                             {/* 难度说明 */}
                             <div className="text-sm font-mono text-gray-400 space-y-1 bg-gray-800/50 p-3 rounded border border-gray-700">
-                                {settings.gameDifficulty === 1 && (
-                                    <p>✨ <span className="text-stable">新手模式</span> - 我方攻击力: <span className="text-neon-cyan">25</span> | 敌方攻击力: <span className="text-stable">-5</span> | 敌方生命: <span className="text-glitch-red">+100</span></p>
+                                {settings.difficulty === 1 && (
+                                    <p>✨ <span className="text-stable">新手模式</span> - 答题时间: <span className="text-stable">+20s</span> | 我方攻击力: <span className="text-neon-cyan">25</span> | 敌方攻击力: <span className="text-stable">-5</span> | 敌方生命: <span className="text-glitch-red">+100</span></p>
                                 )}
-                                {settings.gameDifficulty === 2 && (
-                                    <p>🌟 <span className="text-neon-cyan">简单模式</span> - 我方攻击力: <span className="text-neon-cyan">20</span> | 敌方攻击力: <span className="text-gray-400">不变</span> | 敌方生命: <span className="text-glitch-red">+200</span></p>
+                                {settings.difficulty === 2 && (
+                                    <p>🌟 <span className="text-neon-cyan">简单模式</span> - 答题时间: <span className="text-neon-cyan">+10s</span> | 我方攻击力: <span className="text-neon-cyan">20</span> | 敌方攻击力: <span className="text-gray-400">不变</span> | 敌方生命: <span className="text-glitch-red">+200</span></p>
                                 )}
-                                {settings.gameDifficulty === 3 && (
-                                    <p>⚔️ <span className="text-holographic-gold">标准模式</span> - 我方攻击力: <span className="text-neon-cyan">15</span> | 敌方攻击力: <span className="text-glitch-red">+5</span> | 敌方生命: <span className="text-glitch-red">+300</span></p>
+                                {settings.difficulty === 3 && (
+                                    <p>⚔️ <span className="text-holographic-gold">标准模式</span> - 答题时间: <span className="text-gray-400">默认</span> | 我方攻击力: <span className="text-neon-cyan">15</span> | 敌方攻击力: <span className="text-glitch-red">+5</span> | 敌方生命: <span className="text-glitch-red">+300</span></p>
                                 )}
-                                {settings.gameDifficulty === 4 && (
-                                    <p>🔥 <span className="text-orange-400">困难模式</span> - 我方攻击力: <span className="text-neon-cyan">10</span> | 敌方攻击力: <span className="text-glitch-red">+10</span> | 敌方生命: <span className="text-glitch-red">+500</span></p>
+                                {settings.difficulty === 4 && (
+                                    <p>🔥 <span className="text-orange-400">困难模式</span> - 答题时间: <span className="text-orange-400">-10s</span> | 我方攻击力: <span className="text-neon-cyan">10</span> | 敌方攻击力: <span className="text-glitch-red">+10</span> | 敌方生命: <span className="text-glitch-red">+500</span></p>
                                 )}
-                                {settings.gameDifficulty === 5 && (
-                                    <p>💀 <span className="text-glitch-red">地狱模式</span> - 我方攻击力: <span className="text-neon-cyan">5</span> | 敌方攻击力: <span className="text-glitch-red">+20</span> | 敌方生命: <span className="text-glitch-red">+1000</span></p>
+                                {settings.difficulty === 5 && (
+                                    <p>💀 <span className="text-glitch-red">地狱模式</span> - 答题时间: <span className="text-glitch-red">-15s</span> | 我方攻击力: <span className="text-neon-cyan">5</span> | 敌方攻击力: <span className="text-glitch-red">+20</span> | 敌方生命: <span className="text-glitch-red">+1000</span></p>
                                 )}
                             </div>
                         </div>

@@ -3,7 +3,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useGameStore } from "../stores/useGameStore";
 
 // 每题答题时间（秒）
-const QUESTION_TIME_LIMIT = 20;
+
 
 export interface BattleSequenceReturn {
   handleAnswerSubmit: (selectedIndex: number) => void;
@@ -24,7 +24,7 @@ export function useBattleSequence(): BattleSequenceReturn {
     null
   );
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
-  const [timeRemaining, setTimeRemaining] = useState(QUESTION_TIME_LIMIT);
+
   const [isTimedOut, setIsTimedOut] = useState(false);
   const [isPaused, setIsPaused] = useState(false);
 
@@ -32,7 +32,24 @@ export function useBattleSequence(): BattleSequenceReturn {
   const currentQuestionIdRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { currentQuestion, answerQuestion, battleState } = useGameStore();
+  const { currentQuestion, answerQuestion, battleState, settings } = useGameStore();
+
+  // 根据难度计算答题时间
+  const getQuestionTimeLimit = useCallback(() => {
+    const baseTime = 30;
+    const difficulty = settings.difficulty;
+    
+    switch (difficulty) {
+      case 1: return baseTime + 20; // 50s
+      case 2: return baseTime + 10; // 40s
+      case 3: return baseTime;      // 30s
+      case 4: return baseTime - 10; // 20s
+      case 5: return baseTime - 15; // 15s
+      default: return baseTime;
+    }
+  }, [settings.difficulty]);
+
+  const [timeRemaining, setTimeRemaining] = useState(getQuestionTimeLimit());
 
   // 切换暂停状态
   const togglePause = useCallback(() => {
@@ -82,10 +99,10 @@ export function useBattleSequence(): BattleSequenceReturn {
       setSelectedAnswerIndex(null);
       setIsCorrect(null);
       setIsTimedOut(false);
-      setTimeRemaining(QUESTION_TIME_LIMIT);
+      setTimeRemaining(getQuestionTimeLimit());
       setStatusMessage("等待输入...");
     }, 1000);
-  }, [isProcessing, currentQuestion, battleState, answerQuestion, clearTimer]);
+  }, [isProcessing, currentQuestion, battleState, answerQuestion, clearTimer, getQuestionTimeLimit]);
 
   // 倒计时逻辑
   useEffect(() => {
@@ -98,7 +115,7 @@ export function useBattleSequence(): BattleSequenceReturn {
       clearTimer();
       // 使用 queueMicrotask 调度状态更新，避免同步渲染警告
       queueMicrotask(() => {
-        setTimeRemaining(QUESTION_TIME_LIMIT);
+        setTimeRemaining(getQuestionTimeLimit());
         setIsTimedOut(false);
       });
     }
@@ -119,7 +136,7 @@ export function useBattleSequence(): BattleSequenceReturn {
     }
 
     return () => clearTimer();
-  }, [currentQuestion, battleState, isProcessing, isPaused, clearTimer]);
+  }, [currentQuestion, battleState, isProcessing, isPaused, clearTimer, getQuestionTimeLimit]);
 
   // 监听 timeRemaining 变化，触发超时
   useEffect(() => {
@@ -166,11 +183,11 @@ export function useBattleSequence(): BattleSequenceReturn {
         setIsProcessing(false);
         setSelectedAnswerIndex(null);
         setIsCorrect(null);
-        setTimeRemaining(QUESTION_TIME_LIMIT);
+        setTimeRemaining(getQuestionTimeLimit());
         setStatusMessage("等待输入...");
       }, 1500);
     },
-    [isProcessing, currentQuestion, battleState, answerQuestion, clearTimer]
+    [isProcessing, currentQuestion, battleState, answerQuestion, clearTimer, getQuestionTimeLimit]
   );
 
   return {
