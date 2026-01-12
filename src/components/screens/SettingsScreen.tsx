@@ -5,6 +5,7 @@ import { useAI } from '../../hooks/useAI';
 import { useGameStore } from '../../stores/useGameStore';
 import type { AIProvider } from '../../types/electron';
 import { isElectron } from '../../types/electron';
+import { CustomAlertDialog } from '../common/CustomAlertDialog';
 
 // 动画状态指示器
 const StatusIndicator: React.FC<{ isActive: boolean; label: string }> = ({ isActive, label }) => (
@@ -136,6 +137,10 @@ export const SettingsScreen: React.FC = () => {
     const [connectionTestStatus, setConnectionTestStatus] = useState<'idle' | 'testing' | 'success' | 'error'>('idle');
     const [connectionTestResult, setConnectionTestResult] = useState<{ message: string; responseTime?: number } | null>(null);
 
+    // Dialog State
+    const [showResetConfirm, setShowResetConfirm] = useState(false);
+    const [showResetSuccess, setShowResetSuccess] = useState(false);
+
     const isElectronEnv = isElectron();
 
     // Get current provider info
@@ -263,6 +268,15 @@ export const SettingsScreen: React.FC = () => {
 
     const handleGoToLevelSelect = () => {
         setScreen('GRAND_UNIFICATION_SIM');
+    };
+
+    const handleResetConfirm = async () => {
+        setShowResetConfirm(false);
+        resetProgress();
+        if (isElectronEnv) {
+            await resetConfig();
+        }
+        setShowResetSuccess(true);
     };
 
     const chinaProviders = providersGrouped?.china || [];
@@ -781,15 +795,7 @@ export const SettingsScreen: React.FC = () => {
                             重置所有游戏进度，包括解锁的扇区、获得的铭文和经验值。此操作不可逆。
                         </p>
                         <motion.button
-                            onClick={async () => {
-                                if (confirm('确定要重置所有进度吗？此操作无法撤销。')) {
-                                    resetProgress();
-                                    if (isElectronEnv) {
-                                        await resetConfig();
-                                    }
-                                    alert('进度已重置，AI 配置已清除。');
-                                }
-                            }}
+                            onClick={() => setShowResetConfirm(true)}
                             className="hex-button border-glitch-red text-glitch-red hover:bg-glitch-red/10 w-full py-3"
                             whileHover={{ scale: 1.02 }}
                             whileTap={{ scale: 0.98 }}
@@ -820,6 +826,29 @@ export const SettingsScreen: React.FC = () => {
             <div className="fixed top-6 right-6 w-16 h-16 border-t-2 border-r-2 border-neon-cyan/20 pointer-events-none" />
             <div className="fixed bottom-6 left-6 w-16 h-16 border-b-2 border-l-2 border-neon-cyan/20 pointer-events-none" />
             <div className="fixed bottom-6 right-6 w-16 h-16 border-b-2 border-r-2 border-neon-cyan/20 pointer-events-none" />
+
+            {/* Custom Alert Dialogs */}
+            <CustomAlertDialog
+                isOpen={showResetConfirm}
+                title="系统警告"
+                message="您确定要重置所有游戏进度吗？此操作将清除所有解锁扇区、铭文、经验值以及本地存储的 AI 密钥配置。此操作不可撤销。"
+                confirmText="确认重置"
+                cancelText="取消"
+                type="warning"
+                onConfirm={handleResetConfirm}
+                onCancel={() => setShowResetConfirm(false)}
+            />
+            
+            <CustomAlertDialog
+                isOpen={showResetSuccess}
+                title="重置完成"
+                message="系统已重置。所有进度和配置已清除。"
+                confirmText="确认"
+                cancelText="关闭"
+                type="success"
+                onConfirm={() => setShowResetSuccess(false)}
+                onCancel={() => setShowResetSuccess(false)}
+            />
         </div>
     );
 };
