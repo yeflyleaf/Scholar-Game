@@ -2,34 +2,61 @@
 import { create } from "zustand";
 import { createJSONStorage, persist } from "zustand/middleware";
 import {
-  DEFAULT_THEME,
-  INITIAL_CONSTRUCTS,
-  INSCRIPTIONS,
-  SAMPLE_QUESTIONS,
-  STAR_SECTORS,
+    DEFAULT_THEME,
+    INITIAL_CONSTRUCTS,
+    INSCRIPTIONS,
+    SAMPLE_QUESTIONS,
+    STAR_SECTORS,
 } from "../lib/constants";
 import { generateId, shuffleArray } from "../lib/utils";
 import type {
-  AnsweredQuestion,
-  BattleLogEntry,
-  BattleState,
-  Construct,
-  DamageIndicator,
-  EntropyEntity,
-  GameScreen,
-  GameSettings,
-  GameTheme,
-  Inscription,
-  InscriptionEffectContext,
-  InscriptionTrigger,
-  NodeStatus,
-  ObserverProfile,
-  Question,
-  StarSector,
+    AnsweredQuestion,
+    BattleLogEntry,
+    BattleState,
+    Construct,
+    DamageIndicator,
+    EntropyEntity,
+    GameScreen,
+    GameSettings,
+    GameTheme,
+    Inscription,
+    InscriptionEffectContext,
+    InscriptionTrigger,
+    NodeStatus,
+    ObserverProfile,
+    Question,
+    StarSector,
 } from "../types/game";
 
 // 辅助函数：随机打乱题目选项
 const shuffleQuestion = (question: Question): Question => {
+  // 判断题不打乱选项，确保 A=正确，B=错误
+  if (question.type === 'TrueFalse') {
+    // 尝试标准化选项顺序：A=正确/True, B=错误/False
+    const trueOptions = ['正确', 'True', 'true', 'Yes', 'yes', '是'];
+    const falseOptions = ['错误', 'False', 'false', 'No', 'no', '否'];
+    
+    const opt0 = question.options[0];
+    const opt1 = question.options[1];
+    
+    // 如果已经是 A=正确，直接返回
+    if (trueOptions.some(t => opt0.includes(t)) && falseOptions.some(f => opt1.includes(f))) {
+      return question;
+    }
+    
+    // 如果是 A=错误，B=正确，则交换
+    if (falseOptions.some(f => opt0.includes(f)) && trueOptions.some(t => opt1.includes(t))) {
+       const newCorrectIndex = question.correctOptionIndex === 0 ? 1 : 0;
+       return {
+         ...question,
+         options: [opt1, opt0], // 交换选项文本
+         correctOptionIndex: newCorrectIndex
+       };
+    }
+    
+    return question;
+  }
+
   const indices = question.options.map((_, i) => i);
   const shuffledIndices = shuffleArray(indices);
 

@@ -5,9 +5,9 @@ import type { Question } from '../../types/game';
 
 interface QuestionCardProps {
     question: Question;
-    onAnswer: (index: number) => void;
+    onAnswer: (index: number | number[]) => void;
     disabled?: boolean;
-    selectedIndex?: number | null;
+    selectedIndex?: number | number[] | null;
     isCorrect?: boolean | null;
     timeRemaining?: number;
     isTimedOut?: boolean;
@@ -78,7 +78,53 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
     timeRemaining = 20,
     isTimedOut = false
 }) => {
+    // 多选题的临时选择状态
+    const [multiSelection, setMultiSelection] = React.useState<number[]>([]);
+    
+    // 当题目改变时重置多选状态
+    React.useEffect(() => {
+        setMultiSelection([]);
+    }, [question.id]);
+
     const hasAnswered = selectedIndex !== null && selectedIndex !== undefined;
+    
+    // 辅助函数：判断某个选项是否被选中（无论是单选的最终结果，还是多选的临时/最终结果）
+    const isOptionSelected = (index: number) => {
+        if (hasAnswered) {
+            if (Array.isArray(selectedIndex)) {
+                return selectedIndex.includes(index);
+            }
+            return selectedIndex === index;
+        }
+        // 未提交时，仅多选题显示临时选中状态
+        if (question.type === 'Multi') {
+            return multiSelection.includes(index);
+        }
+        return false;
+    };
+
+    // 处理点击选项
+    const handleOptionClick = (index: number) => {
+        if (disabled || hasAnswered) return;
+
+        if (question.type === 'Multi') {
+            setMultiSelection(prev => {
+                if (prev.includes(index)) {
+                    return prev.filter(i => i !== index);
+                }
+                return [...prev, index];
+            });
+        } else {
+            // 单选或判断题，直接提交
+            onAnswer(index);
+        }
+    };
+
+    // 多选题提交
+    const handleMultiSubmit = () => {
+        if (disabled || hasAnswered || multiSelection.length === 0) return;
+        onAnswer(multiSelection);
+    };
     
     // 根据剩余时间确定颜色
     const getTimerColor = () => {
@@ -222,7 +268,7 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
             {/* 选项 */}
             <div className="grid grid-cols-1 gap-3">
                 {question.options.map((option, index) => {
-                    const isSelected = selectedIndex === index;
+                    const isSelected = isOptionSelected(index);
                     const optionLetter = String.fromCharCode(65 + index); // A, B, C, D...
 
                     // Determine if this specific option is the correct answer
@@ -236,16 +282,31 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     let bgGradient = 'from-black/40 to-black/20';
                     
                     if (isSelected) {
-                        if (isCorrect === true) {
-                            stateClass = 'correct';
-                            borderColor = 'border-stable';
-                            bgGradient = 'from-stable/20 to-stable/5';
-                        } else if (isCorrect === false) {
-                            stateClass = 'incorrect';
-                            borderColor = 'border-glitch-red';
-                            bgGradient = 'from-glitch-red/20 to-glitch-red/5';
+                        if (hasAnswered) {
+                            // 已回答，显示对错
+                            if (isCorrect === true) {
+                                stateClass = 'correct';
+                                borderColor = 'border-stable';
+                                bgGradient = 'from-stable/20 to-stable/5';
+                            } else if (isCorrect === false) {
+                                // 如果是多选，可能部分选对部分选错，这里简单处理：只要最终结果是错，选中的都标红
+                                // 也可以细化：选了但不是答案->红，选了且是答案->绿
+                                if (isActualCorrect) {
+                                     stateClass = 'correct'; // 选对了的选项
+                                     borderColor = 'border-stable';
+                                     bgGradient = 'from-stable/20 to-stable/5';
+                                } else {
+                                     stateClass = 'incorrect'; // 选错了的选项
+                                     borderColor = 'border-glitch-red';
+                                     bgGradient = 'from-glitch-red/20 to-glitch-red/5';
+                                }
+                            } else {
+                                // Processing state
+                                borderColor = 'border-neon-cyan';
+                                bgGradient = 'from-neon-cyan/20 to-neon-cyan/5';
+                            }
                         } else {
-                            // Processing state
+                            // 未回答，仅显示选中状态
                             borderColor = 'border-neon-cyan';
                             bgGradient = 'from-neon-cyan/20 to-neon-cyan/5';
                         }
@@ -259,8 +320,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     return (
                         <motion.button
                             key={index}
-                            onClick={() => !disabled && onAnswer(index)}
-                            disabled={disabled}
+                            onClick={() => handleOptionClick(index)}
+                            disabled={disabled || hasAnswered}
                             className={`
                                 option-card ${stateClass}
                                 relative w-full text-left p-4 rounded
@@ -273,8 +334,8 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             initial={{ opacity: 0, x: -30 }}
                             animate={{ opacity: 1, x: 0 }}
                             transition={{ delay: 0.4 + index * 0.1 }}
-                            whileHover={!disabled ? { x: 10, scale: 1.01 } : {}}
-                            whileTap={!disabled ? { scale: 0.99 } : {}}
+                            whileHover={(!disabled && !hasAnswered) ? { x: 10, scale: 1.01 } : {}}
+                            whileTap={(!disabled && !hasAnswered) ? { scale: 0.99 } : {}}
                         >
                             {/* 选项字母 */}
                             <span className={`
@@ -283,7 +344,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                                 border-2 ${isSelected || (hasAnswered && isActualCorrect) ? borderColor : 'border-neon-cyan/30'}
                                 text-base font-display font-bold
                                 ${isSelected 
-                                    ? isCorrect ? 'text-stable bg-stable/10' : 'text-glitch-red bg-glitch-red/10'
+                                    ? (hasAnswered && isCorrect !== null)
+                                        ? (isActualCorrect ? 'text-stable bg-stable/10' : 'text-glitch-red bg-glitch-red/10')
+                                        : 'text-neon-cyan bg-neon-cyan/10'
                                     : hasAnswered && isActualCorrect
                                         ? 'text-stable bg-stable/10'
                                         : 'text-neon-cyan/70 group-hover:text-neon-cyan group-hover:border-neon-cyan'
@@ -299,7 +362,9 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             <span className={`
                                 font-mono text-base
                                 ${isSelected 
-                                    ? isCorrect ? 'text-stable' : 'text-glitch-red'
+                                    ? (hasAnswered && isCorrect !== null)
+                                        ? (isActualCorrect ? 'text-stable' : 'text-glitch-red')
+                                        : 'text-white'
                                     : hasAnswered && isActualCorrect
                                         ? 'text-stable'
                                         : 'text-gray-200 group-hover:text-white'
@@ -324,15 +389,17 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                             {(isSelected || (hasAnswered && isActualCorrect)) && (
                                 <motion.div
                                     className={`absolute right-4 top-1/2 -translate-y-1/2 text-2xl ${
-                                        (isSelected && !isCorrect) ? 'text-glitch-red' : 'text-stable'
+                                        hasAnswered 
+                                            ? (isActualCorrect ? 'text-stable' : 'text-glitch-red')
+                                            : 'text-neon-cyan'
                                     }`}
                                     initial={{ scale: 0, rotate: -180 }}
                                     animate={{ scale: 1, rotate: 0 }}
                                     transition={{ type: 'spring', stiffness: 300 }}
                                 >
-                                    {isSelected 
-                                        ? (isCorrect ? '✓' : '✕')
-                                        : '✓' // Missed correct answer gets a checkmark
+                                    {hasAnswered
+                                        ? (isActualCorrect ? '✓' : '✕')
+                                        : '✓' 
                                     }
                                 </motion.div>
                             )}
@@ -340,6 +407,30 @@ export const QuestionCard: React.FC<QuestionCardProps> = ({
                     );
                 })}
             </div>
+            
+            {/* 多选题提交按钮 */}
+            {question.type === 'Multi' && !hasAnswered && (
+                <motion.div
+                    className="mt-4 flex justify-end"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                >
+                    <button
+                        onClick={handleMultiSubmit}
+                        disabled={multiSelection.length === 0 || disabled}
+                        className={`
+                            px-6 py-2 rounded font-mono font-bold text-lg
+                            transition-all duration-300
+                            ${multiSelection.length > 0 && !disabled
+                                ? 'bg-neon-cyan text-deep-space hover:bg-white hover:shadow-[0_0_15px_rgba(0,243,255,0.5)]'
+                                : 'bg-gray-700 text-gray-500 cursor-not-allowed'
+                            }
+                        `}
+                    >
+                        确认提交
+                    </button>
+                </motion.div>
+            )}
 
             {/* 角落装饰 */}
             <motion.div

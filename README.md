@@ -46,15 +46,15 @@
 
 ## 🛠️ 技术架构
 
-| 模块         | 技术栈                  | 说明              |
-| ------------ | ---------------------- | ------------------|
-| **核心框架** | React 19 + TypeScript  | 严格类型安全        |
-| **构建工具** | Vite                   | 极速热更新          |
-| **样式引擎** | Tailwind CSS v4        | 原子化 FUI 设计     |
-| **动画引擎** | Framer Motion          | 故障特效与转场       |
-| **状态管理** | Zustand                | 全局游戏状态         |
-| **桌面封装** | Electron               | 跨平台运行           |
-| **AI 驱动**  | 多模型支持 (Gemini 等)  | 动态生成题目与敌人    |
+| 模块         | 技术栈                                 | 说明               |
+| ------------ | -------------------------------------- | ------------------ |
+| **核心框架** | React 19 + TypeScript                  | 严格类型安全       |
+| **构建工具** | Vite                                   | 极速热更新         |
+| **样式引擎** | Tailwind CSS v4                        | 原子化 FUI 设计    |
+| **动画引擎** | Framer Motion                          | 故障特效与转场     |
+| **状态管理** | Zustand                                | 全局游戏状态       |
+| **桌面封装** | Electron                               | 跨平台运行         |
+| **AI 驱动**  | 多模型支持 (Gemini, OpenAI Compatible) | 动态生成题目与敌人 |
 
 ---
 
@@ -64,6 +64,12 @@
 ScholarGame/
 ├── electron/               # Electron 主进程相关代码
 │   ├── providers/          # AI 模型提供商适配器集合
+│   │   ├── base-provider.cjs           # AI 提供商基类
+│   │   ├── error-codes.cjs             # 错误代码定义
+│   │   ├── gemini-provider.cjs         # Google Gemini 适配器
+│   │   ├── openai-compatible-provider.cjs # OpenAI 兼容适配器
+│   │   ├── provider-factory.cjs        # 提供商工厂模式实现
+│   │   └── provider-registry.cjs       # 提供商注册表
 │   ├── ai-service.cjs      # 统一 AI 服务层，管理多模型适配器
 │   ├── main.cjs            # Electron 主入口，负责窗口创建与系统交互
 │   └── preload.cjs         # 预加载脚本，实现主进程与渲染进程的安全通信
@@ -71,7 +77,7 @@ ScholarGame/
 ├── src/                    # React 渲染进程源代码
 │   ├── assets/             # 静态资源文件（图片、字体等）
 │   ├── components/         # UI 组件库（遵循原子化设计原则）
-│   │   ├── atoms/          # 原子组件（如按钮、输入框等基础元素）
+│   │   ├── common/         # 通用组件（如自定义弹窗等）
 │   │   ├── molecules/      # 分子组件（由原子组成的简单功能模块）
 │   │   ├── organisms/      # 组织组件（复杂的区块级组件）
 │   │   └── screens/        # 页面级组件（对应游戏的主要场景）
@@ -81,9 +87,17 @@ ScholarGame/
 │   │       ├── SettingsScreen.tsx      # 系统设置界面
 │   │       └── TitleScreen.tsx         # 游戏标题界面
 │   ├── hooks/              # 自定义 React Hooks（逻辑复用）
+│   │   ├── useAI.ts            # AI 相关逻辑钩子
+│   │   ├── useBattleSequence.ts # 战斗流程控制钩子
+│   │   └── useGemini.ts        # Gemini 特定逻辑钩子
 │   ├── lib/                # 工具函数与通用库
+│   │   ├── constants.ts        # 游戏常量定义
+│   │   └── utils.ts            # 通用工具函数
 │   ├── stores/             # Zustand 全局状态管理
+│   │   └── useGameStore.ts     # 游戏核心状态存储
 │   ├── types/              # TypeScript 类型定义文件
+│   │   ├── electron.ts         # Electron IPC 类型定义
+│   │   └── game.ts             # 游戏核心类型定义
 │   ├── App.tsx             # 应用根组件，处理路由与布局
 │   ├── index.css           # 全局样式与 Tailwind 配置
 │   └── main.tsx            # React 入口文件
@@ -92,6 +106,7 @@ ScholarGame/
 ├── tsconfig.json           # TypeScript 编译配置
 ├── vite.config.ts          # Vite 构建配置
 ├── 开发模式下添加新大模型指南.md # 开发文档：添加新模型指南
+├── 游戏数值机制一览.md      # 游戏数值与机制详解
 └── 游戏设计原稿.md          # 游戏设计文档
 ```
 

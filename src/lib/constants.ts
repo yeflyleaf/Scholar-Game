@@ -13,13 +13,13 @@ export const APP_META = {
 } as const;
 
 import type {
-  Construct,
-  EnemySkill,
-  EntropyEntity,
-  GameTheme,
-  Inscription,
-  Question,
-  StarSector,
+    Construct,
+    EnemySkill,
+    EntropyEntity,
+    GameTheme,
+    Inscription,
+    Question,
+    StarSector,
 } from "../types/game";
 
 // 1. 视觉美学
@@ -243,6 +243,45 @@ export const SAMPLE_QUESTIONS: Question[] = [
     explanation:
       "Cache位于CPU和主存之间，用于缓解CPU速度快而内存速度慢的矛盾。",
     tags: ["Architecture", "Hardware"],
+  },
+  {
+    id: "q7",
+    text: "以下哪些是面向对象编程(OOP)的三大特性？(多选)",
+    type: "Multi",
+    options: [
+      "封装 (Encapsulation)",
+      "多态 (Polymorphism)",
+      "编译 (Compilation)",
+      "继承 (Inheritance)",
+    ],
+    correctOptionIndex: [0, 1, 3],
+    difficulty: 2,
+    timeLimit: 40,
+    explanation:
+      "面向对象编程的三大特性是：封装、继承、多态。编译是程序构建过程。",
+    tags: ["Programming", "OOP"],
+  },
+  {
+    id: "q8",
+    text: "HTTP协议是基于TCP/IP协议之上的应用层协议。",
+    type: "TrueFalse",
+    options: ["正确", "错误"],
+    correctOptionIndex: 0,
+    difficulty: 1,
+    timeLimit: 20,
+    explanation: "HTTP确实是应用层协议，传输层依赖TCP。",
+    tags: ["Network", "HTTP"],
+  },
+  {
+    id: "q9",
+    text: "栈(Stack)是一种先进先出(FIFO)的数据结构。",
+    type: "TrueFalse",
+    options: ["正确", "错误"],
+    correctOptionIndex: 1,
+    difficulty: 1,
+    timeLimit: 20,
+    explanation: "栈是后进先出(LIFO)的数据结构，队列才是先进先出(FIFO)。",
+    tags: ["DataStructure", "Stack"],
   },
 ];
 

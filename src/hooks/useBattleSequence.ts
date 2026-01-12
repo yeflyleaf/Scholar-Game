@@ -4,12 +4,11 @@ import { useGameStore } from "../stores/useGameStore";
 
 // 每题答题时间（秒）
 
-
 export interface BattleSequenceReturn {
-  handleAnswerSubmit: (selectedIndex: number) => void;
+  handleAnswerSubmit: (selectedIndex: number | number[]) => void;
   statusMessage: string;
   isProcessing: boolean;
-  selectedAnswerIndex: number | null;
+  selectedAnswerIndex: number | number[] | null;
   isCorrect: boolean | null;
   timeRemaining: number;
   isTimedOut: boolean;
@@ -20,9 +19,9 @@ export interface BattleSequenceReturn {
 export function useBattleSequence(): BattleSequenceReturn {
   const [statusMessage, setStatusMessage] = useState("等待输入...");
   const [isProcessing, setIsProcessing] = useState(false);
-  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<number | null>(
-    null
-  );
+  const [selectedAnswerIndex, setSelectedAnswerIndex] = useState<
+    number | number[] | null
+  >(null);
   const [isCorrect, setIsCorrect] = useState<boolean | null>(null);
 
   const [isTimedOut, setIsTimedOut] = useState(false);
@@ -32,20 +31,27 @@ export function useBattleSequence(): BattleSequenceReturn {
   const currentQuestionIdRef = useRef<string | null>(null);
   const timerRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  const { currentQuestion, answerQuestion, battleState, settings } = useGameStore();
+  const { currentQuestion, answerQuestion, battleState, settings } =
+    useGameStore();
 
   // 根据难度计算答题时间
   const getQuestionTimeLimit = useCallback(() => {
     const baseTime = 30;
     const difficulty = settings.difficulty;
-    
+
     switch (difficulty) {
-      case 1: return baseTime + 20; // 50s
-      case 2: return baseTime + 10; // 40s
-      case 3: return baseTime;      // 30s
-      case 4: return baseTime - 10; // 20s
-      case 5: return baseTime - 15; // 15s
-      default: return baseTime;
+      case 1:
+        return baseTime + 20; // 50s
+      case 2:
+        return baseTime + 10; // 40s
+      case 3:
+        return baseTime; // 30s
+      case 4:
+        return baseTime - 10; // 20s
+      case 5:
+        return baseTime - 15; // 15s
+      default:
+        return baseTime;
     }
   }, [settings.difficulty]);
 
@@ -60,15 +66,19 @@ export function useBattleSequence(): BattleSequenceReturn {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // 只在战斗界面且不在输入框中响应空格键
-      if (e.code === 'Space' && battleState === 'PLAYER_TURN' && !isProcessing) {
+      if (
+        e.code === "Space" &&
+        battleState === "PLAYER_TURN" &&
+        !isProcessing
+      ) {
         // 防止空格键的默认行为（如页面滚动）
         e.preventDefault();
         togglePause();
       }
     };
 
-    window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
   }, [battleState, isProcessing, togglePause]);
 
   // 清理计时器
@@ -102,7 +112,14 @@ export function useBattleSequence(): BattleSequenceReturn {
       setTimeRemaining(getQuestionTimeLimit());
       setStatusMessage("等待输入...");
     }, 1000);
-  }, [isProcessing, currentQuestion, battleState, answerQuestion, clearTimer, getQuestionTimeLimit]);
+  }, [
+    isProcessing,
+    currentQuestion,
+    battleState,
+    answerQuestion,
+    clearTimer,
+    getQuestionTimeLimit,
+  ]);
 
   // 倒计时逻辑
   useEffect(() => {
@@ -121,7 +138,12 @@ export function useBattleSequence(): BattleSequenceReturn {
     }
 
     // 只在玩家回合且有问题且未暂停时启动计时器
-    if (battleState === "PLAYER_TURN" && currentQuestion && !isProcessing && !isPaused) {
+    if (
+      battleState === "PLAYER_TURN" &&
+      currentQuestion &&
+      !isProcessing &&
+      !isPaused
+    ) {
       timerRef.current = setInterval(() => {
         setTimeRemaining((prev) => {
           if (prev <= 1) {
@@ -136,7 +158,14 @@ export function useBattleSequence(): BattleSequenceReturn {
     }
 
     return () => clearTimer();
-  }, [currentQuestion, battleState, isProcessing, isPaused, clearTimer, getQuestionTimeLimit]);
+  }, [
+    currentQuestion,
+    battleState,
+    isProcessing,
+    isPaused,
+    clearTimer,
+    getQuestionTimeLimit,
+  ]);
 
   // 监听 timeRemaining 变化，触发超时
   useEffect(() => {
@@ -154,7 +183,7 @@ export function useBattleSequence(): BattleSequenceReturn {
   }, [timeRemaining, isProcessing, isTimedOut, battleState, handleTimeout]);
 
   const handleAnswerSubmit = useCallback(
-    async (selectedIndex: number) => {
+    async (selectedIndex: number | number[]) => {
       if (isProcessing || !currentQuestion || battleState !== "PLAYER_TURN")
         return;
 
@@ -164,7 +193,9 @@ export function useBattleSequence(): BattleSequenceReturn {
       setIsProcessing(true);
       setSelectedAnswerIndex(selectedIndex);
 
-      const userAnswers = [selectedIndex];
+      const userAnswers = Array.isArray(selectedIndex)
+        ? selectedIndex
+        : [selectedIndex];
       const correctAnswers = Array.isArray(currentQuestion.correctOptionIndex)
         ? currentQuestion.correctOptionIndex
         : [currentQuestion.correctOptionIndex];
@@ -187,7 +218,14 @@ export function useBattleSequence(): BattleSequenceReturn {
         setStatusMessage("等待输入...");
       }, 1500);
     },
-    [isProcessing, currentQuestion, battleState, answerQuestion, clearTimer, getQuestionTimeLimit]
+    [
+      isProcessing,
+      currentQuestion,
+      battleState,
+      answerQuestion,
+      clearTimer,
+      getQuestionTimeLimit,
+    ]
   );
 
   return {
