@@ -130,11 +130,11 @@ _注：AI 生成功能需在 Electron 环境下配置 API Key 使用。_
 
 ---
 
-## 📄 许可证
+## 📄 许可证 (License)
 
-本项目采用 **AGPL-3.0** 许可证。
+本项目采用 [AGPL-3.0](LICENSE) 许可证。
 
-Copyright © 2026 [yeflyleaf](https://github.com/yeflyleaf). All Rights Reserved.
+Copyright © 2026-Present [yeflyleaf](https://github.com/yeflyleaf). All Rights Reserved.
 
 ---
 
