@@ -43,7 +43,7 @@
 ---
 
 <p align="center">
-  <img src="./src/assets/Home.png" alt="Home" width="600" />
+  <img src="./src/assets/Home.png" alt="Home" width="800" />
 </p>
 
 ---
