@@ -132,6 +132,12 @@ npm run electron:dev
 
 _注：AI 生成功能需在 Electron 环境下配置 API Key 使用。_
 
+### 3. 构建生产模式
+
+```bash
+npm run electron:build:win
+```
+
 ---
 
 ## 📄 许可证 (License)
