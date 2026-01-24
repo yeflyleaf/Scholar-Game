@@ -5,6 +5,10 @@
 </h1>
 
 <p align="center">
+  <img src="./src/assets/icon.ico" width="64" alt="Logo">
+</p>
+
+<p align="center">
   <strong> 在期末的终焉凝视下，知识是我们唯一的救赎。</strong>
 </p>
 
@@ -39,7 +43,7 @@
 ---
 
 <p align="center">
-  <img src="public/主页.png" alt="游戏主页截图" width="800" />
+  <img src="./src/assets/Home.png" alt="Home" width="600" />
 </p>
 
 ---
