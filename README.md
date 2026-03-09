@@ -5,7 +5,7 @@
 </h1>
 
 <p align="center">
-  <img src="./src/assets/icon.ico" width="64" alt="Logo">
+  <img src="./Frontend/src/assets/icon.ico" width="64" alt="Logo">
 </p>
 
 <p align="center">
@@ -43,7 +43,7 @@
 ---
 
 <p align="center">
-  <img src="./src/assets/Home.png" alt="Home" width="800" />
+  <img src="./Frontend/src/assets/Home.png" alt="Home" width="800" />
 </p>
 
 ---
