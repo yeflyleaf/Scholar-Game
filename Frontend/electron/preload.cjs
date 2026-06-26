@@ -22,6 +22,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
     resetQuota: () => ipcRenderer.invoke('ai:reset-quota'),
     resetConfig: () => ipcRenderer.invoke('ai:reset-config'),
     testConnection: () => ipcRenderer.invoke('ai:test-connection'),
+    getCustomConfig: () => ipcRenderer.invoke('ai:get-custom-config'),
+    saveCustomConfig: (customConfig) => ipcRenderer.invoke('ai:save-custom-config', customConfig),
     
     // 内容生成
     generateQuestions: (content, options) => 

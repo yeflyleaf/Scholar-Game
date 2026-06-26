@@ -3,7 +3,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import React, { useEffect, useState } from 'react';
 import { useAI } from '../../hooks/useAI';
 import { useGameStore } from '../../stores/useGameStore';
-import type { AIProvider } from '../../types/electron';
+import type { AIProvider, AICustomConfig } from '../../types/electron';
 import { isElectron } from '../../types/electron';
 import { CustomAlertDialog } from '../common/CustomAlertDialog';
 
@@ -117,6 +117,8 @@ export const SettingsScreen: React.FC = () => {
         generateAllMissionBriefings,
         testConnection,
         resetConfig,
+        getCustomConfig,
+        saveCustomConfig,
         clearError
     } = useAI();
 
@@ -143,9 +145,258 @@ export const SettingsScreen: React.FC = () => {
 
     const isElectronEnv = isElectron();
 
+    // Custom Config State
+    const [customConfig, setCustomConfig] = useState<AICustomConfig>({
+        customProviders: [],
+        customModels: {}
+    });
+
+    const [showAddProvider, setShowAddProvider] = useState(false);
+    const [editingProviderId, setEditingProviderId] = useState<string | null>(null);
+    const [providerForm, setProviderForm] = useState({
+        id: '',
+        name: '',
+        type: 'openai-compatible',
+        baseUrl: '',
+        defaultModel: '',
+        region: 'china' as 'china' | 'international',
+        requiresProxy: false,
+        note: ''
+    });
+
+    const [selectedModelProviderId, setSelectedModelProviderId] = useState<string>('gemini');
+    const [showAddModel, setShowAddModel] = useState(false);
+    const [editingModelId, setEditingModelId] = useState<string | null>(null);
+    const [modelForm, setModelForm] = useState({
+        id: '',
+        name: '',
+        description: '',
+        url: '',
+        toolCalling: true,
+        vision: true,
+        maxInputTokens: 0,
+        maxOutputTokens: 0
+    });
+
+    const [providerFormError, setProviderFormError] = useState('');
+    const [modelFormError, setModelFormError] = useState('');
+    const [providerToDelete, setProviderToDelete] = useState<string | null>(null);
+    const [modelToDelete, setModelToDelete] = useState<{pid: string, mid: string} | null>(null);
+
+    const loadCustomConfigData = async () => {
+        if (isElectronEnv && typeof getCustomConfig === 'function') {
+            const config = await getCustomConfig();
+            if (config) {
+                setCustomConfig(config);
+            }
+        }
+    };
+
+    const handleSaveCustomConfig = async (newConfig: AICustomConfig) => {
+        if (typeof saveCustomConfig === 'function') {
+            const success = await saveCustomConfig(newConfig);
+            if (success) {
+                setCustomConfig(newConfig);
+            }
+        }
+    };
+
+    useEffect(() => {
+        if (isElectronEnv) {
+            loadCustomConfigData();
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [isElectronEnv]);
+
+    // Sync selectedModelProviderId when providerId changes (outside of useEffect to avoid cascading renders)
+    const [prevProviderId, setPrevProviderId] = useState<string | null>(null);
+    if (providerId !== prevProviderId) {
+        setPrevProviderId(providerId);
+        if (providerId) {
+            setSelectedModelProviderId(providerId);
+        }
+    }
+
+    const handleEditProvider = (p: AIProvider) => {
+        setProviderForm({
+            id: p.id,
+            name: p.name,
+            type: p.type || 'openai-compatible',
+            baseUrl: p.baseUrl || '',
+            defaultModel: p.defaultModel || '',
+            region: p.region || 'china',
+            requiresProxy: !!p.requiresProxy,
+            note: p.note || ''
+        });
+        setEditingProviderId(p.id);
+        setShowAddProvider(true);
+    };
+
+    const handleDeleteProvider = (pid: string) => {
+        setProviderToDelete(pid);
+    };
+
+    const confirmDeleteProvider = async () => {
+        if (!providerToDelete) return;
+        const newConfig = {
+            ...customConfig,
+            customProviders: customConfig.customProviders.filter(p => p.id !== providerToDelete)
+        };
+        await handleSaveCustomConfig(newConfig);
+        if (providerId === providerToDelete) {
+            await setProvider('gemini');
+        }
+        setProviderToDelete(null);
+    };
+
+    const handleSaveProviderForm = async () => {
+        setProviderFormError('');
+
+        // 如果是新增，自动生成唯一的内部 ID
+        let currentId = providerForm.id;
+        if (!editingProviderId && !currentId) {
+            currentId = 'custom_' + Date.now().toString(36) + Math.random().toString(36).substring(2, 6);
+        }
+
+        if (!providerForm.name || !providerForm.baseUrl) {
+            setProviderFormError('请填写必要的信息：名称和 API Base URL');
+            return;
+        }
+
+        let updatedProviders = [...customConfig.customProviders];
+        if (editingProviderId) {
+            updatedProviders = updatedProviders.map(p => p.id === editingProviderId ? { ...p, ...providerForm, id: currentId } : p);
+        } else {
+            updatedProviders.push({
+                ...providerForm,
+                id: currentId,
+                models: []
+            } as AIProvider);
+        }
+
+        const newConfig = {
+            ...customConfig,
+            customProviders: updatedProviders
+        };
+
+        await handleSaveCustomConfig(newConfig);
+        setShowAddProvider(false);
+        setEditingProviderId(null);
+        setProviderForm({
+            id: '',
+            name: '',
+            type: 'openai-compatible',
+            baseUrl: '',
+            defaultModel: '',
+            region: 'china',
+            requiresProxy: false,
+            note: ''
+        });
+    };
+
+    const handleAddModelSubmit = async () => {
+        setModelFormError('');
+        if (!modelForm.id || !modelForm.name) {
+            setModelFormError('请填写必要的信息：模型 ID 和模型名称');
+            return;
+        }
+
+        const currentCustomModels = { ...customConfig.customModels };
+        const modelsForProvider = currentCustomModels[selectedModelProviderId] || [];
+        const targetProvider = providers.find(p => p.id === selectedModelProviderId);
+
+        let newModels;
+        if (editingModelId) {
+            if (modelForm.id !== editingModelId && targetProvider?.models.some(m => m.id === modelForm.id)) {
+                setModelFormError('模型 ID 已存在于该服务商中');
+                return;
+            }
+            newModels = modelsForProvider.map(m => m.id === editingModelId ? {
+                ...m,
+                id: modelForm.id,
+                name: modelForm.name,
+                description: modelForm.description,
+                url: modelForm.url,
+                toolCalling: modelForm.toolCalling,
+                vision: modelForm.vision,
+                maxInputTokens: modelForm.maxInputTokens || undefined,
+                maxOutputTokens: modelForm.maxOutputTokens || undefined,
+            } : m);
+        } else {
+            if (targetProvider?.models.some(m => m.id === modelForm.id)) {
+                setModelFormError('模型 ID 已存在于该服务商中');
+                return;
+            }
+            newModels = [
+                ...modelsForProvider,
+                {
+                    id: modelForm.id,
+                    name: modelForm.name,
+                    description: modelForm.description,
+                    url: modelForm.url,
+                    toolCalling: modelForm.toolCalling,
+                    vision: modelForm.vision,
+                    maxInputTokens: modelForm.maxInputTokens || undefined,
+                    maxOutputTokens: modelForm.maxOutputTokens || undefined,
+                }
+            ];
+        }
+
+        const newConfig = {
+            ...customConfig,
+            customModels: {
+                ...currentCustomModels,
+                [selectedModelProviderId]: newModels
+            }
+        };
+
+        await handleSaveCustomConfig(newConfig);
+        setShowAddModel(false);
+        setEditingModelId(null);
+        setModelForm({ id: '', name: '', description: '', url: '', toolCalling: true, vision: true, maxInputTokens: 0, maxOutputTokens: 0 });
+    };
+
+
+    const handleDeleteModel = (pid: string, mid: string) => {
+        setModelToDelete({pid, mid});
+    };
+
+    const confirmDeleteModel = async () => {
+        if (!modelToDelete) return;
+        const { pid, mid } = modelToDelete;
+        const currentCustomModels = { ...customConfig.customModels };
+        const modelsForProvider = currentCustomModels[pid] || [];
+        const newModels = modelsForProvider.filter(m => m.id !== mid);
+
+        const newConfig = {
+            ...customConfig,
+            customModels: {
+                ...currentCustomModels,
+                [pid]: newModels
+            }
+        };
+
+        await handleSaveCustomConfig(newConfig);
+        setModelToDelete(null);
+    };
+
     // Get current provider info
     const currentProvider = providers.find(p => p.id === providerId);
     const availableModels = currentProvider?.models || [];
+    const availableModelIds = availableModels.map(m => m.id).join(',');
+
+    // Auto-select first available model if current model is invalid
+    useEffect(() => {
+        if (availableModels.length > 0 && model) {
+            const isModelValid = availableModels.some(m => m.id === model);
+            if (!isModelValid) {
+                const firstModelId = availableModels[0].id;
+                setModelInput(firstModelId);
+                setModel(firstModelId);
+            }
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [availableModelIds, model, setModel]);
 
     useEffect(() => {
         if (isElectronEnv) {
@@ -198,13 +449,6 @@ export const SettingsScreen: React.FC = () => {
         }
     };
 
-    const handleSaveModel = async () => {
-        if (modelInput.trim() && modelInput !== model) {
-            await setModel(modelInput.trim());
-            setSaveStatus('success');
-            setTimeout(() => setSaveStatus('idle'), 3000);
-        }
-    };
 
     const handleGenerate = async () => {
         if (!textContent.trim() || !chapterTitle.trim()) return;
@@ -564,7 +808,11 @@ export const SettingsScreen: React.FC = () => {
                                 </label>
                                 <select
                                     value={modelInput}
-                                    onChange={(e) => setModelInput(e.target.value)}
+                                    onChange={async (e) => {
+                                        const val = e.target.value;
+                                        setModelInput(val);
+                                        await setModel(val);
+                                    }}
                                     className="fui-input w-full bg-gray-800"
                                 >
                                     {availableModels.map((m) => (
@@ -574,15 +822,6 @@ export const SettingsScreen: React.FC = () => {
                                     ))}
                                 </select>
                             </div>
-                            <motion.button
-                                onClick={handleSaveModel}
-                                disabled={modelInput === model}
-                                className="hex-button px-6 h-[46px] disabled:opacity-50 disabled:cursor-not-allowed"
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                            >
-                                应用模型
-                            </motion.button>
                         </div>
                         
                         {/* Connection Test */}
@@ -650,6 +889,383 @@ export const SettingsScreen: React.FC = () => {
                         </p>
                     </div>
                 </SectionPanel>
+
+                {/* 自定义 AI 核心与模型可视化配置面板 */}
+                {isElectronEnv && (
+                    <SectionPanel
+                        title="自定义 AI 核心与模型"
+                        subtitle="可视化自主配置与扩展您的 AI 服务及模型库"
+                        icon={<span className="text-neon-cyan">⚙</span>}
+                    >
+                        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                            
+                            {/* 左列：服务商管理 */}
+                            <div className="space-y-4 lg:border-r border-gray-800 lg:pr-8">
+                                <div className="flex justify-between items-center mb-2">
+                                    <span className="text-sm font-display font-bold text-holographic-gold">
+                                        自定义服务商列表
+                                    </span>
+                                    {!showAddProvider && (
+                                        <button
+                                            onClick={() => {
+                                                setShowAddProvider(true);
+                                                setEditingProviderId(null);
+                                                setProviderForm({
+                                                    id: '',
+                                                    name: '',
+                                                    type: 'openai-compatible',
+                                                    baseUrl: '',
+                                                    defaultModel: '',
+                                                    region: 'china',
+                                                    requiresProxy: false,
+                                                    note: ''
+                                                });
+                                            }}
+                                            className="px-3 py-1 text-xs border border-neon-cyan text-neon-cyan hover:bg-neon-cyan/10 transition-colors rounded"
+                                        >
+                                            + 新增服务商
+                                        </button>
+                                    )}
+                                </div>
+
+                                {/* 自定义服务商列表滚动区域 */}
+                                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                                    {customConfig.customProviders.length === 0 ? (
+                                        <p className="text-xs font-mono text-gray-500 italic py-4">
+                                            暂无自定义服务商。您可以通过上方按钮进行添加。
+                                        </p>
+                                    ) : (
+                                        customConfig.customProviders.map((p) => (
+                                            <div 
+                                                key={p.id}
+                                                className="p-3 bg-gray-850/40 border border-gray-700 rounded-lg flex items-center justify-between hover:border-gray-500 transition-colors"
+                                            >
+                                                <div>
+                                                    <h4 className="text-sm font-display font-bold text-white">
+                                                        {p.name} <span className="text-xs font-mono text-gray-500 font-normal">({p.id})</span>
+                                                    </h4>
+                                                    <p className="text-xs font-mono text-gray-400 mt-1 truncate max-w-[220px]">
+                                                        {p.baseUrl}
+                                                    </p>
+                                                    <div className="flex gap-2 mt-1">
+                                                        <span className="text-[10px] px-1.5 py-0.2 bg-gray-700 text-gray-300 rounded font-mono">
+                                                            {p.region === 'china' ? '🇨🇳 国内' : '🌍 国际'}
+                                                        </span>
+                                                        {p.requiresProxy && (
+                                                            <span className="text-[10px] px-1.5 py-0.2 bg-blue-500/20 text-blue-400 rounded font-mono">
+                                                                需代理
+                                                            </span>
+                                                        )}
+                                                    </div>
+                                                </div>
+                                                <div className="flex gap-2">
+                                                    <button
+                                                        onClick={() => handleEditProvider(p)}
+                                                        className="px-2 py-1 text-xs text-neon-cyan hover:bg-neon-cyan/10 rounded transition-colors"
+                                                    >
+                                                        编辑
+                                                    </button>
+                                                    <button
+                                                        onClick={() => handleDeleteProvider(p.id)}
+                                                        className="px-2 py-1 text-xs text-glitch-red hover:bg-glitch-red/10 rounded transition-colors"
+                                                    >
+                                                        删除
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        ))
+                                    )}
+                                </div>
+
+                                {/* 服务商新增与编辑表单 */}
+                                {showAddProvider && (
+                                    <motion.div 
+                                        className="p-4 bg-gray-900/80 border border-neon-cyan/30 rounded-lg space-y-3"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        <h4 className="text-sm font-display font-bold text-neon-cyan">
+                                            {editingProviderId ? '编辑服务商' : '新增自定义服务商'}
+                                        </h4>
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-mono text-gray-400 block">名称 (显示用)</label>
+                                            <input
+                                                type="text"
+                                                value={providerForm.name}
+                                                onChange={(e) => setProviderForm({ ...providerForm, name: e.target.value })}
+                                                placeholder="e.g. Deep Seek"
+                                                className="fui-input w-full text-sm py-1.5 px-2 bg-gray-800"
+                                            />
+                                        </div>
+                                        
+                                        <div className="space-y-1">
+                                            <label className="text-xs font-mono text-gray-400 block">API Base URL</label>
+                                            <input
+                                                type="text"
+                                                value={providerForm.baseUrl}
+                                                onChange={(e) => setProviderForm({ ...providerForm, baseUrl: e.target.value })}
+                                                placeholder="e.g. https://api.deepseek.com"
+                                                className="fui-input w-full text-sm py-1.5 px-2 bg-gray-800"
+                                            />
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-3">
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-mono text-gray-400 block">默认模型 ID</label>
+                                                <input
+                                                    type="text"
+                                                    value={providerForm.defaultModel}
+                                                    onChange={(e) => setProviderForm({ ...providerForm, defaultModel: e.target.value })}
+                                                    placeholder="e.g. deepseek-v4-pro"
+                                                    className="fui-input w-full text-sm py-1.5 px-2 bg-gray-800"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-xs font-mono text-gray-400 block">区域归属</label>
+                                                <select
+                                                    value={providerForm.region}
+                                                    onChange={(e) => setProviderForm({ ...providerForm, region: e.target.value as 'china' | 'international' })}
+                                                    className="fui-input w-full text-sm py-1.5 px-2 bg-gray-800"
+                                                >
+                                                    <option value="china">🇨🇳 国内区域</option>
+                                                    <option value="international">🌍 国际区域</option>
+                                                </select>
+                                            </div>
+                                        </div>
+
+
+
+                                        {providerFormError && <div className="text-red-500 text-xs font-mono">{providerFormError}</div>}
+                                        <div className="flex justify-end gap-3 pt-2">
+                                            <button
+                                                onClick={() => {
+                                                    setShowAddProvider(false);
+                                                    setEditingProviderId(null);
+                                                    setProviderFormError('');
+                                                }}
+                                                className="px-3 py-1.5 text-xs text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                取消
+                                            </button>
+                                            <button
+                                                onClick={handleSaveProviderForm}
+                                                className="px-4 py-1.5 text-xs bg-neon-cyan/20 border border-neon-cyan text-neon-cyan rounded hover:bg-neon-cyan/30 transition-colors"
+                                            >
+                                                保存服务商
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </div>
+
+                            {/* 右列：模型配置字典 */}
+                            <div className="space-y-4">
+                                <div className="space-y-2">
+                                    <span className="text-sm font-display font-bold text-holographic-gold block">
+                                        模型配置管理
+                                    </span>
+                                    <div className="flex gap-2 items-center">
+                                        <span className="text-xs font-mono text-gray-400 shrink-0">选择服务商:</span>
+                                        <select
+                                            value={selectedModelProviderId}
+                                            onChange={(e) => setSelectedModelProviderId(e.target.value)}
+                                            className="fui-input flex-1 bg-gray-800 text-sm py-1.5 px-2"
+                                        >
+                                            {providers.map((p) => (
+                                                <option key={p.id} value={p.id}>
+                                                    {p.name} {p.id === providerId ? '(当前激活)' : ''}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+                                </div>
+
+                                {/* 模型列表滚动区域 */}
+                                <div className="space-y-2 max-h-[220px] overflow-y-auto pr-2 border-t border-gray-800/50 pt-3">
+                                    {(() => {
+                                        const currentModelProvider = providers.find(p => p.id === selectedModelProviderId);
+                                        const allModels = currentModelProvider?.models || [];
+                                        
+                                        if (allModels.length === 0) {
+                                            return (
+                                                <p className="text-xs font-mono text-gray-500 italic py-4">
+                                                    该服务商暂无模型列表。请在下方添加第一个模型。
+                                                </p>
+                                            );
+                                        }
+
+                                        return allModels.map((m) => {
+                                            const isCustomModel = !!m.isCustom;
+                                            return (
+                                                <div 
+                                                    key={m.id}
+                                                    className="flex items-center justify-between p-2 bg-gray-800/20 border border-gray-700/50 rounded hover:border-gray-600 transition-colors animate-fade-in"
+                                                >
+                                                    <div>
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-mono text-white font-bold">{m.name}</span>
+                                                            <span className="text-[9px] font-mono text-gray-500">({m.id})</span>
+                                                            <span className={`text-[8px] px-1.5 py-0.2 rounded font-mono ${
+                                                                isCustomModel 
+                                                                    ? 'bg-holographic-gold/20 text-holographic-gold border border-holographic-gold/30' 
+                                                                    : 'bg-neon-cyan/20 text-neon-cyan border border-neon-cyan/30'
+                                                            }`}>
+                                                                {isCustomModel ? '自定义' : '内置'}
+                                                            </span>
+                                                        </div>
+                                                        {m.description && (
+                                                            <p className="text-[10px] font-mono text-gray-400 mt-0.5">{m.description}</p>
+                                                        )}
+                                                    </div>
+                                                    {isCustomModel && (
+                                                        <div className="flex gap-1">
+                                                            <button
+                                                                onClick={() => {
+                                                                    setModelForm({
+                                                                        id: m.id,
+                                                                        name: m.name,
+                                                                        description: m.description || '',
+                                                                        url: m.url || '',
+                                                                        toolCalling: m.toolCalling ?? true,
+                                                                        vision: m.vision ?? true,
+                                                                        maxInputTokens: m.maxInputTokens || 0,
+                                                                        maxOutputTokens: m.maxOutputTokens || 0
+                                                                    });
+                                                                    setEditingModelId(m.id);
+                                                                    setShowAddModel(true);
+                                                                }}
+                                                                className="px-2 py-0.5 text-[10px] text-neon-cyan hover:bg-neon-cyan/10 rounded transition-colors border border-transparent hover:border-neon-cyan/30"
+                                                            >
+                                                                编辑
+                                                            </button>
+                                                            <button
+                                                                onClick={() => handleDeleteModel(selectedModelProviderId, m.id)}
+                                                                className="px-2 py-0.5 text-[10px] text-glitch-red hover:bg-glitch-red/10 rounded transition-colors border border-transparent hover:border-glitch-red/30"
+                                                            >
+                                                                删除
+                                                            </button>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            );
+                                        });
+                                    })()}
+                                </div>
+
+                                {/* 模型新增表单 */}
+                                {!showAddModel ? (
+                                    <button
+                                        onClick={() => {
+                                            setShowAddModel(true);
+                                            setEditingModelId(null);
+                                            setModelFormError('');
+                                            setModelForm({ id: '', name: '', description: '', url: '', toolCalling: true, vision: true, maxInputTokens: 0, maxOutputTokens: 0 });
+                                        }}
+                                        className="w-full py-2 border border-dashed border-gray-700 text-gray-400 hover:text-neon-cyan hover:border-neon-cyan/50 text-xs font-mono transition-colors rounded"
+                                    >
+                                        + 为此服务商添加模型
+                                    </button>
+                                ) : (
+                                    <motion.div 
+                                        className="p-3 bg-gray-900/60 border border-holographic-gold/30 rounded-lg space-y-2"
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                    >
+                                        <h4 className="text-xs font-display font-bold text-holographic-gold">
+                                            {editingModelId ? '编辑模型' : '添加新模型'}
+                                        </h4>
+                                        <div className="grid grid-cols-2 gap-2">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-mono text-gray-400 block">模型真实 ID (与厂商完全一致)</label>
+                                                <input
+                                                    type="text"
+                                                    value={modelForm.id}
+                                                    onChange={(e) => setModelForm({ ...modelForm, id: e.target.value.trim() })}
+                                                    placeholder="e.g. deepseek-v4-pro"
+                                                    className="fui-input w-full text-xs py-1 px-1.5 bg-gray-800"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-mono text-gray-400 block">模型友好显示名称</label>
+                                                <input
+                                                    type="text"
+                                                    value={modelForm.name}
+                                                    onChange={(e) => setModelForm({ ...modelForm, name: e.target.value })}
+                                                    placeholder="e.g. Deep Seek V4 Pro"
+                                                    className="fui-input w-full text-xs py-1 px-1.5 bg-gray-800"
+                                                />
+                                            </div>
+                                        </div>
+
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <div className="flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id="toolCalling"
+                                                    checked={modelForm.toolCalling}
+                                                    onChange={(e) => setModelForm({ ...modelForm, toolCalling: e.target.checked })}
+                                                    className="w-3 h-3 text-neon-cyan bg-gray-800 border-gray-600 rounded focus:ring-neon-cyan/50"
+                                                />
+                                                <label htmlFor="toolCalling" className="ml-2 text-[10px] font-mono text-gray-400">支持工具调用 (toolCalling)</label>
+                                            </div>
+                                            <div className="flex items-center">
+                                                <input
+                                                    type="checkbox"
+                                                    id="vision"
+                                                    checked={modelForm.vision}
+                                                    onChange={(e) => setModelForm({ ...modelForm, vision: e.target.checked })}
+                                                    className="w-3 h-3 text-neon-cyan bg-gray-800 border-gray-600 rounded focus:ring-neon-cyan/50"
+                                                />
+                                                <label htmlFor="vision" className="ml-2 text-[10px] font-mono text-gray-400">支持视觉 (vision)</label>
+                                            </div>
+                                        </div>
+                                        <div className="grid grid-cols-2 gap-2 mt-2">
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-mono text-gray-400 block">最大输入 Token (可选)</label>
+                                                <input
+                                                    type="number"
+                                                    value={modelForm.maxInputTokens || ''}
+                                                    onChange={(e) => setModelForm({ ...modelForm, maxInputTokens: parseInt(e.target.value) || 0 })}
+                                                    placeholder="1024000"
+                                                    className="fui-input w-full text-xs py-1 px-1.5 bg-gray-800"
+                                                />
+                                            </div>
+                                            <div className="space-y-1">
+                                                <label className="text-[10px] font-mono text-gray-400 block">最大输出 Token (可选)</label>
+                                                <input
+                                                    type="number"
+                                                    value={modelForm.maxOutputTokens || ''}
+                                                    onChange={(e) => setModelForm({ ...modelForm, maxOutputTokens: parseInt(e.target.value) || 0 })}
+                                                    placeholder="32768"
+                                                    className="fui-input w-full text-xs py-1 px-1.5 bg-gray-800"
+                                                />
+                                            </div>
+                                        </div>
+                                        {modelFormError && <div className="text-red-500 text-[10px] font-mono mt-1">{modelFormError}</div>}
+                                        <div className="flex justify-end gap-2 pt-1">
+                                            <button
+                                                onClick={() => {
+                                                    setShowAddModel(false);
+                                                    setEditingModelId(null);
+                                                    setModelFormError('');
+                                                }}
+                                                className="px-2.5 py-1 text-[10px] text-gray-400 hover:text-white transition-colors"
+                                            >
+                                                取消
+                                            </button>
+                                            <button
+                                                onClick={handleAddModelSubmit}
+                                                className="px-3 py-1 text-[10px] bg-holographic-gold/20 border border-holographic-gold text-holographic-gold rounded hover:bg-holographic-gold/30 transition-colors"
+                                            >
+                                                {editingModelId ? '保存修改' : '确认添加'}
+                                            </button>
+                                        </div>
+                                    </motion.div>
+                                )}
+                            </div>
+                        </div>
+                    </SectionPanel>
+                )}
 
                 {/* Data Synthesis */}
                 <SectionPanel
@@ -848,6 +1464,28 @@ export const SettingsScreen: React.FC = () => {
                 type="success"
                 onConfirm={() => setShowResetSuccess(false)}
                 onCancel={() => setShowResetSuccess(false)}
+            />
+
+            <CustomAlertDialog
+                isOpen={!!providerToDelete}
+                title="删除自定义服务商"
+                message="确认删除该自定义服务商吗？删除后，该服务商下的所有模型配置也将失效。"
+                confirmText="确认删除"
+                cancelText="取消"
+                type="warning"
+                onConfirm={confirmDeleteProvider}
+                onCancel={() => setProviderToDelete(null)}
+            />
+
+            <CustomAlertDialog
+                isOpen={!!modelToDelete}
+                title="删除自定义模型"
+                message="确认删除该自定义模型吗？"
+                confirmText="确认删除"
+                cancelText="取消"
+                type="warning"
+                onConfirm={confirmDeleteModel}
+                onCancel={() => setModelToDelete(null)}
             />
         </div>
     );

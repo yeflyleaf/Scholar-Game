@@ -14,7 +14,7 @@ class GeminiProvider extends BaseProvider {
     this.providerName = 'gemini';
     this.displayName = 'Google Gemini';
     this.baseUrl = config.baseUrl || 'https://generativelanguage.googleapis.com/v1beta/models';
-    this.model = config.model || 'gemini-2.5-flash';
+    this.model = config.model || 'gemini-3.5-flash';
     
     // 从注册表加载模型配置
     this.providerConfig = getProviderById('gemini');
@@ -27,7 +27,7 @@ class GeminiProvider extends BaseProvider {
     }
     // 后备默认值
     return [
-      { id: 'gemini-2.5-flash', name: 'Gemini 2.5 Flash', description: '最新最快的模型' },
+      { id: 'gemini-3.5-flash', name: 'Gemini 3.5 Flash', description: '最新最快旗舰模型' },
     ];
   }
 
@@ -35,7 +35,10 @@ class GeminiProvider extends BaseProvider {
    * 向 Gemini API 发起补全请求
    */
   async complete(prompt, systemInstruction = null, options = {}) {
-    const maxTokens = options.maxTokens || 8192;
+    const models = this.getAvailableModels();
+    const currentModelObj = models.find(m => m.id === this.model);
+    const defaultMaxTokens = (currentModelObj && currentModelObj.maxOutputTokens) ? currentModelObj.maxOutputTokens : 8192;
+    const maxTokens = options.maxTokens || defaultMaxTokens;
     const retryCount = options.retryCount || 0;
 
     if (!this.apiKey) {
@@ -49,7 +52,14 @@ class GeminiProvider extends BaseProvider {
     this.checkRateLimits(estimatedTokens);
     this.incrementUsage(estimatedTokens);
 
-    const url = `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`;
+    let url;
+    if (currentModelObj && currentModelObj.url) {
+      const baseOverride = currentModelObj.url.replace(/\/+$/, '');
+      url = `${baseOverride}?key=${this.apiKey}`;
+    } else {
+      const base = (this.baseUrl || '').replace(/\/+$/, '');
+      url = `${base}/${this.model}:generateContent?key=${this.apiKey}`;
+    }
     console.log(`[GeminiProvider] Calling API with model: ${this.model}`);
 
     const requestBody = {

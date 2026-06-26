@@ -6,7 +6,8 @@ import type {
     ConnectionTestResult,
     GeneratedChapter,
     GeneratedKnowledgeTree,
-    QuestionGenerationOptions
+    QuestionGenerationOptions,
+    AICustomConfig
 } from '../types/electron';
 import type {
     EntropyEntity,
@@ -37,6 +38,8 @@ interface UseAIReturn {
   checkStatus: () => Promise<AIStatus | null>;
   resetConfig: () => Promise<boolean>;
   testConnection: () => Promise<ConnectionTestResult>;
+  getCustomConfig: () => Promise<AICustomConfig | null>;
+  saveCustomConfig: (customConfig: AICustomConfig) => Promise<boolean>;
   
   // 动作 - 生成
   generateQuestions: (content: string, options?: QuestionGenerationOptions) => Promise<Question[] | null>;
@@ -433,6 +436,45 @@ export function useAI(): UseAIReturn {
     }
   }, [electronAPI]);
 
+  // 获取自定义配置
+  const getCustomConfig = useCallback(async (): Promise<AICustomConfig | null> => {
+    if (!electronAPI?.ai) {
+      setError('AI API only available in Electron');
+      return null;
+    }
+    try {
+      return await electronAPI.ai.getCustomConfig();
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Failed to get custom config');
+      return null;
+    }
+  }, [electronAPI]);
+
+  // 保存自定义配置
+  const saveCustomConfig = useCallback(async (customConfig: AICustomConfig): Promise<boolean> => {
+    if (!electronAPI?.ai) {
+      setError('AI API only available in Electron');
+      return false;
+    }
+    setIsLoading(true);
+    try {
+      const result = await electronAPI.ai.saveCustomConfig(customConfig);
+      if (result.success) {
+        await loadProviders();
+        await checkStatus();
+        return true;
+      } else {
+        setError(result.error || 'Failed to save custom config');
+        return false;
+      }
+    } catch (e) {
+      setError(e instanceof Error ? e.message : 'Unknown error');
+      return false;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [electronAPI, loadProviders, checkStatus]);
+
   // 挂载时加载提供商并检查状态
   useEffect(() => {
     if (electronAPI?.ai) {
@@ -464,6 +506,8 @@ export function useAI(): UseAIReturn {
     generateAllMissionBriefings,
     testConnection,
     resetConfig,
+    getCustomConfig,
+    saveCustomConfig,
     clearError,
   };
 }

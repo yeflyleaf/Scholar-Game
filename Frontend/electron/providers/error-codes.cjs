@@ -440,14 +440,14 @@ const GENERIC_ERROR_CODES = {
  */
 const PROVIDER_ERROR_CODES = {
   gemini: GEMINI_ERROR_CODES,
-  siliconflow: SILICONFLOW_ERROR_CODES,
-  groq: GROQ_ERROR_CODES,
-  xai: XAI_ERROR_CODES,
   openai: OPENAI_ERROR_CODES,
+  claude: OPENAI_ERROR_CODES,
+  xai: XAI_ERROR_CODES,
+  siliconflow: SILICONFLOW_ERROR_CODES,
+  deepseek: SILICONFLOW_ERROR_CODES,
   zhipu: ZHIPU_ERROR_CODES,
-  baidu: BAIDU_ERROR_CODES,
+  doubao: SILICONFLOW_ERROR_CODES,
   aliyun: ALIYUN_ERROR_CODES,
-  moonshot: MOONSHOT_ERROR_CODES,
 };
 
 /**
@@ -599,28 +599,24 @@ function isQuotaError(providerId, errorMessage) {
     return msg.includes('resource_exhausted') || msg.includes('429');
   }
   
-  if (providerId === 'siliconflow') {
-    return msg.includes('insufficient_balance') || msg.includes('rate_limit_exceeded');
+  if (providerId === 'siliconflow' || providerId === 'deepseek') {
+    return msg.includes('insufficient_balance') || msg.includes('rate_limit_exceeded') || msg.includes('insufficient_quota');
   }
   
-  if (providerId === 'openai') {
-    return msg.includes('insufficient_quota') || msg.includes('billing');
+  if (providerId === 'openai' || providerId === 'claude' || providerId === 'xai') {
+    return msg.includes('insufficient_quota') || msg.includes('billing') || msg.includes('quota_exceeded');
   }
   
   if (providerId === 'zhipu') {
     return msg.includes('1112') || msg.includes('1263');
-  }
-  
-  if (providerId === 'baidu') {
-    return msg.includes('4') || msg.includes('17') || msg.includes('18') || msg.includes('19');
   }
 
   if (providerId === 'aliyun') {
     return msg.includes('allocationquota') || msg.includes('ratequota');
   }
 
-  if (providerId === 'moonshot') {
-    return msg.includes('balance') || msg.includes('402');
+  if (providerId === 'doubao') {
+    return msg.includes('quota') || msg.includes('limit');
   }
   
   // 通用关键字 (仅作为最后的后备)

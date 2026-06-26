@@ -13,6 +13,12 @@ export interface AIProviderModel {
   id: string;
   name: string;
   description: string;
+  isCustom?: boolean;
+  url?: string;
+  toolCalling?: boolean;
+  vision?: boolean;
+  maxInputTokens?: number;
+  maxOutputTokens?: number;
 }
 
 export interface AIProvider {
@@ -23,6 +29,9 @@ export interface AIProvider {
   requiresProxy: boolean;
   models: AIProviderModel[];
   defaultModel: string;
+  isCustom?: boolean;
+  baseUrl?: string;
+  note?: string;
 }
 
 export interface AIProvidersGrouped {
@@ -108,6 +117,11 @@ export interface ConnectionTestResult {
 // AI 服务 API 接口 (新统一 API)
 // ============================================
 
+export interface AICustomConfig {
+  customProviders: AIProvider[];
+  customModels: Record<string, AIProviderModel[]>;
+}
+
 export interface AIAPI {
   // 提供商管理
   getProviders: () => Promise<AIProvider[]>;
@@ -120,6 +134,8 @@ export interface AIAPI {
   resetQuota: () => Promise<APIResponse<void>>;
   resetConfig: () => Promise<APIResponse<void>>;
   testConnection: () => Promise<ConnectionTestResult>;
+  getCustomConfig: () => Promise<AICustomConfig>;
+  saveCustomConfig: (customConfig: AICustomConfig) => Promise<APIResponse<void>>;
   
   // 内容生成
   generateQuestions: (

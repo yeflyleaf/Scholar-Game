@@ -24,6 +24,7 @@ class AIService {
     this.providerId = null;
     this.apiKey = null;
     this.model = null;
+    this.apiKeys = {}; // 存储每个提供商各自的 API Key
 
     // 配额耗尽状态 Map <providerId, timestamp>
     // 记录每个提供商的配额耗尽时间
@@ -133,27 +134,42 @@ class AIService {
 
   loadConfig() {
     const configPath = this.getConfigPath();
+    this.apiKeys = {};
     if (fs.existsSync(configPath)) {
       try {
         const data = fs.readFileSync(configPath, "utf-8");
         const config = JSON.parse(data);
         this.providerId = config.providerId || "gemini";
+        this.model = config.model || null;
         
-        // 尝试加载加密的 API Key
+        // 尝试加载各个提供商的加密 API Key
+        if (config.encryptedApiKeys) {
+          Object.entries(config.encryptedApiKeys).forEach(([pid, encVal]) => {
+            const dec = this.decrypt(encVal);
+            if (dec) this.apiKeys[pid] = dec;
+          });
+        }
+        
+        // 兼容旧版：加载单一加密或明文的 API Key
         if (config.encryptedApiKey) {
-          this.apiKey = this.decrypt(config.encryptedApiKey);
-        } else {
-          // 兼容旧版：加载明文 API Key
-          this.apiKey = config.apiKey || null;
-          
-          // 如果有明文 Key 且支持加密，自动迁移（保存一次即可）
-          if (this.apiKey && safeStorage && safeStorage.isEncryptionAvailable()) {
-            console.log("[AIService] Migrating plain text API key to encrypted storage...");
-            this.saveConfig();
+          const dec = this.decrypt(config.encryptedApiKey);
+          if (dec && !this.apiKeys[this.providerId]) {
+            this.apiKeys[this.providerId] = dec;
+          }
+        } else if (config.apiKey) {
+          if (!this.apiKeys[this.providerId]) {
+            this.apiKeys[this.providerId] = config.apiKey;
           }
         }
         
-        this.model = config.model || null;
+        this.apiKey = this.apiKeys[this.providerId] || null;
+        
+        // 如果有明文 Key 且支持加密，自动迁移
+        if (this.apiKey && safeStorage && safeStorage.isEncryptionAvailable() && !config.encryptedApiKeys) {
+          console.log("[AIService] Migrating plain text API key to encrypted storage...");
+          this.saveConfig();
+        }
+        
         return config;
       } catch (e) {
         console.error("[AIService] Failed to load config:", e);
@@ -165,22 +181,30 @@ class AIService {
 
   saveConfig() {
     const configPath = this.getConfigPath();
+    
+    // 确保当前的 apiKey 已存入 map
+    if (this.providerId && this.apiKey) {
+      this.apiKeys[this.providerId] = this.apiKey;
+    }
+
     const config = {
       providerId: this.providerId,
       model: this.model,
+      encryptedApiKeys: {},
     };
 
-    // 尝试加密 API Key
-    if (this.apiKey) {
-      const encrypted = this.encrypt(this.apiKey);
-      if (encrypted) {
-        config.encryptedApiKey = encrypted;
-      } else {
-        // 如果加密不可用或失败，回退到明文（或者根据需求决定是否允许明文）
-        // 这里为了保证可用性，回退到明文，但实际生产中可能需要警告
-        config.apiKey = this.apiKey;
+    // 加密保存所有提供商的 Key
+    Object.entries(this.apiKeys).forEach(([pid, keyVal]) => {
+      if (keyVal) {
+        const encrypted = this.encrypt(keyVal);
+        if (encrypted) {
+          config.encryptedApiKeys[pid] = encrypted;
+        } else {
+          // 加密不可用时回退明文
+          config.encryptedApiKeys[pid] = keyVal;
+        }
       }
-    }
+    });
 
     fs.writeFileSync(configPath, JSON.stringify(config, null, 2));
   }
@@ -196,12 +220,28 @@ class AIService {
         return false;
       }
     }
+
+    // 同时也删除自定义服务商配置文件 custom-providers.json
+    const customProvidersPath = this.getCustomProvidersPath();
+    if (fs.existsSync(customProvidersPath)) {
+      try {
+        fs.unlinkSync(customProvidersPath);
+        console.log("[AIService] Custom providers config file deleted");
+        
+        // 重新加载注册表以反映删除
+        const { reloadRegistry } = require("./providers/index.cjs");
+        reloadRegistry();
+      } catch (e) {
+        console.error("[AIService] Failed to delete custom providers file:", e);
+      }
+    }
     
     // Reset internal state
     this.providerId = null;
     this.apiKey = null;
     this.model = null;
     this.provider = null;
+    this.apiKeys = {};
     this.quotaStatus.clear();
     
     return true;
@@ -232,8 +272,11 @@ class AIService {
 
   setProvider(providerId) {
     this.providerId = providerId;
+    // 加载此提供商的密钥
+    this.apiKey = this.apiKeys[providerId] || null;
+    
     // 切换提供商时重置模型
-    const providers = getAvailableProviders();
+    const providers = this.getProviders();
     const providerInfo = providers.find((p) => p.id === providerId);
     if (providerInfo) {
       this.model = providerInfo.defaultModel;
@@ -244,6 +287,9 @@ class AIService {
 
   setApiKey(apiKey) {
     this.apiKey = apiKey;
+    if (this.providerId) {
+      this.apiKeys[this.providerId] = apiKey;
+    }
     this.saveConfig();
     if (this.provider) {
       this.provider.setApiKey(apiKey);
@@ -279,6 +325,47 @@ class AIService {
 
   getProvidersGrouped() {
     return getProvidersGroupedByRegion();
+  }
+
+  getCustomProvidersPath() {
+    const appDataFolder = app.getPath("userData");
+    if (!fs.existsSync(appDataFolder)) {
+      fs.mkdirSync(appDataFolder, { recursive: true });
+    }
+    return path.join(appDataFolder, "custom-providers.json");
+  }
+
+  getCustomConfig() {
+    const filePath = this.getCustomProvidersPath();
+    if (fs.existsSync(filePath)) {
+      try {
+        const data = fs.readFileSync(filePath, "utf-8");
+        return JSON.parse(data);
+      } catch (e) {
+        console.error("[AIService] Failed to read custom config:", e);
+        return { customProviders: [], customModels: {} };
+      }
+    }
+    return { customProviders: [], customModels: {} };
+  }
+
+  saveCustomConfig(customConfig) {
+    const filePath = this.getCustomProvidersPath();
+    try {
+      fs.writeFileSync(filePath, JSON.stringify(customConfig, null, 2), "utf-8");
+      
+      // 重新加载提供商注册表
+      const { reloadRegistry } = require("./providers/index.cjs");
+      reloadRegistry();
+      
+      // 重新初始化当前提供商（防止模型列表或配置更新）
+      this.initProvider();
+      
+      return true;
+    } catch (e) {
+      console.error("[AIService] Failed to save custom config:", e);
+      return false;
+    }
   }
 
   // ============================================

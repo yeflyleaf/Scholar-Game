@@ -8,6 +8,9 @@ const { app, BrowserWindow, ipcMain } = require("electron");
 const path = require("path");
 const { AIService } = require("./ai-service.cjs");
 
+// 禁用硬件加速，防止在部分 Windows 设备上出现 GPU 进程崩溃 (exit_code=-1073741819)
+app.disableHardwareAcceleration();
+
 // 设置用户数据目录为安装目录下的 data 文件夹
 // 设置用户数据目录
 // 在开发环境中，使用项目根目录下的 data 文件夹
@@ -111,6 +114,21 @@ ipcMain.handle("ai:get-providers", async () => {
 // 获取按区域分组的提供商
 ipcMain.handle("ai:get-providers-grouped", async () => {
   return aiService.getProvidersGrouped();
+});
+
+// 获取自定义配置
+ipcMain.handle("ai:get-custom-config", async () => {
+  return aiService.getCustomConfig();
+});
+
+// 保存自定义配置
+ipcMain.handle("ai:save-custom-config", async (event, customConfig) => {
+  try {
+    const success = aiService.saveCustomConfig(customConfig);
+    return { success };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
 });
 
 // 设置提供商

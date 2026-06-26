@@ -13,7 +13,8 @@ const {
   getAllProviders, 
   getProviderById, 
   getProvidersByRegion, 
-  getProvidersByType 
+  getProvidersByType,
+  reloadRegistry
 } = require('./provider-registry.cjs');
 const { 
   createProvider, 
@@ -35,6 +36,7 @@ module.exports = {
   getProviderById,
   getProvidersByRegion,
   getProvidersByType,
+  reloadRegistry,
   
   // 工厂
   createProvider,

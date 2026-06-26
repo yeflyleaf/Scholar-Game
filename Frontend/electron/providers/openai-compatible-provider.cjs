@@ -28,7 +28,7 @@ class OpenAICompatibleProvider extends BaseProvider {
       this.providerName = config.providerName || 'openai-compatible';
       this.displayName = config.displayName || 'OpenAI Compatible';
       this.baseUrl = config.baseUrl || 'https://api.openai.com/v1';
-      this.model = config.model || 'gpt-4o-mini';
+      this.model = config.model || 'gpt-5.4-mini';
       this.providerConfig = null;
     }
 
@@ -41,15 +41,22 @@ class OpenAICompatibleProvider extends BaseProvider {
       return this.providerConfig.models;
     }
     return [
-      { id: 'gpt-4o-mini', name: 'GPT-4o Mini', description: '默认模型' },
+      { id: 'gpt-5.4-mini', name: 'GPT-5.4 Mini', description: '默认模型' },
     ];
   }
 
-  /**
-   * 构建请求 URL
-   */
   getRequestUrl() {
-    return `${this.baseUrl}/chat/completions`;
+    const models = this.getAvailableModels();
+    const currentModelObj = models.find(m => m.id === this.model);
+    if (currentModelObj && currentModelObj.url) {
+      return currentModelObj.url;
+    }
+
+    const base = (this.baseUrl || '').replace(/\/+$/, '');
+    if (base.endsWith('/chat/completions')) {
+      return base;
+    }
+    return `${base}/chat/completions`;
   }
 
   /**
@@ -75,7 +82,10 @@ class OpenAICompatibleProvider extends BaseProvider {
    * 使用 OpenAI 兼容格式发起补全请求
    */
   async complete(prompt, systemInstruction = null, options = {}) {
-    const maxTokens = options.maxTokens || 4096;
+    const models = this.getAvailableModels();
+    const currentModelObj = models.find(m => m.id === this.model);
+    const defaultMaxTokens = (currentModelObj && currentModelObj.maxOutputTokens) ? currentModelObj.maxOutputTokens : 4096;
+    const maxTokens = options.maxTokens || defaultMaxTokens;
     const retryCount = options.retryCount || 0;
 
     if (!this.apiKey) {
